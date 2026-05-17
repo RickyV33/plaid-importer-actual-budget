@@ -1,0 +1,34 @@
+<div class="card">
+  <h1>Completing link…</h1>
+  <p class="muted">Re-opening Plaid Link to finish.</p>
+</div>
+<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+<script>
+  (async function () {
+    const lt = sessionStorage.getItem("plaidLinkToken");
+    if (!lt) {
+      document.querySelector("main").innerHTML =
+        '<div class="card"><h1>Link session expired</h1>' +
+        '<p>Restart linking from the <a href="/">home page</a>.</p></div>';
+      return;
+    }
+    const handler = Plaid.create({
+      token: lt,
+      receivedRedirectUri: window.location.href,
+      onSuccess: async function (publicToken) {
+        await fetch("/link/exchange", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ public_token: publicToken }),
+        });
+        sessionStorage.removeItem("plaidLinkToken");
+        window.location.href = "/";
+      },
+      onExit: function () {
+        sessionStorage.removeItem("plaidLinkToken");
+        window.location.href = "/";
+      },
+    });
+    handler.open();
+  })();
+</script>

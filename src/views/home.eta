@@ -1,0 +1,234 @@
+<h1>Linked accounts</h1>
+
+<% if (it.actualError) { %>
+  <p class="warn"><%= it.actualError %></p>
+<% } %>
+
+<% if (it.items.length === 0) { %>
+  <div class="card">
+    <p class="muted">No accounts linked yet.</p>
+    <button type="button" id="link-btn">Link an account</button>
+  </div>
+<% } else { %>
+  <% it.items.forEach(function(item) { %>
+    <div class="card item-card" data-item-id="<%= item.id %>">
+      <div class="item-header">
+        <div>
+          <h2 class="item-title"><%= item.institutionName ?? "(unknown institution)" %></h2>
+          <p class="muted item-meta">
+            <% if (item.status === "requires_relink") { %>
+              <span class="error">re-link needed</span> ·
+            <% } else if (item.status === "active") { %>
+              <span class="success">active</span> ·
+            <% } else { %>
+              <span class="warn"><%= item.status %></span> ·
+            <% } %>
+            <% if (item.lastSyncedAt) { %>
+              last sync <%= new Date(item.lastSyncedAt).toLocaleString() %>
+            <% } else { %>
+              never synced
+            <% } %>
+          </p>
+        </div>
+        <div class="item-actions">
+          <% if (item.status === "requires_relink") { %>
+            <button type="button" class="relink-btn" data-item-id="<%= item.id %>">Re-link</button>
+          <% } %>
+        </div>
+      </div>
+
+      <table class="account-table">
+        <thead>
+          <tr>
+            <th style="width: 2rem;">
+              <input type="checkbox" class="item-select-all" data-item-id="<%= item.id %>" />
+            </th>
+            <th>Account</th>
+            <th>Mapped to</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% item.accounts.forEach(function(acct) { %>
+            <tr>
+              <td>
+                <input
+                  type="checkbox"
+                  class="account-check"
+                  data-item-id="<%= item.id %>"
+                  value="<%= acct.plaidAccountId %>"
+                />
+              </td>
+              <td>
+                <%= acct.name %>
+                <% if (acct.mask) { %>
+                  <span class="muted">····<%= acct.mask %></span>
+                <% } %>
+                <% if (acct.type) { %>
+                  <span class="muted">· <%= acct.type %></span>
+                <% } %>
+              </td>
+              <td>
+                <select
+                  class="mapping-select"
+                  data-plaid-account-id="<%= acct.plaidAccountId %>"
+                >
+                  <option value="">— unmapped —</option>
+                  <% it.actualAccounts.forEach(function(a) { %>
+                    <option
+                      value="<%= a.id %>"
+                      <%= a.id === acct.mappedActualId ? "selected" : "" %>
+                    ><%= a.name %></option>
+                  <% }) %>
+                </select>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% }) %>
+
+  <div class="card sync-actions">
+    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+      <button type="button" id="sync-selected-btn">Sync selected</button>
+      <button type="button" class="secondary" id="sync-all-btn">Sync all</button>
+      <button type="button" class="secondary" id="link-btn">Link another account</button>
+      <span id="sync-status" class="muted"></span>
+    </div>
+    <div id="sync-result" style="margin-top: 1rem;"></div>
+  </div>
+<% } %>
+
+<script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+<script>
+  (function () {
+    document.querySelectorAll('.item-select-all').forEach((box) => {
+      box.addEventListener('change', (e) => {
+        const itemId = box.dataset.itemId;
+        document
+          .querySelectorAll('.account-check[data-item-id="' + itemId + '"]')
+          .forEach((c) => (c.checked = e.target.checked));
+      });
+    });
+
+    document.querySelectorAll('.mapping-select').forEach((sel) => {
+      sel.addEventListener('change', async (e) => {
+        const target = e.target;
+        const plaidAccountId = target.dataset.plaidAccountId;
+        const actualAccountId = target.value;
+        const url = '/accounts/' + encodeURIComponent(plaidAccountId) + '/mapping';
+        if (!actualAccountId) {
+          await fetch(url, { method: 'DELETE' });
+          return;
+        }
+        await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ actualAccountId }),
+        });
+      });
+    });
+
+    async function runSync(payload) {
+      const status = document.getElementById('sync-status');
+      const result = document.getElementById('sync-result');
+      status.textContent = 'syncing…';
+      result.innerHTML = '';
+      try {
+        const res = await fetch('/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const body = await res.json();
+        if (!res.ok) {
+          result.innerHTML = '<p class="error">Sync failed: ' + (body.error ?? 'unknown') + '</p>';
+        } else {
+          const cls = body.status === 'success' ? 'success' : 'error';
+          result.innerHTML =
+            '<p class="' + cls + '">Sync ' + body.status +
+            ' — imported ' + body.totalImported + ' transactions.</p>';
+          setTimeout(() => window.location.reload(), 1200);
+        }
+      } catch (err) {
+        result.innerHTML = '<p class="error">Network error: ' + err.message + '</p>';
+      } finally {
+        status.textContent = '';
+      }
+    }
+
+    document.getElementById('sync-all-btn')?.addEventListener('click', () => {
+      runSync({ scope: 'all' });
+    });
+
+    document.getElementById('sync-selected-btn')?.addEventListener('click', () => {
+      const ids = Array.from(document.querySelectorAll('.account-check:checked')).map((c) => c.value);
+      if (ids.length === 0) {
+        document.getElementById('sync-result').innerHTML =
+          '<p class="warn">Pick at least one account to sync.</p>';
+        return;
+      }
+      runSync({ scope: 'selected', plaidAccountIds: ids });
+    });
+
+    document.getElementById('link-btn')?.addEventListener('click', async function () {
+      const res = await fetch('/link/token', { method: 'POST' });
+      if (!res.ok) {
+        alert('Could not get a link token. Check server logs.');
+        return;
+      }
+      const { link_token } = await res.json();
+      sessionStorage.setItem('plaidLinkToken', link_token);
+      const handler = Plaid.create({
+        token: link_token,
+        onSuccess: async function (publicToken) {
+          await fetch('/link/exchange', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ public_token: publicToken }),
+          });
+          sessionStorage.removeItem('plaidLinkToken');
+          window.location.reload();
+        },
+        onExit: function () {
+          sessionStorage.removeItem('plaidLinkToken');
+        },
+      });
+      handler.open();
+    });
+
+    document.querySelectorAll('.relink-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const itemId = btn.dataset.itemId;
+        btn.disabled = true;
+        try {
+          const res = await fetch('/link/items/' + encodeURIComponent(itemId) + '/update-token', {
+            method: 'POST',
+          });
+          if (!res.ok) {
+            alert('Could not get an update-mode link token. Check server logs.');
+            return;
+          }
+          const { link_token } = await res.json();
+          sessionStorage.setItem('plaidLinkToken', link_token);
+          const handler = Plaid.create({
+            token: link_token,
+            onSuccess: async function () {
+              await fetch('/link/items/' + encodeURIComponent(itemId) + '/mark-active', {
+                method: 'POST',
+              });
+              sessionStorage.removeItem('plaidLinkToken');
+              window.location.reload();
+            },
+            onExit: function () {
+              sessionStorage.removeItem('plaidLinkToken');
+            },
+          });
+          handler.open();
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+  })();
+</script>

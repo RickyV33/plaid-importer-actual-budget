@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title><%= it.title ?? "plaid-importer" %></title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a href="/" class="brand">plaid-importer</a>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/history">History</a>
+        <% if (it.authed) { %>
+          <form method="post" action="/logout" class="inline">
+            <button type="submit" class="linklike">Logout</button>
+          </form>
+        <% } %>
+      </nav>
+    </header>
+    <main>
+      <%~ it.body %>
+    </main>
+  </body>
+</html>

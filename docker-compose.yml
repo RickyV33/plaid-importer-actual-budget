@@ -1,0 +1,12 @@
+services:
+  plaid-importer:
+    build: .
+    image: plaid-importer:latest
+    container_name: plaid-importer
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      # bind to localhost; expose to the network via your reverse proxy
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./data:/app/data

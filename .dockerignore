@@ -1,0 +1,11 @@
+node_modules
+dist
+data
+.env
+.git
+.gitignore
+.DS_Store
+*.log
+openspec
+source
+README.md

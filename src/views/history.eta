@@ -1,0 +1,72 @@
+<div class="card">
+  <h1>Sync history</h1>
+
+  <% if (it.runs.length === 0) { %>
+    <p class="muted">No sync runs yet.</p>
+  <% } else { %>
+    <table>
+      <thead>
+        <tr>
+          <th>Started</th>
+          <th>Trigger</th>
+          <th>Scope</th>
+          <th>Status</th>
+          <th>Imported</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% it.runs.forEach(function(run) { %>
+          <tr>
+            <td><%= new Date(run.startedAt).toLocaleString() %></td>
+            <td><%= run.triggeredBy %></td>
+            <td><%= run.scope %></td>
+            <td>
+              <% if (run.status === "success") { %><span class="success">success</span><% } %>
+              <% if (run.status === "failure") { %><span class="error">failure</span><% } %>
+              <% if (run.status === "running") { %><span class="warn">running</span><% } %>
+            </td>
+            <td><%= run.totalImported %></td>
+          </tr>
+          <% if (run.results.length > 0) { %>
+            <tr>
+              <td colspan="5">
+                <details>
+                  <summary class="muted">per-account results</summary>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Account</th>
+                        <th>Status</th>
+                        <th>Imported</th>
+                        <th>Reason</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% run.results.forEach(function(r) { %>
+                        <tr>
+                          <td><%= r.accountName ?? r.plaid_account_id %></td>
+                          <td><%= r.status %></td>
+                          <td><%= r.txns_imported %></td>
+                          <td><%= r.reason ?? "" %></td>
+                        </tr>
+                      <% }) %>
+                    </tbody>
+                  </table>
+                </details>
+              </td>
+            </tr>
+          <% } %>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <div style="margin-top: 1rem;">
+      <% if (it.offset > 0) { %>
+        <a class="button secondary" href="/history?offset=<%= it.prevOffset %>">← newer</a>
+      <% } %>
+      <% if (it.hasMore) { %>
+        <a class="button secondary" href="/history?offset=<%= it.nextOffset %>">older →</a>
+      <% } %>
+    </div>
+  <% } %>
+</div>
