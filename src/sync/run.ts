@@ -8,6 +8,7 @@ import {
   plaidAccounts,
   plaidItems,
   syncAccountResults,
+  syncOrphanDeletes,
   syncRuns,
   type AccountMappingRow,
   type PlaidAccountRow,
@@ -15,8 +16,12 @@ import {
 } from "../db/queries.js";
 import { classifyPlaidError, syncItem } from "../plaid/sync.js";
 import {
+  bucketDelta,
+  buildImportedIdMap,
+  processPromotions,
   processRemovals,
-  shouldImportTxn,
+  type ImportedIdEntry,
+  type PendingPromotion,
   type PendingRemoval,
   type RunLogger,
 } from "./lifecycle.js";
@@ -44,7 +49,7 @@ type PerAccount = {
   item: PlaidItemRow;
 };
 
-const NOOP_LOGGER: RunLogger = { warn: () => {} };
+const NOOP_LOGGER: RunLogger = { warn: () => {}, info: () => {} };
 
 export async function runSync(args: RunSyncArgs): Promise<RunSyncResult> {
   const log = args.logger ?? NOOP_LOGGER;
@@ -58,6 +63,8 @@ export async function runSync(args: RunSyncArgs): Promise<RunSyncResult> {
 
   const targetsByItem = groupByItem(targets);
   const pulled = new Map<string, Transaction[]>();
+  const promotionsByActualAccount = new Map<string, PendingPromotion[]>();
+  const promotionPlaidTxnByPostedId = new Map<string, Transaction>();
   const removalsByActualAccount = new Map<string, PendingRemoval[]>();
   const itemErrors = new Map<string, string>();
 
@@ -73,32 +80,29 @@ export async function runSync(args: RunSyncArgs): Promise<RunSyncResult> {
         group.map((g) => [g.plaidAccountId, g] as const),
       );
 
-      const collect = (txn: Transaction) => {
-        const target = targetByPlaidAcct.get(txn.account_id);
-        if (!target) return;
-        if (!shouldImportTxn(target.mapping, txn)) return;
-        const list = pulled.get(txn.account_id) ?? [];
-        list.push(txn);
-        pulled.set(txn.account_id, list);
-      };
+      const buckets = bucketDelta({
+        delta,
+        targetByPlaidAcct,
+        plaidItemId: itemId,
+      });
 
-      for (const txn of delta.added) collect(txn);
-      for (const txn of delta.modified) collect(txn);
-
-      for (const removed of delta.removed) {
-        const plaidAccountId = removed.account_id;
-        if (!plaidAccountId) continue;
-        const target = targetByPlaidAcct.get(plaidAccountId);
-        if (!target?.mapping) continue;
-        const actualAccountId = target.mapping.actual_account_id;
-        const list = removalsByActualAccount.get(actualAccountId) ?? [];
-        list.push({
-          plaidTransactionId: removed.transaction_id,
-          plaidAccountId,
-          actualAccountId,
-          plaidItemId: itemId,
-        });
-        removalsByActualAccount.set(actualAccountId, list);
+      for (const [plaidAcctId, txns] of buckets.importsByPlaidAccount.entries()) {
+        const list = pulled.get(plaidAcctId) ?? [];
+        list.push(...txns);
+        pulled.set(plaidAcctId, list);
+      }
+      for (const [actualAcctId, promos] of buckets.promotionsByActualAccount.entries()) {
+        const list = promotionsByActualAccount.get(actualAcctId) ?? [];
+        list.push(...promos);
+        promotionsByActualAccount.set(actualAcctId, list);
+      }
+      for (const [postedId, plaidTxn] of buckets.promotionPlaidTxnByPostedId.entries()) {
+        promotionPlaidTxnByPostedId.set(postedId, plaidTxn);
+      }
+      for (const [actualAcctId, removals] of buckets.removalsByActualAccount.entries()) {
+        const list = removalsByActualAccount.get(actualAcctId) ?? [];
+        list.push(...removals);
+        removalsByActualAccount.set(actualAcctId, list);
       }
 
       plaidItems.setCursor(itemId, delta.nextCursor);
@@ -147,16 +151,79 @@ export async function runSync(args: RunSyncArgs): Promise<RunSyncResult> {
   });
 
   const hasActualWork =
-    importables.length > 0 || removalsByActualAccount.size > 0;
+    importables.length > 0 ||
+    removalsByActualAccount.size > 0 ||
+    promotionsByActualAccount.size > 0;
 
   if (hasActualWork) {
     try {
       await withActual(async (api) => {
+        // Build an imported_id lookup map once per Actual account that needs one.
+        const accountIdsNeedingMap = new Set<string>([
+          ...promotionsByActualAccount.keys(),
+          ...removalsByActualAccount.keys(),
+        ]);
+        const mapsByActualAccount = new Map<string, Map<string, ImportedIdEntry>>();
+        for (const acctId of accountIdsNeedingMap) {
+          try {
+            mapsByActualAccount.set(acctId, await buildImportedIdMap(api, acctId));
+          } catch (err) {
+            // Lookup failed for this account. For removals, record one orphan
+            // per removal with lookup_failed reason (preserves the existing
+            // behavior). For promotions, the empty map below causes them all
+            // to fall through to the import path — graceful degradation.
+            const removals = removalsByActualAccount.get(acctId) ?? [];
+            for (const r of removals) {
+              syncOrphanDeletes.insert({
+                syncRunId: runId,
+                plaidAccountId: r.plaidAccountId,
+                plaidTransactionId: r.plaidTransactionId,
+                payeeName: null,
+                amountCents: null,
+                date: null,
+                errorReason: `lookup_failed: ${errMsg(err)}`,
+              });
+            }
+            removalsByActualAccount.delete(acctId);
+            mapsByActualAccount.set(acctId, new Map());
+          }
+        }
+
+        // Process promotions before imports so fell-through promotions can be
+        // re-routed into the imports batch as fresh inserts.
+        const promotionSuccessByPlaidAccount = new Map<string, number>();
+        for (const [acctId, promotions] of promotionsByActualAccount.entries()) {
+          const map = mapsByActualAccount.get(acctId) ?? new Map();
+          const { updated, fellThrough } = await processPromotions(
+            api,
+            runId,
+            acctId,
+            promotions,
+            map,
+            log,
+          );
+          for (const u of updated) {
+            promotionSuccessByPlaidAccount.set(
+              u.plaidAccountId,
+              (promotionSuccessByPlaidAccount.get(u.plaidAccountId) ?? 0) + 1,
+            );
+          }
+          for (const fp of fellThrough) {
+            const plaidTxn = promotionPlaidTxnByPostedId.get(fp.plaidPostedTransactionId);
+            if (!plaidTxn) continue;
+            const list = pulled.get(fp.plaidAccountId) ?? [];
+            list.push(plaidTxn);
+            pulled.set(fp.plaidAccountId, list);
+          }
+        }
+
+        // Imports (now includes any fell-through promotions).
         for (const t of importables) {
           const txns = pulled.get(t.plaidAccountId) ?? [];
+          const promotionCount = promotionSuccessByPlaidAccount.get(t.plaidAccountId) ?? 0;
           try {
             const result = await importBatch(api, t.mapping!.actual_account_id, txns);
-            const count = result.added.length;
+            const count = result.added.length + promotionCount;
             totalImported += count;
             perAccountOutcomes.push({
               plaidAccountId: t.plaidAccountId,
@@ -176,7 +243,8 @@ export async function runSync(args: RunSyncArgs): Promise<RunSyncResult> {
         }
 
         for (const [actualAccountId, removals] of removalsByActualAccount.entries()) {
-          await processRemovals(api, runId, actualAccountId, removals, log);
+          const map = mapsByActualAccount.get(actualAccountId) ?? new Map();
+          await processRemovals(api, runId, actualAccountId, removals, map, log);
         }
       });
     } catch (err) {
