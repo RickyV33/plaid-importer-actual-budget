@@ -30,6 +30,7 @@ declare module "fastify" {
 
 async function build() {
   const app = Fastify({
+    trustProxy: 1,
     logger: {
       level: config.LOG_LEVEL,
       redact: {
@@ -70,6 +71,10 @@ async function build() {
   await app.register(fastifyStatic, {
     root: path.join(__dirname, "..", "public"),
     prefix: "/static/",
+  });
+
+  app.get("/healthz", async (_req, reply) => {
+    return reply.send({ ok: true });
   });
 
   app.addHook("preHandler", authPreHandler);

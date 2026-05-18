@@ -15,18 +15,38 @@
     const handler = Plaid.create({
       token: lt,
       receivedRedirectUri: window.location.href,
-      onSuccess: async function (publicToken) {
-        await fetch("/link/exchange", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ public_token: publicToken }),
-        });
+      onSuccess: async function (publicToken, metadata) {
+        console.log('[plaid] onSuccess', { metadata });
+        try {
+          const ex = await fetch("/link/exchange", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ public_token: publicToken }),
+          });
+          if (!ex.ok) {
+            const body = await ex.text();
+            console.error('[plaid] exchange failed', ex.status, body);
+            alert('Exchange failed (' + ex.status + '). ' + body.slice(0, 300));
+            return;
+          }
+        } catch (err) {
+          console.error('[plaid] exchange threw', err);
+          alert('Exchange network error: ' + err.message);
+          return;
+        }
         sessionStorage.removeItem("plaidLinkToken");
         window.location.href = "/";
       },
-      onExit: function () {
+      onExit: function (err, metadata) {
+        console.log('[plaid] onExit', { err, metadata });
+        if (err) {
+          alert('Plaid Link exited with error: ' + (err.error_message || err.display_message || err.error_code || JSON.stringify(err)));
+        }
         sessionStorage.removeItem("plaidLinkToken");
         window.location.href = "/";
+      },
+      onEvent: function (eventName, metadata) {
+        console.log('[plaid] event', eventName, metadata);
       },
     });
     handler.open();

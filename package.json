@@ -13,7 +13,11 @@
     "start": "node dist/server.js",
     "migrate": "tsx src/db/migrate.ts",
     "smoke": "tsx scripts/smoke.ts",
-    "test": "node --test --import tsx/esm \"src/**/*.test.ts\""
+    "test": "node --test --import tsx/esm \"src/**/*.test.ts\"",
+    "docker:build": "docker buildx build --platform linux/amd64 -t plaid-importer:local --load .",
+    "docker:run": "docker run --rm -it -p 8080:8080 --env-file .env -v $(pwd)/data:/app/data plaid-importer:local",
+    "deploy": "./deploy.sh",
+    "deploy:latest": "./deploy.sh latest"
   },
   "dependencies": {
     "@actual-app/api": "^26.5.2",

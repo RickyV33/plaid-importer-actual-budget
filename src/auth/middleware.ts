@@ -3,6 +3,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 const ALLOWLIST_EXACT: ReadonlySet<string> = new Set([
   "GET /login",
   "POST /login",
+  "GET /healthz",
 ]);
 
 const ALLOWLIST_PREFIX: readonly string[] = ["/static/"];

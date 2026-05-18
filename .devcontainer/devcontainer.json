@@ -1,25 +1,22 @@
 {
   "name": "plaid-importer",
-  "image": "mcr.microsoft.com/devcontainers/go:1-1.22-bookworm",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
   "features": {
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "lts"
-    }
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
   "forwardPorts": [8080],
   "portsAttributes": {
-    "8080": {
-      "label": "web",
-      "onAutoForward": "notify"
-    }
+    "8080": { "label": "plaid-importer", "onAutoForward": "notify" }
   },
-  "postCreateCommand": "go mod download",
+  "postCreateCommand": "npm install",
+  "containerEnv": { "NODE_ENV": "development" },
+  "remoteUser": "node",
   "customizations": {
     "vscode": {
       "extensions": [
-        "golang.go"
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
       ]
     }
-  },
-  "remoteUser": "vscode"
+  }
 }
