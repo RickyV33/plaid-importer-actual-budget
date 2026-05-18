@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 
 import { listAccounts } from "../actual/accounts.js";
 import { accountMappings, plaidAccounts } from "../db/queries.js";
@@ -57,6 +58,26 @@ export function registerAccountRoutes(app: FastifyInstance): void {
     async (req, reply) => {
       accountMappings.remove(req.params.plaidAccountId);
       return reply.code(204).send();
+    },
+  );
+
+  const pendingVisibleSchema = z.object({ value: z.boolean() });
+
+  app.post<{ Params: { plaidAccountId: string } }>(
+    "/accounts/:plaidAccountId/mapping/pending-visible",
+    async (req, reply) => {
+      const parsed = pendingVisibleSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return reply.code(400).send({ error: "invalid_body" });
+      }
+      const changed = accountMappings.setPendingVisible(
+        req.params.plaidAccountId,
+        parsed.data.value,
+      );
+      if (changed === 0) {
+        return reply.code(404).send({ error: "mapping_not_found" });
+      }
+      return reply.send({ ok: true, pendingVisible: parsed.data.value });
     },
   );
 }

@@ -37,7 +37,7 @@ The system SHALL pull new transactions per Plaid item using `/transactions/sync`
 
 ### Requirement: Transactions are normalized and pushed to Actual
 
-The system SHALL map each Plaid transaction to an Actual transaction with the following correspondences and push the batch via `@actual-app/api.importTransactions` against the mapped Actual account.
+The system SHALL map each Plaid transaction to an Actual transaction with the following correspondences and push the batch via `@actual-app/api.importTransactions` against the mapped Actual account. Before mapping, the system SHALL filter the batch according to the target mapping's `pending_visible` flag (see "Pending transactions are filtered when the mapping disables them").
 
 | Plaid field | Actual field | Notes |
 | --- | --- | --- |
@@ -57,9 +57,45 @@ The system SHALL map each Plaid transaction to an Actual transaction with the fo
 - **WHEN** a sync run pulls transactions whose `transaction_id` matches transactions already imported (via `imported_id`)
 - **THEN** Actual's de-duplication on `imported_id` SHALL prevent double-insertion and the count reflects only new transactions
 
-#### Scenario: Pending transaction
-- **WHEN** a Plaid transaction has `pending=true`
+#### Scenario: Pending transaction with pending_visible=true
+- **WHEN** a Plaid transaction has `pending=true` and the target mapping has `pending_visible=true`
 - **THEN** the resulting Actual transaction has `cleared=false`
+
+### Requirement: Pending transactions are filtered when the mapping disables them
+
+The system SHALL drop transactions where `pending=true` (in either `delta.added` or `delta.modified`) before calling `importTransactions`, for any target whose `account_mappings.pending_visible=false`. When `pending_visible=true`, pending transactions SHALL be imported with `cleared=false` (as already specified).
+
+#### Scenario: Pending transaction with pending_visible=false
+- **WHEN** a sync run pulls a Plaid transaction with `pending=true` for an account whose mapping has `pending_visible=false`
+- **THEN** that transaction is excluded from the `importTransactions` batch and does not appear in Actual
+
+#### Scenario: Pending transaction with pending_visible=true
+- **WHEN** a sync run pulls a Plaid transaction with `pending=true` for an account whose mapping has `pending_visible=true`
+- **THEN** that transaction is included in the `importTransactions` batch and lands in Actual as `cleared=false`
+
+#### Scenario: Modified pending transaction with pending_visible=false
+- **WHEN** a sync run receives a `delta.modified` Plaid transaction still in `pending=true` state for an account whose mapping has `pending_visible=false`
+- **THEN** that transaction is excluded from the `importTransactions` batch
+
+### Requirement: Removed transactions are deleted from Actual
+
+For each item processed in a sync run, the system SHALL consume `delta.removed` from Plaid `/transactions/sync` and attempt to delete each corresponding Actual transaction. Resolution from Plaid `transaction_id` to Actual transaction id SHALL use a single `getTransactions(actualAccountId, today−30d, today+30d)` call per affected Actual account, building an in-memory `Map<imported_id, actual_id>` from the response. For each removed `transaction_id` found in the map, the system SHALL call `deleteTransaction(actualId)`.
+
+#### Scenario: Removed transaction is found in Actual
+- **WHEN** Plaid returns a removed `transaction_id` whose value matches an Actual transaction's `imported_id` within the lookup window
+- **THEN** the system calls `deleteTransaction(actualId)` and the row is removed from Actual on the next `actual.sync`
+
+#### Scenario: Removed transaction has no matching Actual row
+- **WHEN** Plaid returns a removed `transaction_id` with no matching `imported_id` in the lookup window
+- **THEN** the system logs a structured warning identifying the Plaid `transaction_id` and `plaid_account_id` and continues with the rest of the sync; no orphan row is recorded and no UI surface is raised
+
+#### Scenario: Delete throws after the Actual row was resolved
+- **WHEN** `deleteTransaction` throws for a resolved Actual id (e.g., Actual unreachable mid-run, transaction id stale)
+- **THEN** the system inserts a row into `sync_orphan_deletes` capturing `sync_run_id`, `plaid_account_id`, `plaid_transaction_id`, `payee_name`, `amount_cents`, `date`, and `error_reason`, and the sync run continues for remaining work
+
+#### Scenario: Item has empty removed
+- **WHEN** `delta.removed` is empty for an item
+- **THEN** the system does not call `getTransactions` for any account associated with that item
 
 ### Requirement: One Actual lifecycle per sync run
 
@@ -84,4 +120,20 @@ The system SHALL persist a `sync_runs` row immediately when a sync is triggered 
 #### Scenario: Sync run completes
 - **WHEN** a sync run finishes
 - **THEN** the row's `finished_at` is set, `status` is `success` if every targeted account succeeded or `failure` otherwise, and the home page updates inline via HTMX
+
+### Requirement: Sync excludes removed items
+
+The system SHALL exclude any Plaid item whose `plaid_items.status='removed'` from sync targeting. Accounts under a removed item SHALL NOT be pulled, regardless of whether `POST /sync` was invoked with `scope=all` or with `scope=selected` and an explicit account list naming them. Removed-item accounts SHALL NOT produce `sync_account_results` rows for the current run.
+
+#### Scenario: scope=all skips removed items
+- **WHEN** a sync run is invoked with `scope=all` and at least one item has `status='removed'`
+- **THEN** the run does not call `/transactions/sync` for that item and writes no `sync_account_results` rows for its accounts
+
+#### Scenario: scope=selected naming a removed item's account
+- **WHEN** a sync run is invoked with `scope=selected` and `plaidAccountIds` includes an account whose item has `status='removed'`
+- **THEN** that account is silently dropped from the target set; the run continues for any other targeted accounts and the response reflects only the surviving targets
+
+#### Scenario: All selected accounts belong to removed items
+- **WHEN** a sync run is invoked with `scope=selected` and every named account belongs to a removed item
+- **THEN** the run completes with `status=success` and `total_imported=0`, and writes no `sync_account_results` rows
 

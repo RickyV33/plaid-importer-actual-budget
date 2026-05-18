@@ -89,6 +89,10 @@ export async function fetchAccounts(accessToken: string): Promise<AccountBase[]>
   return res.data.accounts;
 }
 
+export async function removeItem(accessToken: string): Promise<void> {
+  await plaid.itemRemove({ access_token: accessToken });
+}
+
 function stableClientUserId(): string {
   // Single-user app — derive a stable per-deployment id from the configured user
   // so Plaid sees a consistent identity across Link sessions.

@@ -93,3 +93,12 @@ th { font-size: 0.875rem; color: var(--muted); font-weight: 500; }
 .account-table th, .account-table td { padding: 0.4rem 0.5rem; }
 
 .sync-actions { padding: 1rem 1.25rem; }
+
+.pending-toggle {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  margin-left: 0.75rem; font-size: 0.875rem; cursor: help;
+  user-select: none;
+}
+.pending-toggle input { margin: 0; cursor: pointer; }
+
+.card.warn { border-left: 4px solid var(--warn); }

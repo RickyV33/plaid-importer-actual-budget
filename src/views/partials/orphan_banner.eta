@@ -1,0 +1,52 @@
+<% if (it.orphans && it.orphans.length > 0) { %>
+  <div id="orphan-banner" class="card warn">
+    <h2 style="margin-top: 0;">
+      <%= it.orphans.length %>
+      <%= it.orphans.length === 1 ? "transaction" : "transactions" %>
+      failed to delete from Actual
+    </h2>
+    <p class="muted">
+      These pending entries in Actual could not be removed automatically. Delete
+      them in Actual manually, then click <em>I deleted it</em> to dismiss.
+    </p>
+    <details open>
+      <summary class="muted">show orphans</summary>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Account</th>
+            <th>Payee</th>
+            <th style="text-align: right;">Amount</th>
+            <th>Reason</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% it.orphans.forEach(function(o) { %>
+            <tr data-orphan-id="<%= o.id %>">
+              <td><%= o.date ?? "—" %></td>
+              <td><%= o.plaidAccountName %></td>
+              <td><%= o.payeeName ?? "—" %></td>
+              <td style="text-align: right;">
+                <% if (o.amountCents != null) { %>
+                  <%= (o.amountCents / 100).toFixed(2) %>
+                <% } else { %>
+                  —
+                <% } %>
+              </td>
+              <td class="muted"><%= o.errorReason %></td>
+              <td>
+                <button
+                  type="button"
+                  class="orphan-ack-btn"
+                  data-orphan-id="<%= o.id %>"
+                >I deleted it</button>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </details>
+  </div>
+<% } %>

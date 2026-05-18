@@ -1,3 +1,7 @@
+<div id="orphan-banner-host">
+  <%~ include("partials/orphan_banner", { orphans: it.orphans }) %>
+</div>
+
 <div class="card">
   <h1>Sync history</h1>
 
@@ -70,3 +74,30 @@
     </div>
   <% } %>
 </div>
+
+<script>
+  (function () {
+    const host = document.getElementById('orphan-banner-host');
+    if (!host) return;
+    host.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.orphan-ack-btn');
+      if (!btn) return;
+      const id = btn.dataset.orphanId;
+      btn.disabled = true;
+      try {
+        const res = await fetch('/history/orphans/' + encodeURIComponent(id) + '/ack', {
+          method: 'POST',
+        });
+        if (!res.ok) {
+          alert('Could not acknowledge. Refresh and try again.');
+          btn.disabled = false;
+          return;
+        }
+        host.innerHTML = await res.text();
+      } catch (err) {
+        alert('Network error: ' + err.message);
+        btn.disabled = false;
+      }
+    });
+  })();
+</script>

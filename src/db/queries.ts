@@ -6,7 +6,7 @@ export type PlaidItemRow = {
   institution_name: string | null;
   access_token_enc: string;
   cursor: string | null;
-  status: "active" | "requires_relink" | "disabled";
+  status: "active" | "requires_relink" | "disabled" | "removed";
   last_synced_at: number | null;
   created_at: number;
   updated_at: number;
@@ -29,8 +29,22 @@ export type AccountMappingRow = {
   plaid_account_id: string;
   actual_account_id: string;
   actual_account_name: string;
+  pending_visible: number;
   created_at: number;
   updated_at: number;
+};
+
+export type SyncOrphanDeleteRow = {
+  id: number;
+  sync_run_id: number;
+  plaid_account_id: string;
+  plaid_transaction_id: string;
+  payee_name: string | null;
+  amount_cents: number | null;
+  date: string | null;
+  error_reason: string;
+  created_at: number;
+  acknowledged_at: number | null;
 };
 
 export type SyncRunRow = {
@@ -105,7 +119,9 @@ export const plaidItems = {
 
   listAll(): PlaidItemRow[] {
     return db()
-      .prepare<[], PlaidItemRow>("SELECT * FROM plaid_items ORDER BY created_at ASC")
+      .prepare<[], PlaidItemRow>(
+        "SELECT * FROM plaid_items WHERE status != 'removed' ORDER BY created_at ASC",
+      )
       .all();
   },
 };
@@ -195,6 +211,15 @@ export const accountMappings = {
       );
   },
 
+  setPendingVisible(plaidAccountId: string, value: boolean): number {
+    const info = db()
+      .prepare(
+        "UPDATE account_mappings SET pending_visible = ?, updated_at = ? WHERE plaid_account_id = ?",
+      )
+      .run(value ? 1 : 0, now(), plaidAccountId);
+    return info.changes;
+  },
+
   remove(plaidAccountId: string): void {
     db()
       .prepare("DELETE FROM account_mappings WHERE plaid_account_id = ?")
@@ -213,6 +238,71 @@ export const accountMappings = {
     return db()
       .prepare<[], AccountMappingRow>("SELECT * FROM account_mappings")
       .all();
+  },
+};
+
+export const syncOrphanDeletes = {
+  insert(row: {
+    syncRunId: number;
+    plaidAccountId: string;
+    plaidTransactionId: string;
+    payeeName: string | null;
+    amountCents: number | null;
+    date: string | null;
+    errorReason: string;
+  }): number {
+    const info = db()
+      .prepare(
+        `INSERT INTO sync_orphan_deletes
+           (sync_run_id, plaid_account_id, plaid_transaction_id,
+            payee_name, amount_cents, date, error_reason, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        row.syncRunId,
+        row.plaidAccountId,
+        row.plaidTransactionId,
+        row.payeeName,
+        row.amountCents,
+        row.date,
+        row.errorReason,
+        now(),
+      );
+    return Number(info.lastInsertRowid);
+  },
+
+  listUnacknowledged(): SyncOrphanDeleteRow[] {
+    return db()
+      .prepare<[], SyncOrphanDeleteRow>(
+        "SELECT * FROM sync_orphan_deletes WHERE acknowledged_at IS NULL ORDER BY created_at DESC",
+      )
+      .all();
+  },
+
+  getById(id: number): SyncOrphanDeleteRow | undefined {
+    return db()
+      .prepare<[number], SyncOrphanDeleteRow>(
+        "SELECT * FROM sync_orphan_deletes WHERE id = ?",
+      )
+      .get(id);
+  },
+
+  ack(id: number): number {
+    const info = db()
+      .prepare(
+        "UPDATE sync_orphan_deletes SET acknowledged_at = ? WHERE id = ? AND acknowledged_at IS NULL",
+      )
+      .run(now(), id);
+    return info.changes;
+  },
+
+  countUnacknowledged(): number {
+    const row = db()
+      .prepare<[], { c: number }>(
+        "SELECT COUNT(*) AS c FROM sync_orphan_deletes WHERE acknowledged_at IS NULL",
+      )
+      .get();
+    return row?.c ?? 0;
   },
 };
 

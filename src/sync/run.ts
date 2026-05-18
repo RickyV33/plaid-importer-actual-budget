@@ -14,6 +14,12 @@ import {
   type PlaidItemRow,
 } from "../db/queries.js";
 import { classifyPlaidError, syncItem } from "../plaid/sync.js";
+import {
+  processRemovals,
+  shouldImportTxn,
+  type PendingRemoval,
+  type RunLogger,
+} from "./lifecycle.js";
 
 export type Scope = "all" | "selected";
 export type TriggeredBy = "manual" | "scheduled";
@@ -22,6 +28,7 @@ export type RunSyncArgs = {
   triggeredBy: TriggeredBy;
   scope: Scope;
   plaidAccountIds?: string[];
+  logger?: RunLogger;
 };
 
 export type RunSyncResult = {
@@ -37,7 +44,10 @@ type PerAccount = {
   item: PlaidItemRow;
 };
 
+const NOOP_LOGGER: RunLogger = { warn: () => {} };
+
 export async function runSync(args: RunSyncArgs): Promise<RunSyncResult> {
+  const log = args.logger ?? NOOP_LOGGER;
   const runId = syncRuns.start({ triggeredBy: args.triggeredBy, scope: args.scope });
 
   const targets = collectTargets(args);
@@ -48,6 +58,7 @@ export async function runSync(args: RunSyncArgs): Promise<RunSyncResult> {
 
   const targetsByItem = groupByItem(targets);
   const pulled = new Map<string, Transaction[]>();
+  const removalsByActualAccount = new Map<string, PendingRemoval[]>();
   const itemErrors = new Map<string, string>();
 
   for (const [itemId, group] of targetsByItem.entries()) {
@@ -58,18 +69,36 @@ export async function runSync(args: RunSyncArgs): Promise<RunSyncResult> {
       const accessToken = decrypt(item.access_token_enc);
       const delta = await syncItem({ accessToken, cursor: item.cursor });
 
-      const wantedIds = new Set(group.map((g) => g.plaidAccountId));
-      for (const txn of delta.added) {
-        if (!wantedIds.has(txn.account_id)) continue;
+      const targetByPlaidAcct = new Map(
+        group.map((g) => [g.plaidAccountId, g] as const),
+      );
+
+      const collect = (txn: Transaction) => {
+        const target = targetByPlaidAcct.get(txn.account_id);
+        if (!target) return;
+        if (!shouldImportTxn(target.mapping, txn)) return;
         const list = pulled.get(txn.account_id) ?? [];
         list.push(txn);
         pulled.set(txn.account_id, list);
-      }
-      for (const txn of delta.modified) {
-        if (!wantedIds.has(txn.account_id)) continue;
-        const list = pulled.get(txn.account_id) ?? [];
-        list.push(txn);
-        pulled.set(txn.account_id, list);
+      };
+
+      for (const txn of delta.added) collect(txn);
+      for (const txn of delta.modified) collect(txn);
+
+      for (const removed of delta.removed) {
+        const plaidAccountId = removed.account_id;
+        if (!plaidAccountId) continue;
+        const target = targetByPlaidAcct.get(plaidAccountId);
+        if (!target?.mapping) continue;
+        const actualAccountId = target.mapping.actual_account_id;
+        const list = removalsByActualAccount.get(actualAccountId) ?? [];
+        list.push({
+          plaidTransactionId: removed.transaction_id,
+          plaidAccountId,
+          actualAccountId,
+          plaidItemId: itemId,
+        });
+        removalsByActualAccount.set(actualAccountId, list);
       }
 
       plaidItems.setCursor(itemId, delta.nextCursor);
@@ -117,7 +146,10 @@ export async function runSync(args: RunSyncArgs): Promise<RunSyncResult> {
     return true;
   });
 
-  if (importables.length > 0) {
+  const hasActualWork =
+    importables.length > 0 || removalsByActualAccount.size > 0;
+
+  if (hasActualWork) {
     try {
       await withActual(async (api) => {
         for (const t of importables) {
@@ -141,6 +173,10 @@ export async function runSync(args: RunSyncArgs): Promise<RunSyncResult> {
               reason: errMsg(err),
             });
           }
+        }
+
+        for (const [actualAccountId, removals] of removalsByActualAccount.entries()) {
+          await processRemovals(api, runId, actualAccountId, removals, log);
         }
       });
     } catch (err) {

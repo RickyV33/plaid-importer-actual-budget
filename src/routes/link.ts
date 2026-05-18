@@ -6,7 +6,9 @@ import {
   createLinkToken,
   createUpdateLinkToken,
   exchangePublicToken,
+  removeItem,
 } from "../plaid/link.js";
+import { classifyPlaidError } from "../plaid/sync.js";
 import { render } from "../views/render.js";
 
 export function registerLinkRoutes(app: FastifyInstance): void {
@@ -92,6 +94,34 @@ export function registerLinkRoutes(app: FastifyInstance): void {
       }
       plaidItems.setStatus(item.id, "active");
       return reply.send({ ok: true });
+    },
+  );
+
+  app.delete<{ Params: { itemId: string } }>(
+    "/link/items/:itemId",
+    async (req, reply) => {
+      const item = plaidItems.get(req.params.itemId);
+      if (!item) {
+        return reply.code(404).send({ error: "item_not_found" });
+      }
+      if (item.status === "removed") {
+        return reply.code(204).send();
+      }
+
+      try {
+        const accessToken = decrypt(item.access_token_enc);
+        await removeItem(accessToken);
+        plaidItems.setStatus(item.id, "removed");
+        return reply.code(204).send();
+      } catch (err) {
+        const code = classifyPlaidError(err);
+        if (code === "ITEM_NOT_FOUND" || code === "INVALID_ACCESS_TOKEN") {
+          plaidItems.setStatus(item.id, "removed");
+          return reply.code(204).send();
+        }
+        app.log.error({ err, itemId: item.id }, "item_remove_failed");
+        return reply.code(502).send({ error: "plaid_item_remove_failed", code });
+      }
     },
   );
 }

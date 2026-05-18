@@ -17,6 +17,7 @@ export type HomeAccountView = {
   type: string | null;
   mappedActualName: string | null;
   mappedActualId: string | null;
+  pendingVisible: boolean;
 };
 
 export type HomeItemView = {
@@ -49,6 +50,7 @@ export function registerHomeRoute(app: FastifyInstance): void {
           type: acct.type,
           mappedActualId: m?.actual_account_id ?? null,
           mappedActualName: m?.actual_account_name ?? null,
+          pendingVisible: Boolean(m?.pending_visible),
         };
       }),
     }));

@@ -21,11 +21,12 @@ export function registerSyncRoutes(app: FastifyInstance): void {
     try {
       const result =
         parsed.data.scope === "all"
-          ? await runSync({ triggeredBy: "manual", scope: "all" })
+          ? await runSync({ triggeredBy: "manual", scope: "all", logger: req.log })
           : await runSync({
               triggeredBy: "manual",
               scope: "selected",
               plaidAccountIds: parsed.data.plaidAccountIds,
+              logger: req.log,
             });
 
       return reply.send(result);

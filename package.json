@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc && npm run copy-assets",
-    "copy-assets": "mkdir -p dist/views dist/db/migrations && cp src/views/*.eta dist/views/ && cp src/db/migrations/*.sql dist/db/migrations/",
+    "copy-assets": "mkdir -p dist/views/partials dist/db/migrations && cp src/views/*.eta dist/views/ && cp src/views/partials/*.eta dist/views/partials/ && cp src/db/migrations/*.sql dist/db/migrations/",
     "start": "node dist/server.js",
     "migrate": "tsx src/db/migrate.ts",
     "smoke": "tsx scripts/smoke.ts",

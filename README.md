@@ -33,8 +33,13 @@ Visit `http://localhost:8080` and log in with the credentials from `.env`.
    **Mapped to** dropdown to map it to an Actual account. (The dropdown
    takes a couple of seconds to populate the first time — that's the
    Actual client downloading your budget.)
-3. Click **Sync all** to pull transactions and push them to Actual.
-4. Click **History** in the top nav to see the run and per-account results.
+3. Once mapped, a **show pending** checkbox appears next to the dropdown.
+   Off by default (recommended): wait for transactions to post before
+   importing, so amount changes (tips, gas pre-auths) don't produce
+   duplicates. Toggle on if you want pending transactions visible in
+   Actual as uncleared — they'll be deleted and replaced when posted.
+4. Click **Sync all** to pull transactions and push them to Actual.
+5. Click **History** in the top nav to see the run and per-account results.
 
 ### Troubleshooting
 
@@ -47,6 +52,7 @@ Visit `http://localhost:8080` and log in with the credentials from `.env`.
 | Plaid Link won't open | Check `PLAID_CLIENT_ID` / `PLAID_SECRET` and that `PLAID_ENV` matches the secret tier |
 | Mapping dropdown is empty | Actual returned zero accounts, or it's not reachable |
 | OAuth bank link redirects but the page errors | `PLAID_REDIRECT_URI` must exactly match what's registered in your Plaid dashboard |
+| Yellow "failed to delete" banner on history page | A delete to Actual failed mid-sync; the banner lists each transaction. Remove the listed rows in Actual manually, then click **I deleted it** to dismiss. |
 
 ## How it talks to Actual
 

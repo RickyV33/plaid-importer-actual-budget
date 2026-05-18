@@ -3,11 +3,13 @@ import type { FastifyInstance } from "fastify";
 import {
   plaidAccounts,
   syncAccountResults,
+  syncOrphanDeletes,
   syncRuns,
   type SyncAccountResultRow,
+  type SyncOrphanDeleteRow,
   type SyncRunRow,
 } from "../db/queries.js";
-import { render } from "../views/render.js";
+import { render, renderPartial } from "../views/render.js";
 
 const PAGE_SIZE = 25;
 
@@ -49,16 +51,64 @@ export function registerHistoryRoutes(app: FastifyInstance): void {
       })),
     }));
 
+    const orphans = orphanViews(acctNameByPlaidId);
+
     return render(reply, "history", {
       title: "Sync history",
       authed: true,
       runs: views,
+      orphans,
       hasMore,
       nextOffset: offset + PAGE_SIZE,
       prevOffset: Math.max(0, offset - PAGE_SIZE),
       offset,
     });
   });
+
+  app.post<{ Params: { id: string } }>(
+    "/history/orphans/:id/ack",
+    async (req, reply) => {
+      const id = Number.parseInt(req.params.id, 10);
+      if (!Number.isFinite(id) || id < 1) {
+        return reply.code(404).send({ error: "not_found" });
+      }
+      const changed = syncOrphanDeletes.ack(id);
+      if (changed === 0) {
+        return reply.code(404).send({ error: "not_found" });
+      }
+
+      const acctNameByPlaidId = new Map(
+        plaidAccounts.listAll().map((a) => [a.plaid_account_id, a.name]),
+      );
+      const orphans = orphanViews(acctNameByPlaidId);
+
+      const html = renderPartial("partials/orphan_banner", { orphans });
+      return reply.type("text/html; charset=utf-8").send(html);
+    },
+  );
+}
+
+export type OrphanView = {
+  id: number;
+  payeeName: string | null;
+  amountCents: number | null;
+  date: string | null;
+  errorReason: string;
+  plaidAccountName: string;
+};
+
+function orphanViews(
+  acctNameByPlaidId: Map<string, string>,
+): OrphanView[] {
+  return syncOrphanDeletes.listUnacknowledged().map((o: SyncOrphanDeleteRow) => ({
+    id: o.id,
+    payeeName: o.payee_name,
+    amountCents: o.amount_cents,
+    date: o.date,
+    errorReason: o.error_reason,
+    plaidAccountName:
+      acctNameByPlaidId.get(o.plaid_account_id) ?? o.plaid_account_id,
+  }));
 }
 
 function clampOffset(raw: string | undefined): number {
