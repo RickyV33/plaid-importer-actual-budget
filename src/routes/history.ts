@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 
+import { currentUser, requireUserId } from "../auth/middleware.js";
 import {
   plaidAccounts,
   syncAccountResults,
@@ -28,13 +29,16 @@ export type HistoryRunView = {
 
 export function registerHistoryRoutes(app: FastifyInstance): void {
   app.get<{ Querystring: { offset?: string } }>("/history", async (req, reply) => {
+    const userId = requireUserId(req, reply);
+    if (userId === undefined) return;
+
     const offset = clampOffset(req.query.offset);
-    const runs: SyncRunRow[] = syncRuns.listRecent(PAGE_SIZE + 1, offset);
+    const runs: SyncRunRow[] = syncRuns.listRecentByOwner(userId, PAGE_SIZE + 1, offset);
     const hasMore = runs.length > PAGE_SIZE;
     const pageRuns = hasMore ? runs.slice(0, PAGE_SIZE) : runs;
 
     const acctNameByPlaidId = new Map(
-      plaidAccounts.listAll().map((a) => [a.plaid_account_id, a.name]),
+      plaidAccounts.listByOwner(userId).map((a) => [a.plaid_account_id, a.name]),
     );
 
     const views: HistoryRunView[] = pageRuns.map((run) => ({
@@ -56,6 +60,7 @@ export function registerHistoryRoutes(app: FastifyInstance): void {
     return render(reply, "history", {
       title: "Sync history",
       authed: true,
+      isAdmin: currentUser(req)?.role === "admin",
       runs: views,
       orphans,
       hasMore,
@@ -68,8 +73,21 @@ export function registerHistoryRoutes(app: FastifyInstance): void {
   app.post<{ Params: { id: string } }>(
     "/history/orphans/:id/ack",
     async (req, reply) => {
+      const userId = requireUserId(req, reply);
+      if (userId === undefined) return;
+
       const id = Number.parseInt(req.params.id, 10);
       if (!Number.isFinite(id) || id < 1) {
+        return reply.code(404).send({ error: "not_found" });
+      }
+
+      const acctNameByPlaidId = new Map(
+        plaidAccounts.listByOwner(userId).map((a) => [a.plaid_account_id, a.name]),
+      );
+
+      // Only acknowledge orphans that belong to one of this owner's accounts.
+      const orphan = syncOrphanDeletes.getById(id);
+      if (!orphan || !acctNameByPlaidId.has(orphan.plaid_account_id)) {
         return reply.code(404).send({ error: "not_found" });
       }
       const changed = syncOrphanDeletes.ack(id);
@@ -77,9 +95,6 @@ export function registerHistoryRoutes(app: FastifyInstance): void {
         return reply.code(404).send({ error: "not_found" });
       }
 
-      const acctNameByPlaidId = new Map(
-        plaidAccounts.listAll().map((a) => [a.plaid_account_id, a.name]),
-      );
       const orphans = orphanViews(acctNameByPlaidId);
 
       const html = renderPartial("partials/orphan_banner", { orphans });
@@ -100,15 +115,19 @@ export type OrphanView = {
 function orphanViews(
   acctNameByPlaidId: Map<string, string>,
 ): OrphanView[] {
-  return syncOrphanDeletes.listUnacknowledged().map((o: SyncOrphanDeleteRow) => ({
-    id: o.id,
-    payeeName: o.payee_name,
-    amountCents: o.amount_cents,
-    date: o.date,
-    errorReason: o.error_reason,
-    plaidAccountName:
-      acctNameByPlaidId.get(o.plaid_account_id) ?? o.plaid_account_id,
-  }));
+  return syncOrphanDeletes
+    .listUnacknowledged()
+    // Scope to the requesting owner's accounts only.
+    .filter((o: SyncOrphanDeleteRow) => acctNameByPlaidId.has(o.plaid_account_id))
+    .map((o: SyncOrphanDeleteRow) => ({
+      id: o.id,
+      payeeName: o.payee_name,
+      amountCents: o.amount_cents,
+      date: o.date,
+      errorReason: o.error_reason,
+      plaidAccountName:
+        acctNameByPlaidId.get(o.plaid_account_id) ?? o.plaid_account_id,
+    }));
 }
 
 function clampOffset(raw: string | undefined): number {

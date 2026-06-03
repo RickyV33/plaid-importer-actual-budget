@@ -29,9 +29,15 @@ const {
   shouldImportTxn,
 } = await import("./lifecycle.js");
 const { runMigrations } = await import("../db/migrate.js");
-const { syncOrphanDeletes, syncRuns } = await import("../db/queries.js");
+const { syncOrphanDeletes, syncRuns, users } = await import("../db/queries.js");
 
 runMigrations();
+
+const ownerUserId = users.create({
+  username: "owner",
+  passwordHash: "x",
+  role: "admin",
+});
 
 const silentLog = { warn: () => {}, info: () => {} };
 
@@ -76,7 +82,7 @@ test("buildImportedIdMapFromTxns: skips rows without imported_id, indexes the re
 });
 
 test("processRemovals: missing-in-map removal logs warn and does NOT insert orphan", async () => {
-  const runId = syncRuns.start({ triggeredBy: "manual", scope: "all" });
+  const runId = syncRuns.start({ triggeredBy: "manual", scope: "all", ownerUserId });
   const warns: Array<{ obj: object; msg?: string }> = [];
   const log = { warn: (obj: object, msg?: string) => warns.push({ obj, msg }), info: () => {} };
 
@@ -115,7 +121,7 @@ test("processRemovals: missing-in-map removal logs warn and does NOT insert orph
 });
 
 test("processRemovals: failed deleteTransaction inserts a sync_orphan_deletes row", async () => {
-  const runId = syncRuns.start({ triggeredBy: "manual", scope: "all" });
+  const runId = syncRuns.start({ triggeredBy: "manual", scope: "all", ownerUserId });
 
   const fakeApi = {
     deleteTransaction: async () => {
@@ -166,7 +172,7 @@ test("processRemovals: failed deleteTransaction inserts a sync_orphan_deletes ro
 });
 
 test("processRemovals: successful delete inserts no orphan", async () => {
-  const runId = syncRuns.start({ triggeredBy: "manual", scope: "all" });
+  const runId = syncRuns.start({ triggeredBy: "manual", scope: "all", ownerUserId });
 
   let deleted: string | undefined;
   const fakeApi = {
@@ -208,7 +214,7 @@ test("processRemovals: successful delete inserts no orphan", async () => {
 });
 
 test("processPromotions: hit case calls updateTransaction with promotion fields (no payee)", async () => {
-  const runId = syncRuns.start({ triggeredBy: "manual", scope: "all" });
+  const runId = syncRuns.start({ triggeredBy: "manual", scope: "all", ownerUserId });
 
   const updates: Array<{ id: string; fields: Record<string, unknown> }> = [];
   const fakeApi = {
@@ -263,7 +269,7 @@ test("processPromotions: hit case calls updateTransaction with promotion fields 
 });
 
 test("processPromotions: miss case returns promotion in fellThrough, no updateTransaction call", async () => {
-  const runId = syncRuns.start({ triggeredBy: "manual", scope: "all" });
+  const runId = syncRuns.start({ triggeredBy: "manual", scope: "all", ownerUserId });
 
   let updateCalls = 0;
   const fakeApi = {
@@ -305,7 +311,7 @@ test("processPromotions: miss case returns promotion in fellThrough, no updateTr
 });
 
 test("processPromotions: thrown updateTransaction is caught and promotion falls through", async () => {
-  const runId = syncRuns.start({ triggeredBy: "manual", scope: "all" });
+  const runId = syncRuns.start({ triggeredBy: "manual", scope: "all", ownerUserId });
 
   const fakeApi = {
     deleteTransaction: async () => {

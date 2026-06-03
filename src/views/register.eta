@@ -1,0 +1,27 @@
+<div class="card login-card">
+  <h1>Register</h1>
+  <% if (it.error) { %>
+    <p class="error"><%= it.error %></p>
+  <% } %>
+  <% if (!it.usersExist) { %>
+    <p class="muted">No users exist yet — the first account becomes the administrator.</p>
+  <% } %>
+  <form method="post" action="/register">
+    <div class="field">
+      <label for="username">Username</label>
+      <input id="username" name="username" type="text" autocomplete="username" autofocus required />
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="new-password" required />
+    </div>
+    <% if (it.usersExist) { %>
+      <div class="field">
+        <label for="registration_secret">Registration secret</label>
+        <input id="registration_secret" name="registration_secret" type="password" autocomplete="off" required />
+      </div>
+    <% } %>
+    <button type="submit">Create account</button>
+  </form>
+  <p class="muted"><a href="/login">Already have an account? Sign in</a></p>
+</div>

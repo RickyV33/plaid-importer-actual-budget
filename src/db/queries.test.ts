@@ -28,9 +28,16 @@ const {
   accountMappings,
   syncOrphanDeletes,
   syncRuns,
+  users,
 } = await import("./queries.js");
 
 runMigrations();
+
+const ownerUserId = users.create({
+  username: "owner",
+  passwordHash: "x",
+  role: "admin",
+});
 
 function seedMapping(plaidAccountId: string, actualAccountId: string) {
   plaidItems.upsert({
@@ -38,6 +45,7 @@ function seedMapping(plaidAccountId: string, actualAccountId: string) {
     institutionId: "ins_1",
     institutionName: "Test Bank",
     accessTokenEnc: "fake-enc",
+    ownerUserId,
   });
   plaidAccounts.upsert({
     itemId: `item-${plaidAccountId}`,
@@ -93,7 +101,7 @@ test("accountMappings.setPendingVisible: toggles 1 ↔ 0", () => {
 });
 
 test("syncOrphanDeletes: insert + listUnacknowledged + ack + count", () => {
-  const runId = syncRuns.start({ triggeredBy: "manual", scope: "all" });
+  const runId = syncRuns.start({ triggeredBy: "manual", scope: "all", ownerUserId });
 
   const id1 = syncOrphanDeletes.insert({
     syncRunId: runId,

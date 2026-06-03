@@ -2,8 +2,8 @@
 
 A small self-hosted web app that imports transactions from your bank accounts
 (via Plaid) into your self-hosted [Actual Budget](https://actualbudget.org/)
-server. Single user, simple UX: link an account, map it to an Actual account,
-click "Sync."
+server. Multi-user with private per-user connections; simple UX: link an
+account, map it to an Actual account, click "Sync."
 
 ## Setup
 
@@ -24,6 +24,20 @@ openssl rand -base64 32  # TOKEN_ENCRYPTION_KEY
 ```
 
 Visit `http://localhost:8080` and log in with the credentials from `.env`.
+
+### Users & registration
+
+`APP_USER` / `APP_PASSWORD` are **seed-only**: on first boot, if no users
+exist, an admin account is created from them so existing single-user
+deployments keep working with the same login. After that, accounts live in the
+database:
+
+- Additional people self-register at `/register`.
+- Registration is gated by a secret the admin sets under **Settings** (`/settings`).
+- **First-user bootstrap:** if you start with an empty database and no env seed,
+  the first person to register becomes the admin (no secret required); the gate
+  engages for everyone after.
+- Each user's Plaid connections, mappings, and sync history are private to them.
 
 ### First-run walkthrough
 

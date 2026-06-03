@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 
+import { requireUserId } from "../auth/middleware.js";
 import { runSync } from "../sync/run.js";
 
 const bodySchema = z.discriminatedUnion("scope", [
@@ -18,13 +19,17 @@ export function registerSyncRoutes(app: FastifyInstance): void {
       return reply.code(400).send({ error: "invalid_scope" });
     }
 
+    const ownerUserId = requireUserId(req, reply);
+    if (ownerUserId === undefined) return;
+
     try {
       const result =
         parsed.data.scope === "all"
-          ? await runSync({ triggeredBy: "manual", scope: "all", logger: req.log })
+          ? await runSync({ triggeredBy: "manual", scope: "all", ownerUserId, logger: req.log })
           : await runSync({
               triggeredBy: "manual",
               scope: "selected",
+              ownerUserId,
               plaidAccountIds: parsed.data.plaidAccountIds,
               logger: req.log,
             });

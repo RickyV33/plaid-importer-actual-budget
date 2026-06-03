@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 
 import { listAccounts } from "../actual/accounts.js";
+import { currentUser, requireUserId } from "../auth/middleware.js";
 import {
   accountMappings,
   plaidAccounts,
@@ -29,11 +30,14 @@ export type HomeItemView = {
 };
 
 export function registerHomeRoute(app: FastifyInstance): void {
-  app.get("/", async (_req, reply) => {
-    const items = plaidItems.listAll();
-    const accounts = plaidAccounts.listAll();
+  app.get("/", async (req, reply) => {
+    const userId = requireUserId(req, reply);
+    if (userId === undefined) return;
+
+    const items = plaidItems.listByOwner(userId);
+    const accounts = plaidAccounts.listByOwner(userId);
     const mappings = new Map(
-      accountMappings.listAll().map((m) => [m.plaid_account_id, m]),
+      accountMappings.listByOwner(userId).map((m) => [m.plaid_account_id, m]),
     );
 
     const itemViews: HomeItemView[] = items.map((item) => ({
@@ -69,6 +73,7 @@ export function registerHomeRoute(app: FastifyInstance): void {
     return render(reply, "home", {
       title: "plaid-importer",
       authed: true,
+      isAdmin: currentUser(req)?.role === "admin",
       items: itemViews,
       actualAccounts,
       actualError,

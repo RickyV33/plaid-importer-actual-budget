@@ -1,0 +1,23 @@
+<h1>Settings</h1>
+
+<% if (it.saved) { %>
+  <p class="success">Registration secret updated.</p>
+<% } %>
+<% if (it.error) { %>
+  <p class="error"><%= it.error %></p>
+<% } %>
+
+<div class="card">
+  <h2>Registration secret</h2>
+  <p class="muted">
+    New users must supply this secret to register.
+    <% if (it.secretSet) { %>A secret is currently set.<% } else { %>No secret is set yet — registration is currently closed to new members until you set one.<% } %>
+  </p>
+  <form method="post" action="/settings">
+    <div class="field">
+      <label for="registration_secret">New registration secret</label>
+      <input id="registration_secret" name="registration_secret" type="password" autocomplete="off" required />
+    </div>
+    <button type="submit">Save</button>
+  </form>
+</div>

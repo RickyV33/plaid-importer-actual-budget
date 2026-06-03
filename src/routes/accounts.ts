@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 
 import { listAccounts } from "../actual/accounts.js";
+import { requireUserId } from "../auth/middleware.js";
 import { accountMappings, plaidAccounts } from "../db/queries.js";
 
 export function registerAccountRoutes(app: FastifyInstance): void {
@@ -26,7 +27,10 @@ export function registerAccountRoutes(app: FastifyInstance): void {
       return reply.code(400).send({ error: "actualAccountId required" });
     }
 
-    const plaidAcct = plaidAccounts.getByPlaidId(plaidAccountId);
+    const userId = requireUserId(req, reply);
+    if (userId === undefined) return;
+
+    const plaidAcct = plaidAccounts.getByPlaidIdOwned(plaidAccountId, userId);
     if (!plaidAcct) {
       return reply.code(404).send({ error: "plaid_account_not_found" });
     }
@@ -56,6 +60,11 @@ export function registerAccountRoutes(app: FastifyInstance): void {
   app.delete<{ Params: { plaidAccountId: string } }>(
     "/accounts/:plaidAccountId/mapping",
     async (req, reply) => {
+      const userId = requireUserId(req, reply);
+      if (userId === undefined) return;
+      if (!plaidAccounts.getByPlaidIdOwned(req.params.plaidAccountId, userId)) {
+        return reply.code(404).send({ error: "plaid_account_not_found" });
+      }
       accountMappings.remove(req.params.plaidAccountId);
       return reply.code(204).send();
     },
@@ -69,6 +78,11 @@ export function registerAccountRoutes(app: FastifyInstance): void {
       const parsed = pendingVisibleSchema.safeParse(req.body);
       if (!parsed.success) {
         return reply.code(400).send({ error: "invalid_body" });
+      }
+      const userId = requireUserId(req, reply);
+      if (userId === undefined) return;
+      if (!plaidAccounts.getByPlaidIdOwned(req.params.plaidAccountId, userId)) {
+        return reply.code(404).send({ error: "plaid_account_not_found" });
       }
       const changed = accountMappings.setPendingVisible(
         req.params.plaidAccountId,

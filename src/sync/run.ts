@@ -32,6 +32,7 @@ export type TriggeredBy = "manual" | "scheduled";
 export type RunSyncArgs = {
   triggeredBy: TriggeredBy;
   scope: Scope;
+  ownerUserId: number;
   plaidAccountIds?: string[];
   logger?: RunLogger;
 };
@@ -53,7 +54,11 @@ const NOOP_LOGGER: RunLogger = { warn: () => {}, info: () => {} };
 
 export async function runSync(args: RunSyncArgs): Promise<RunSyncResult> {
   const log = args.logger ?? NOOP_LOGGER;
-  const runId = syncRuns.start({ triggeredBy: args.triggeredBy, scope: args.scope });
+  const runId = syncRuns.start({
+    triggeredBy: args.triggeredBy,
+    scope: args.scope,
+    ownerUserId: args.ownerUserId,
+  });
 
   const targets = collectTargets(args);
   if (targets.length === 0) {
@@ -277,11 +282,13 @@ export async function runSync(args: RunSyncArgs): Promise<RunSyncResult> {
 }
 
 function collectTargets(args: RunSyncArgs): PerAccount[] {
-  const allAccounts = plaidAccounts.listAll();
+  const allAccounts = plaidAccounts.listByOwner(args.ownerUserId);
   const allMappings = new Map(
-    accountMappings.listAll().map((m) => [m.plaid_account_id, m]),
+    accountMappings.listByOwner(args.ownerUserId).map((m) => [m.plaid_account_id, m]),
   );
-  const allItems = new Map(plaidItems.listAll().map((i) => [i.id, i]));
+  const allItems = new Map(
+    plaidItems.listByOwner(args.ownerUserId).map((i) => [i.id, i]),
+  );
 
   const wanted =
     args.scope === "all"

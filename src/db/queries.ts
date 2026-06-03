@@ -8,6 +8,16 @@ export type PlaidItemRow = {
   cursor: string | null;
   status: "active" | "requires_relink" | "disabled" | "removed";
   last_synced_at: number | null;
+  owner_user_id: number | null;
+  created_at: number;
+  updated_at: number;
+};
+
+export type UserRow = {
+  id: number;
+  username: string;
+  password_hash: string;
+  role: "admin" | "member";
   created_at: number;
   updated_at: number;
 };
@@ -55,6 +65,7 @@ export type SyncRunRow = {
   triggered_by: "manual" | "scheduled";
   scope: "all" | "selected";
   total_imported: number;
+  owner_user_id: number | null;
 };
 
 export type SyncAccountResultRow = {
@@ -74,12 +85,13 @@ export const plaidItems = {
     institutionId: string | null;
     institutionName: string | null;
     accessTokenEnc: string;
+    ownerUserId: number;
   }): void {
     db()
       .prepare(
         `INSERT INTO plaid_items
-           (id, institution_id, institution_name, access_token_enc, status, created_at, updated_at)
-         VALUES (?, ?, ?, ?, 'active', ?, ?)
+           (id, institution_id, institution_name, access_token_enc, status, owner_user_id, created_at, updated_at)
+         VALUES (?, ?, ?, ?, 'active', ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET
            institution_id = excluded.institution_id,
            institution_name = excluded.institution_name,
@@ -92,9 +104,19 @@ export const plaidItems = {
         row.institutionId,
         row.institutionName,
         row.accessTokenEnc,
+        row.ownerUserId,
         now(),
         now(),
       );
+  },
+
+  backfillOwner(ownerUserId: number): number {
+    const info = db()
+      .prepare(
+        "UPDATE plaid_items SET owner_user_id = ?, updated_at = ? WHERE owner_user_id IS NULL",
+      )
+      .run(ownerUserId, now());
+    return info.changes;
   },
 
   setCursor(id: string, cursor: string): void {
@@ -117,12 +139,28 @@ export const plaidItems = {
       .get(id);
   },
 
+  getOwned(id: string, ownerUserId: number): PlaidItemRow | undefined {
+    return db()
+      .prepare<[string, number], PlaidItemRow>(
+        "SELECT * FROM plaid_items WHERE id = ? AND owner_user_id = ?",
+      )
+      .get(id, ownerUserId);
+  },
+
   listAll(): PlaidItemRow[] {
     return db()
       .prepare<[], PlaidItemRow>(
         "SELECT * FROM plaid_items WHERE status != 'removed' ORDER BY created_at ASC",
       )
       .all();
+  },
+
+  listByOwner(ownerUserId: number): PlaidItemRow[] {
+    return db()
+      .prepare<[number], PlaidItemRow>(
+        "SELECT * FROM plaid_items WHERE status != 'removed' AND owner_user_id = ? ORDER BY created_at ASC",
+      )
+      .all(ownerUserId);
   },
 };
 
@@ -177,12 +215,36 @@ export const plaidAccounts = {
       .all();
   },
 
+  listByOwner(ownerUserId: number): PlaidAccountRow[] {
+    return db()
+      .prepare<[number], PlaidAccountRow>(
+        `SELECT a.* FROM plaid_accounts a
+           JOIN plaid_items i ON i.id = a.item_id
+         WHERE i.owner_user_id = ?
+         ORDER BY a.name`,
+      )
+      .all(ownerUserId);
+  },
+
   getByPlaidId(plaidAccountId: string): PlaidAccountRow | undefined {
     return db()
       .prepare<[string], PlaidAccountRow>(
         "SELECT * FROM plaid_accounts WHERE plaid_account_id = ?",
       )
       .get(plaidAccountId);
+  },
+
+  getByPlaidIdOwned(
+    plaidAccountId: string,
+    ownerUserId: number,
+  ): PlaidAccountRow | undefined {
+    return db()
+      .prepare<[string, number], PlaidAccountRow>(
+        `SELECT a.* FROM plaid_accounts a
+           JOIN plaid_items i ON i.id = a.item_id
+         WHERE a.plaid_account_id = ? AND i.owner_user_id = ?`,
+      )
+      .get(plaidAccountId, ownerUserId);
   },
 };
 
@@ -238,6 +300,17 @@ export const accountMappings = {
     return db()
       .prepare<[], AccountMappingRow>("SELECT * FROM account_mappings")
       .all();
+  },
+
+  listByOwner(ownerUserId: number): AccountMappingRow[] {
+    return db()
+      .prepare<[number], AccountMappingRow>(
+        `SELECT m.* FROM account_mappings m
+           JOIN plaid_accounts a ON a.plaid_account_id = m.plaid_account_id
+           JOIN plaid_items i ON i.id = a.item_id
+         WHERE i.owner_user_id = ?`,
+      )
+      .all(ownerUserId);
   },
 };
 
@@ -310,14 +383,15 @@ export const syncRuns = {
   start(args: {
     triggeredBy: SyncRunRow["triggered_by"];
     scope: SyncRunRow["scope"];
+    ownerUserId: number;
   }): number {
     const info = db()
       .prepare(
         `INSERT INTO sync_runs
-           (started_at, status, triggered_by, scope, total_imported)
-         VALUES (?, 'running', ?, ?, 0)`,
+           (started_at, status, triggered_by, scope, total_imported, owner_user_id)
+         VALUES (?, 'running', ?, ?, 0, ?)`,
       )
-      .run(now(), args.triggeredBy, args.scope);
+      .run(now(), args.triggeredBy, args.scope, args.ownerUserId);
     return Number(info.lastInsertRowid);
   },
 
@@ -345,6 +419,14 @@ export const syncRuns = {
         "SELECT * FROM sync_runs ORDER BY started_at DESC LIMIT ? OFFSET ?",
       )
       .all(limit, offset);
+  },
+
+  listRecentByOwner(ownerUserId: number, limit: number, offset: number): SyncRunRow[] {
+    return db()
+      .prepare<[number, number, number], SyncRunRow>(
+        "SELECT * FROM sync_runs WHERE owner_user_id = ? ORDER BY started_at DESC LIMIT ? OFFSET ?",
+      )
+      .all(ownerUserId, limit, offset);
   },
 };
 
@@ -379,3 +461,60 @@ export const syncAccountResults = {
       .all(syncRunId);
   },
 };
+
+export const users = {
+  create(row: {
+    username: string;
+    passwordHash: string;
+    role: UserRow["role"];
+  }): number {
+    const info = db()
+      .prepare(
+        `INSERT INTO users (username, password_hash, role, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?)`,
+      )
+      .run(row.username, row.passwordHash, row.role, now(), now());
+    return Number(info.lastInsertRowid);
+  },
+
+  getByUsername(username: string): UserRow | undefined {
+    return db()
+      .prepare<[string], UserRow>("SELECT * FROM users WHERE username = ?")
+      .get(username);
+  },
+
+  getById(id: number): UserRow | undefined {
+    return db()
+      .prepare<[number], UserRow>("SELECT * FROM users WHERE id = ?")
+      .get(id);
+  },
+
+  count(): number {
+    const row = db()
+      .prepare<[], { c: number }>("SELECT COUNT(*) AS c FROM users")
+      .get();
+    return row?.c ?? 0;
+  },
+};
+
+export const settings = {
+  get(key: string): string | undefined {
+    const row = db()
+      .prepare<[string], { value: string }>(
+        "SELECT value FROM settings WHERE key = ?",
+      )
+      .get(key);
+    return row?.value;
+  },
+
+  set(key: string, value: string): void {
+    db()
+      .prepare(
+        `INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
+      )
+      .run(key, value, now());
+  },
+};
+
+export const REGISTRATION_SECRET_KEY = "registration_secret";

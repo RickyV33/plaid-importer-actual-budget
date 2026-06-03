@@ -12,6 +12,9 @@
       <nav>
         <a href="/">Home</a>
         <a href="/history">History</a>
+        <% if (it.isAdmin) { %>
+          <a href="/settings">Settings</a>
+        <% } %>
         <% if (it.authed) { %>
           <form method="post" action="/logout" class="inline">
             <button type="submit" class="linklike">Logout</button>
