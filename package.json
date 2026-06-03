@@ -20,7 +20,7 @@
     "deploy:latest": "./deploy.sh latest"
   },
   "dependencies": {
-    "@actual-app/api": "^26.5.2",
+    "@actual-app/api": "^26.6.0",
     "@fastify/cookie": "^11.0.2",
     "@fastify/formbody": "^8.0.2",
     "@fastify/rate-limit": "^10.3.0",
