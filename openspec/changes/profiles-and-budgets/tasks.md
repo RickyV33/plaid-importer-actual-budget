@@ -1,6 +1,6 @@
 ## 1. Schema
 
-- [ ] 1.1 Add migration `src/db/migrations/0004_profiles_and_journal.sql`: create `profiles` (id, owner_user_id FK, name, server_url, budget_id, server_password_enc, encryption_password_enc NULLABLE, created_at, updated_at).
+- [ ] 1.1 Add migration `src/db/migrations/0005_profiles_and_journal.sql`: create `profiles` (id, owner_user_id FK, name, server_url, budget_id, server_password_enc, encryption_password_enc NULLABLE, created_at, updated_at).
 - [ ] 1.2 Create `profile_account_mappings` (profile_id FK, plaid_account_id FK, actual_account_id, actual_account_name, pending_visible INTEGER NOT NULL DEFAULT 0, timestamps, PRIMARY KEY (profile_id, plaid_account_id)).
 - [ ] 1.3 Create `plaid_txn_events` (id INTEGER PK AUTOINCREMENT, item_id, plaid_account_id, event_type, plaid_txn_id, payload_enc NULLABLE, pulled_at) with an index on (item_id, id).
 - [ ] 1.4 Create `profile_item_delivery` (profile_id, item_id, last_delivered_event_id, PRIMARY KEY (profile_id, item_id)). Do NOT drop `account_mappings`.

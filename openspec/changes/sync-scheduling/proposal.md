@@ -19,7 +19,7 @@ Syncing is manual today — a user must click "Sync" ([sync route](../../../src/
 
 ## Impact
 
-- **Schema**: new migration `0005_schedules.sql` — create `schedules` (id, profile_id FK, owner_user_id FK, plaid_account_ids, cron/interval, enabled, last_run_at, next_run_at, timestamps).
+- **Schema**: new migration `0006_schedules.sql` — create `schedules` (id, profile_id FK, owner_user_id FK, plaid_account_ids, cron/interval, enabled, last_run_at, next_run_at, timestamps).
 - **Code**:
   - New `src/scheduler/runner.ts` — evaluates due schedules and calls `runSync({ triggeredBy: "scheduled", ... })`; started from `main()` in `src/server.ts`. Respects the Actual singleton (no overlapping runs).
   - `src/db/queries.ts` — `schedules` query module.

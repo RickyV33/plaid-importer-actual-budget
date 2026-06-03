@@ -428,6 +428,13 @@ export const syncRuns = {
       )
       .all(ownerUserId, limit, offset);
   },
+
+  backfillOwner(ownerUserId: number): number {
+    const info = db()
+      .prepare("UPDATE sync_runs SET owner_user_id = ? WHERE owner_user_id IS NULL")
+      .run(ownerUserId);
+    return info.changes;
+  },
 };
 
 export const syncAccountResults = {

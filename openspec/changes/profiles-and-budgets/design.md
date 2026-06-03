@@ -52,7 +52,7 @@ Introducing the journal means real transaction data now lives at rest in the imp
 
 ## Migration Plan
 
-1. Ship migration `0004_profiles_and_journal.sql`: create `profiles`, `profile_account_mappings`, `plaid_txn_events`, `profile_item_delivery`. Additive; do not drop `account_mappings`.
+1. Ship migration `0005_profiles_and_journal.sql`: create `profiles`, `profile_account_mappings`, `plaid_txn_events`, `profile_item_delivery`. Additive; do not drop `account_mappings`.
 2. Boot-time seed (after the `multi-user-auth` seed): if no profiles exist and `ACTUAL_*` env present, create a "Default" profile owned by the admin (encrypt the server + encryption passwords), then for every existing `account_mappings` row insert a `profile_account_mappings` row under Default carrying `actual_account_id` + `pending_visible`. Initialize each profile_item_delivery watermark so existing items continue from their current cursor (journal empty → watermark 0; future pulls flow to Default).
 3. Existing item cursors are untouched, so the next sync resumes seamlessly into Default. No re-link, no re-import (Actual idempotent on `imported_id`).
 4. Rollback: previous build still reads `account_mappings` and `ACTUAL_*` env. Drop the legacy table in a later cleanup migration once confident.

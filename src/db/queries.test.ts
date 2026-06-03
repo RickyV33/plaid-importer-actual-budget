@@ -22,6 +22,7 @@ process.env.DATABASE_PATH = dbPath;
 process.env.ACTUAL_CACHE_DIR = path.join(tmpDir, "actual-cache");
 
 const { runMigrations } = await import("./migrate.js");
+const { db } = await import("./client.js");
 const {
   plaidItems,
   plaidAccounts,
@@ -83,6 +84,21 @@ test("accountMappings.upsert: preserves pending_visible when actual_account_id c
   row = accountMappings.getByPlaidId("plaid-A");
   assert.equal(row?.actual_account_id, "actual-A-renamed");
   assert.equal(row?.pending_visible, 1, "pending_visible must survive upsert");
+});
+
+test("syncRuns.backfillOwner: claims pre-migration runs with NULL owner", () => {
+  // Simulate a run that predates multi-user-auth (owner_user_id column was NULL).
+  db()
+    .prepare(
+      "INSERT INTO sync_runs (started_at, status, triggered_by, scope, total_imported) VALUES (?, 'success', 'manual', 'all', 0)",
+    )
+    .run(Date.now());
+
+  const before = syncRuns.listRecentByOwner(ownerUserId, 50, 0).length;
+  const claimed = syncRuns.backfillOwner(ownerUserId);
+  assert.equal(claimed, 1, "exactly one NULL-owner run claimed");
+  const after = syncRuns.listRecentByOwner(ownerUserId, 50, 0).length;
+  assert.equal(after, before + 1, "backfilled run now visible to the owner");
 });
 
 test("accountMappings.setPendingVisible: returns 0 for non-existent mapping", () => {

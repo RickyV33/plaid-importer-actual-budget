@@ -24,7 +24,7 @@ Today the app targets exactly one Actual budget, configured by the `ACTUAL_SERVE
 
 ## Impact
 
-- **Schema**: new migration `0004_profiles_and_journal.sql` — create `profiles`, `profile_account_mappings`, `plaid_txn_events`, `profile_item_delivery`; keep `account_mappings` (read-compat for one release).
+- **Schema**: new migration `0005_profiles_and_journal.sql` — create `profiles`, `profile_account_mappings`, `plaid_txn_events`, `profile_item_delivery`; keep `account_mappings` (read-compat for one release).
 - **Code**:
   - `src/config.ts` — `ACTUAL_*` become seed-only (still validated for the seed).
   - `src/db/queries.ts` — `profiles`, `profileAccountMappings`, `plaidTxnEvents`, `profileItemDelivery` modules; deprecate direct `accountMappings` use.

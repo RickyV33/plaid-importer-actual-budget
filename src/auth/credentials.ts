@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 
 import { config } from "../config.js";
-import { plaidItems, users, type UserRow } from "../db/queries.js";
+import { plaidItems, syncRuns, users, type UserRow } from "../db/queries.js";
 
 const BCRYPT_ROUNDS = 12;
 
@@ -60,7 +60,8 @@ export async function seedAdminFromEnv(): Promise<void> {
 
   const adminId = await createUser(username, password, "admin");
   const claimed = plaidItems.backfillOwner(adminId);
+  const claimedRuns = syncRuns.backfillOwner(adminId);
   process.stdout.write(
-    `seeded admin '${username}' (id=${adminId}); claimed ${claimed} existing item(s)\n`,
+    `seeded admin '${username}' (id=${adminId}); claimed ${claimed} existing item(s), ${claimedRuns} sync run(s)\n`,
   );
 }

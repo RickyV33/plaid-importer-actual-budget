@@ -1,6 +1,6 @@
 ## 1. Schema
 
-- [ ] 1.1 Add migration `src/db/migrations/0005_schedules.sql`: create `schedules` (id, owner_user_id FK, profile_id FK, plaid_account_ids TEXT (JSON or CSV), cadence, enabled INTEGER NOT NULL DEFAULT 1, last_run_at, next_run_at, created_at, updated_at) with an index on (enabled, next_run_at).
+- [ ] 1.1 Add migration `src/db/migrations/0006_schedules.sql`: create `schedules` (id, owner_user_id FK, profile_id FK, plaid_account_ids TEXT (JSON or CSV), cadence, enabled INTEGER NOT NULL DEFAULT 1, last_run_at, next_run_at, created_at, updated_at) with an index on (enabled, next_run_at).
 
 ## 2. Data access
 

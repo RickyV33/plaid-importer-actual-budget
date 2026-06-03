@@ -37,7 +37,7 @@ The Actual client's `inFlight` guard already rejects overlapping runs. The sched
 
 ## Migration Plan
 
-1. Ship `0005_schedules.sql` (additive).
+1. Ship `0006_schedules.sql` (additive).
 2. Start the runner from `main()` after the server is listening; it reads enabled schedules and ticks on an interval.
 3. No data migration; existing deployments simply gain the feature with zero schedules.
 4. Rollback: previous build ignores the `schedules` table and the runner is absent; manual sync is unaffected.
