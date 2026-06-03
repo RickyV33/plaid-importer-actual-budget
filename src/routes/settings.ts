@@ -11,7 +11,7 @@ export function registerSettingsRoutes(app: FastifyInstance): void {
       title: "Settings",
       authed: true,
       isAdmin: true,
-      secretSet: Boolean(settings.get(REGISTRATION_SECRET_KEY)),
+      currentSecret: settings.get(REGISTRATION_SECRET_KEY) ?? null,
       saved: false,
       error: null,
     });
@@ -27,7 +27,7 @@ export function registerSettingsRoutes(app: FastifyInstance): void {
           title: "Settings",
           authed: true,
           isAdmin: true,
-          secretSet: Boolean(settings.get(REGISTRATION_SECRET_KEY)),
+          currentSecret: settings.get(REGISTRATION_SECRET_KEY) ?? null,
           saved: false,
           error: "Registration secret cannot be empty.",
         });
@@ -37,7 +37,7 @@ export function registerSettingsRoutes(app: FastifyInstance): void {
         title: "Settings",
         authed: true,
         isAdmin: true,
-        secretSet: true,
+        currentSecret: secret,
         saved: true,
         error: null,
       });

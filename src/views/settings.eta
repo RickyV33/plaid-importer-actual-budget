@@ -10,13 +10,22 @@
 <div class="card">
   <h2>Registration secret</h2>
   <p class="muted">
-    New users must supply this secret to register.
-    <% if (it.secretSet) { %>A secret is currently set.<% } else { %>No secret is set yet — registration is currently closed to new members until you set one.<% } %>
+    New users must supply this secret to register. Share it only with people you want to invite.
   </p>
+
+  <% if (it.currentSecret) { %>
+    <div class="field">
+      <label for="current_secret">Current secret</label>
+      <input id="current_secret" type="text" value="<%= it.currentSecret %>" readonly onclick="this.select()" />
+    </div>
+  <% } else { %>
+    <p class="warn">No secret is set yet — registration is closed to new members until you set one.</p>
+  <% } %>
+
   <form method="post" action="/settings">
     <div class="field">
-      <label for="registration_secret">New registration secret</label>
-      <input id="registration_secret" name="registration_secret" type="password" autocomplete="off" required />
+      <label for="registration_secret"><%= it.currentSecret ? "Change secret" : "Set secret" %></label>
+      <input id="registration_secret" name="registration_secret" type="text" autocomplete="off" required />
     </div>
     <button type="submit">Save</button>
   </form>

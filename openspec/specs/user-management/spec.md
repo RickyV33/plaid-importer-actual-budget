@@ -42,11 +42,15 @@ The system SHALL allow open registration (no secret required) only while zero us
 
 ### Requirement: Admin-managed registration secret
 
-The system SHALL provide an admin-only settings page (`GET /settings`, `POST /settings`) that lets an `admin` set or rotate the registration secret stored in the `settings` table. Users with role `member` SHALL be denied access.
+The system SHALL provide an admin-only settings page (`GET /settings`, `POST /settings`) that lets an `admin` view, set, or rotate the registration secret stored in the `settings` table. Users with role `member` SHALL be denied access.
 
 #### Scenario: Admin sets the secret
 - **WHEN** an authenticated `admin` submits a new registration secret
 - **THEN** the value is stored in `settings` and used to gate subsequent registrations
+
+#### Scenario: Admin views the current secret
+- **WHEN** an authenticated `admin` opens the settings page and a registration secret is set
+- **THEN** the current secret value is displayed so the admin can copy and share it
 
 #### Scenario: Member denied
 - **WHEN** an authenticated `member` requests `GET /settings` or `POST /settings`
