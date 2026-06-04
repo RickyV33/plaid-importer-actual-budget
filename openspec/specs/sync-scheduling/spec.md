@@ -3,25 +3,29 @@
 ## Purpose
 TBD - created by archiving change sync-scheduling. Update Purpose after archive.
 ## Requirements
-### Requirement: Schedules target a profile and a set of accounts
+### Requirement: Schedules target a set of connections
 
-The system SHALL store schedules in a `schedules` table owned by a user, each referencing one `profile_id`, the set of `plaid_account_ids` to sync, a cadence (interval or cron expression), and an `enabled` flag. The profile and accounts SHALL be owned by the schedule's owner.
+The system SHALL store schedules in a `schedules` table owned by a user, each referencing the set of `plaid_item_ids` (connections) to sync, a cadence (interval hours), and an `enabled` flag. Connections billing in Plaid is per item, so scheduling is by connection rather than by account. The connections SHALL be owned by the schedule's owner.
 
 #### Scenario: Creating a schedule
-- **WHEN** an authenticated user creates a schedule for a profile they own with one or more of that profile's mapped accounts and a cadence
+- **WHEN** an authenticated user creates a schedule selecting one or more of their connections and a cadence
 - **THEN** a `schedules` row is persisted with `enabled=true` and a computed `next_run_at`
 
 #### Scenario: Owner scoping
-- **WHEN** a user references a profile or schedule owned by another user
-- **THEN** the system responds 404 and stores nothing
+- **WHEN** a user references a connection or schedule owned by another user
+- **THEN** the referenced connection is dropped (or the schedule is 404), and nothing of another user's is changed
 
-### Requirement: Scheduled runs reuse stored profile settings
+### Requirement: Scheduled runs reuse stored mapping settings and fan out
 
-When a schedule fires, the system SHALL invoke the sync orchestrator with `triggered_by="scheduled"` for the schedule's accounts, using the per-(profile, account) settings already stored in `profile_account_mappings` (including `pending_visible`). A schedule SHALL NOT carry its own copy of those settings.
+When a schedule fires, the system SHALL expand its connections to their accounts and invoke the sync orchestrator with `triggered_by="scheduled"`, using the per-(profile, account) settings already stored in `profile_account_mappings` (including `pending_visible`). Each connection is pulled once and fans out to every profile that maps its accounts. A schedule SHALL NOT carry its own copy of those settings.
 
 #### Scenario: Pending setting honored from the mapping
-- **WHEN** a scheduled run executes for an account whose profile mapping has `pending_visible=1`
-- **THEN** that run imports pending transactions for the account, matching a manual run with the same mapping
+- **WHEN** a scheduled run delivers an account whose profile mapping has `pending_visible=1`
+- **THEN** that profile imports pending transactions for the account, matching a manual run with the same mapping
+
+#### Scenario: Connection fans out to all mapping profiles
+- **WHEN** a scheduled connection's account is mapped in more than one profile
+- **THEN** the single pull updates every profile that maps it
 
 #### Scenario: Run recorded as scheduled
 - **WHEN** a schedule fires a sync

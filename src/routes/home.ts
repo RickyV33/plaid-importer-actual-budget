@@ -29,6 +29,7 @@ type HomeItemView = {
 };
 
 type ProfileAccountView = HomeAccount & {
+  institutionName: string | null;
   mappedActualId: string | null;
   pendingVisible: boolean;
 };
@@ -50,6 +51,7 @@ export function registerHomeRoute(app: FastifyInstance): void {
 
     const items = plaidItems.listByOwner(userId);
     const accounts = plaidAccounts.listByOwner(userId);
+    const itemInstitution = new Map(items.map((i) => [i.id, i.institution_name]));
 
     const itemViews: HomeItemView[] = items.map((item) => ({
       id: item.id,
@@ -85,6 +87,7 @@ export function registerHomeRoute(app: FastifyInstance): void {
           const m = mappings.get(a.plaid_account_id);
           return {
             ...toHomeAccount(a),
+            institutionName: itemInstitution.get(a.item_id) ?? null,
             mappedActualId: m?.actual_account_id ?? null,
             pendingVisible: Boolean(m?.pending_visible),
           };

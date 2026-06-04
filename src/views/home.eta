@@ -119,7 +119,11 @@
           <tbody>
             <% profile.accounts.forEach(function(acct) { %>
               <tr>
-                <td><%= acct.name %><% if (acct.mask) { %> <span class="muted">····<%= acct.mask %></span><% } %></td>
+                <td>
+                  <span class="acct-name" title="<%= (acct.institutionName ? acct.institutionName + ' :: ' : '') + acct.name %><%= acct.mask ? ' ····' + acct.mask : '' %>">
+                    <% if (acct.institutionName) { %><span class="muted"><%= acct.institutionName %> :: </span><% } %><%= acct.name %><% if (acct.mask) { %> <span class="muted">····<%= acct.mask %></span><% } %>
+                  </span>
+                </td>
                 <td class="col-mapped">
                   <select class="mapping-select" data-profile-id="<%= profile.id %>" data-plaid-account-id="<%= acct.plaidAccountId %>">
                     <option value=""><%= it.t("home.unmapped") %></option>

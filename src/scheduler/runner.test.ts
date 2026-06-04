@@ -27,22 +27,14 @@ process.env.DATABASE_PATH = path.join(tmpDir, "test.db");
 process.env.ACTUAL_CACHE_DIR = path.join(tmpDir, "actual-cache");
 
 const { runMigrations } = await import("../db/migrate.js");
-const { users, profiles, schedules, syncRuns } = await import("../db/queries.js");
+const { users, schedules, syncRuns } = await import("../db/queries.js");
 
 runMigrations();
 const adminId = users.create({ username: "admin", passwordHash: "x", role: "admin" });
-const profileId = profiles.create({
-  ownerUserId: adminId,
-  name: "P",
-  serverUrl: "https://b.example.com",
-  budgetId: "sync-1",
-  serverPasswordEnc: "x",
-  encryptionPasswordEnc: null,
-});
 
 test("listDue selects past-due enabled schedules, excludes future and disabled", () => {
-  const due = schedules.create({ ownerUserId: adminId, profileId, plaidAccountIds: ["a"], intervalHours: 24, nextRunAt: Date.now() - 1000 });
-  const future = schedules.create({ ownerUserId: adminId, profileId, plaidAccountIds: ["a"], intervalHours: 24, nextRunAt: Date.now() + 3600_000 });
+  const due = schedules.create({ ownerUserId: adminId, plaidItemIds: ["item-a"], intervalHours: 24, nextRunAt: Date.now() - 1000 });
+  const future = schedules.create({ ownerUserId: adminId, plaidItemIds: ["item-a"], intervalHours: 24, nextRunAt: Date.now() + 3600_000 });
 
   const dueIds = schedules.listDue(Date.now()).map((s) => s.id);
   assert.ok(dueIds.includes(due));
@@ -53,7 +45,7 @@ test("listDue selects past-due enabled schedules, excludes future and disabled",
 });
 
 test("markRan advances next_run_at and records last_run_at", () => {
-  const id = schedules.create({ ownerUserId: adminId, profileId, plaidAccountIds: ["a"], intervalHours: 6, nextRunAt: Date.now() - 1000 });
+  const id = schedules.create({ ownerUserId: adminId, plaidItemIds: ["item-a"], intervalHours: 6, nextRunAt: Date.now() - 1000 });
   const now = Date.now();
   schedules.markRan(id, now, now + 6 * 3600_000);
   const s = schedules.getOwned(id, adminId)!;
@@ -70,7 +62,7 @@ test("a run started with triggeredBy=scheduled is recorded as scheduled", () => 
 
 test("schedules are owner-scoped", () => {
   const other = users.create({ username: "other", passwordHash: "x", role: "member" });
-  const id = schedules.create({ ownerUserId: adminId, profileId, plaidAccountIds: ["a"], intervalHours: 24, nextRunAt: Date.now() });
+  const id = schedules.create({ ownerUserId: adminId, plaidItemIds: ["item-a"], intervalHours: 24, nextRunAt: Date.now() });
   assert.ok(schedules.getOwned(id, adminId));
   assert.equal(schedules.getOwned(id, other), undefined);
 });

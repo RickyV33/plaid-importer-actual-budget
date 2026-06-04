@@ -853,8 +853,7 @@ export const plaidTxnEvents = {
 export type ScheduleRow = {
   id: number;
   owner_user_id: number;
-  profile_id: number;
-  plaid_account_ids: string; // JSON array of plaid_account_id
+  plaid_item_ids: string; // JSON array of plaid_item id (connection)
   interval_hours: number;
   enabled: number;
   last_run_at: number | null;
@@ -866,21 +865,19 @@ export type ScheduleRow = {
 export const schedules = {
   create(row: {
     ownerUserId: number;
-    profileId: number;
-    plaidAccountIds: string[];
+    plaidItemIds: string[];
     intervalHours: number;
     nextRunAt: number;
   }): number {
     const info = db()
       .prepare(
         `INSERT INTO schedules
-           (owner_user_id, profile_id, plaid_account_ids, interval_hours, enabled, next_run_at, created_at, updated_at)
-         VALUES (?, ?, ?, ?, 1, ?, ?, ?)`,
+           (owner_user_id, plaid_item_ids, interval_hours, enabled, next_run_at, created_at, updated_at)
+         VALUES (?, ?, ?, 1, ?, ?, ?)`,
       )
       .run(
         row.ownerUserId,
-        row.profileId,
-        JSON.stringify(row.plaidAccountIds),
+        JSON.stringify(row.plaidItemIds),
         row.intervalHours,
         row.nextRunAt,
         now(),

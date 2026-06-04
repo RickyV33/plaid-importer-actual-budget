@@ -8,10 +8,10 @@
     <div class="card list-row">
       <div class="item-header">
         <div>
-          <h2 class="item-title"><%= s.profileName %> · <%= it.t("schedules.everyHours", { hours: s.intervalHours }) %></h2>
+          <h2 class="item-title"><%= s.connectionNames.join(", ") %></h2>
           <p class="muted">
             <%= s.enabled ? it.t("schedules.enabled") : it.t("schedules.disabled") %> ·
-            <%= it.t("schedules.accountsCount", { count: s.accountNames.length, names: s.accountNames.join(", ") }) %>
+            <%= it.t("schedules.everyHours", { hours: s.intervalHours }) %>
             <% if (s.nextRunAt) { %> · <%= it.t("schedules.next", { when: new Date(s.nextRunAt).toLocaleString() }) %><% } %>
           </p>
         </div>
@@ -31,31 +31,18 @@
 <div class="card">
   <h2><%= it.t("schedules.new") %></h2>
   <p class="muted"><%= it.t("schedules.newDesc") %></p>
-  <% if (it.profiles.length === 0) { %>
-    <p class="muted"><%= it.t("schedules.needProfile") %></p>
+  <% if (it.connections.length === 0) { %>
+    <p class="muted"><%= it.t("schedules.needConnections") %></p>
   <% } else { %>
     <form method="post" action="/schedules">
-      <div class="field">
-        <label for="profileId"><%= it.t("schedules.profile") %></label>
-        <select id="profileId" name="profileId" required>
-          <% it.profiles.forEach(function(p) { %>
-            <option value="<%= p.id %>"><%= p.name %></option>
-          <% }) %>
-        </select>
-      </div>
       <div class="field">
         <label for="intervalHours"><%= it.t("schedules.runEvery") %></label>
         <input id="intervalHours" name="intervalHours" type="number" min="1" step="1" value="24" required />
       </div>
       <div class="field">
-        <label><%= it.t("schedules.accounts") %></label>
-        <% it.profiles.forEach(function(p) { %>
-          <div class="sched-accounts" data-profile-id="<%= p.id %>">
-            <% p.accounts.forEach(function(a) { %>
-              <label class="check-label muted"><input type="checkbox" class="bigcheck" name="plaidAccountIds" value="<%= a.id %>" /> <%= a.name %></label>
-            <% }) %>
-            <% if (p.accounts.length === 0) { %><span class="muted"><%= it.t("schedules.noMapped") %></span><% } %>
-          </div>
+        <label><%= it.t("schedules.connections") %></label>
+        <% it.connections.forEach(function(c) { %>
+          <div><label class="check-label"><input type="checkbox" class="bigcheck" name="plaidItemIds" value="<%= c.id %>" /> <%= c.name %></label></div>
         <% }) %>
       </div>
       <button type="submit"><i class="fa-solid fa-plus" aria-hidden="true"></i><%= it.t("schedules.create") %></button>

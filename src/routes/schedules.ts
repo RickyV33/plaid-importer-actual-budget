@@ -2,18 +2,12 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 
 import { requireUserId } from "../auth/middleware.js";
-import {
-  plaidAccounts,
-  profileAccountMappings,
-  profiles,
-  schedules,
-} from "../db/queries.js";
+import { plaidItems, schedules } from "../db/queries.js";
 import { render } from "../views/render.js";
 
 const createSchema = z.object({
-  profileId: z.coerce.number().int().positive(),
   intervalHours: z.coerce.number().int().positive(),
-  plaidAccountIds: z.union([z.string(), z.array(z.string())]).optional(),
+  plaidItemIds: z.union([z.string(), z.array(z.string())]).optional(),
 });
 
 function asArray(v: string | string[] | undefined): string[] {
@@ -26,44 +20,31 @@ export function registerScheduleRoutes(app: FastifyInstance): void {
     const userId = requireUserId(req, reply);
     if (userId === undefined) return;
 
-    const ownerProfiles = profiles.listByOwner(userId);
-    const profileName = new Map(ownerProfiles.map((p) => [p.id, p.name]));
-    const accountName = new Map(
-      plaidAccounts.listByOwner(userId).map((a) => [a.plaid_account_id, a.name]),
-    );
+    const ownerItems = plaidItems.listByOwner(userId);
+    const itemName = new Map(ownerItems.map((i) => [i.id, i.institution_name ?? i.id]));
 
     const rows = schedules.listByOwner(userId).map((s) => ({
       id: s.id,
-      profileName: profileName.get(s.profile_id) ?? `#${s.profile_id}`,
       intervalHours: s.interval_hours,
       enabled: s.enabled === 1,
       lastRunAt: s.last_run_at,
       nextRunAt: s.next_run_at,
-      accountNames: (() => {
+      connectionNames: (() => {
         try {
-          return (JSON.parse(s.plaid_account_ids) as string[]).map(
-            (id) => accountName.get(id) ?? id,
-          );
+          return (JSON.parse(s.plaid_item_ids) as string[]).map((id) => itemName.get(id) ?? id);
         } catch {
           return [];
         }
       })(),
     }));
 
-    // Candidate accounts per profile (its mapped accounts) for the create form.
-    const profileOptions = ownerProfiles.map((p) => ({
-      id: p.id,
-      name: p.name,
-      accounts: profileAccountMappings
-        .listByProfile(p.id)
-        .map((m) => ({ id: m.plaid_account_id, name: accountName.get(m.plaid_account_id) ?? m.plaid_account_id })),
-    }));
+    const connections = ownerItems.map((i) => ({ id: i.id, name: i.institution_name ?? i.id }));
 
     return render(reply, "schedules", {
       title: "Schedules",
       authed: true,
       schedules: rows,
-      profiles: profileOptions,
+      connections,
       error: null,
     });
   });
@@ -74,20 +55,14 @@ export function registerScheduleRoutes(app: FastifyInstance): void {
     const parsed = createSchema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "invalid_schedule" });
 
-    const profile = profiles.getOwned(parsed.data.profileId, userId);
-    if (!profile) return reply.code(404).send({ error: "profile_not_found" });
-
-    // Keep only accounts actually mapped in that profile and owned by the user.
-    const mapped = new Set(
-      profileAccountMappings.listByProfile(profile.id).map((m) => m.plaid_account_id),
-    );
-    const accountIds = asArray(parsed.data.plaidAccountIds).filter((id) => mapped.has(id));
-    if (accountIds.length === 0) return reply.code(400).send({ error: "no_accounts_selected" });
+    // Keep only connections actually owned by the user.
+    const owned = new Set(plaidItems.listByOwner(userId).map((i) => i.id));
+    const itemIds = asArray(parsed.data.plaidItemIds).filter((id) => owned.has(id));
+    if (itemIds.length === 0) return reply.code(400).send({ error: "no_connections_selected" });
 
     schedules.create({
       ownerUserId: userId,
-      profileId: profile.id,
-      plaidAccountIds: accountIds,
+      plaidItemIds: itemIds,
       intervalHours: parsed.data.intervalHours,
       nextRunAt: Date.now() + parsed.data.intervalHours * 3600_000,
     });

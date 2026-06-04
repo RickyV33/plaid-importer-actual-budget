@@ -1,4 +1,4 @@
-import { schedules } from "../db/queries.js";
+import { plaidAccounts, schedules } from "../db/queries.js";
 import type { RunLogger } from "../sync/lifecycle.js";
 import { isSyncRunning, runSync } from "../sync/run.js";
 
@@ -17,12 +17,20 @@ export async function tick(now: number = Date.now(), log: TickLogger = NOOP): Pr
   for (const s of schedules.listDue(now)) {
     if (isSyncRunning()) break;
 
-    let accountIds: string[] = [];
+    let itemIds: string[] = [];
     try {
-      accountIds = JSON.parse(s.plaid_account_ids) as string[];
+      itemIds = JSON.parse(s.plaid_item_ids) as string[];
     } catch {
-      accountIds = [];
+      itemIds = [];
     }
+
+    // Expand the scheduled connections to their accounts (owned). The sync engine
+    // pulls each connection once and fans out to every profile mapping it.
+    const wanted = new Set(itemIds);
+    const accountIds = plaidAccounts
+      .listByOwner(s.owner_user_id)
+      .filter((a) => wanted.has(a.item_id))
+      .map((a) => a.plaid_account_id);
 
     try {
       await runSync({
