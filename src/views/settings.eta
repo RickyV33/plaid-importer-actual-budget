@@ -1,0 +1,109 @@
+<h1><%= it.t("settings.title") %></h1>
+
+<% if (it.saved) { %>
+  <p class="success"><%= it.t("settings.saved") %></p>
+<% } %>
+<% if (it.errorKey) { %>
+  <p class="error"><%= it.t(it.errorKey) %></p>
+<% } %>
+
+<div class="card">
+  <h2><%= it.t("settings.regSecret") %></h2>
+  <p class="muted"><%= it.t("settings.regSecretHelp") %></p>
+
+  <% if (it.currentSecret) { %>
+    <div class="field">
+      <label for="current_secret"><%= it.t("settings.currentSecret") %></label>
+      <div class="reveal-row">
+        <input id="current_secret" type="password" value="<%= it.currentSecret %>" readonly onclick="this.select()" />
+        <button type="button" class="secondary reveal-btn" data-target="current_secret" aria-label="<%= it.t('settings.showHide') %>" title="<%= it.t('settings.showHide') %>">
+          <i class="fa-regular fa-eye" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+  <% } else { %>
+    <p class="warn"><%= it.t("settings.noSecret") %></p>
+  <% } %>
+
+  <form method="post" action="/settings">
+    <div class="field">
+      <label for="registration_secret"><%= it.currentSecret ? it.t("settings.changeSecret") : it.t("settings.setSecret") %></label>
+      <input id="registration_secret" name="registration_secret" type="text" autocomplete="off" required />
+    </div>
+    <button type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i><%= it.t("common.save") %></button>
+  </form>
+</div>
+
+<div class="card">
+  <h2><%= it.t("settings.syncLimit") %></h2>
+  <p class="muted"><%= it.t("settings.syncLimitHelp") %></p>
+  <form method="post" action="/settings/sync-limit">
+    <div class="field">
+      <label for="sync_max"><%= it.t("settings.syncMax") %></label>
+      <input id="sync_max" name="sync_max" type="number" min="0" step="1" value="<%= it.syncMax %>" />
+    </div>
+    <div class="field">
+      <label for="sync_window_hours"><%= it.t("settings.syncWindow") %></label>
+      <input id="sync_window_hours" name="sync_window_hours" type="number" min="0" step="1" value="<%= it.syncWindowHours %>" />
+    </div>
+    <button type="submit"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i><%= it.t("common.save") %></button>
+  </form>
+</div>
+
+<div class="card">
+  <h2><%= it.t("settings.allProfiles") %></h2>
+  <p class="muted"><%= it.t("settings.allProfilesHelp") %></p>
+  <% if (!it.allProfiles || it.allProfiles.length === 0) { %>
+    <p class="muted"><%= it.t("settings.noProfiles") %></p>
+  <% } else { %>
+    <table>
+      <thead>
+        <tr>
+          <th><%= it.t("settings.profileOwner") %></th>
+          <th><%= it.t("profile.name") %></th>
+          <th><%= it.t("profile.serverUrl") %></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% it.allProfiles.forEach(function(p) { %>
+          <tr class="list-row">
+            <td><%= p.owner %></td>
+            <td><%= p.name %></td>
+            <td class="muted"><%= p.serverUrl %> · <%= p.budgetId %></td>
+            <td class="row-actions">
+              <button type="button" class="icon-btn admin-profile-delete" data-id="<%= p.id %>" aria-label="<%= it.t('common.delete') %>" title="<%= it.t('common.delete') %>">
+                <i class="fa-solid fa-trash" aria-hidden="true"></i>
+              </button>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
+<script>
+  document.querySelectorAll('.admin-profile-delete').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!window.confirm(<%~ JSON.stringify(it.t('settings.deleteProfileConfirm')) %>)) return;
+      const res = await fetch('/admin/profiles/' + encodeURIComponent(btn.dataset.id) + '/delete', { method: 'POST' });
+      if (res.status === 204) { window.location.reload(); return; }
+      alert(<%~ JSON.stringify(it.t('settings.deleteProfileFailed')) %>);
+    });
+  });
+
+  document.querySelectorAll('.reveal-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.target);
+      if (!input) return;
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      const icon = btn.querySelector('i');
+      if (icon) {
+        icon.classList.toggle('fa-eye', !show);
+        icon.classList.toggle('fa-eye-slash', show);
+      }
+    });
+  });
+</script>

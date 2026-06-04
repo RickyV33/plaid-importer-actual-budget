@@ -5,61 +5,51 @@ TBD - created by archiving change init-plaid-importer. Update Purpose after arch
 ## Requirements
 ### Requirement: Trigger a sync run with explicit account selection
 
-The system SHALL provide an authenticated `POST /sync` endpoint that accepts a body identifying which Plaid accounts to sync — either `{ "scope": "all" }` to sync every linked account, or `{ "scope": "selected", "plaidAccountIds": [...] }` for a specific subset.
+The system SHALL provide an authenticated `POST /sync` endpoint that accepts a body identifying which Plaid accounts to sync — either `{ "scope": "all" }` to sync every linked account, or `{ "scope": "selected", "plaidAccountIds": [...] }` for a specific subset. When the per-connection sync ceiling is enabled (see sync-rate-limit), the endpoint SHALL exclude accounts whose connection is at or above its limit before starting the run, sync the remaining accounts, and report the skipped connections in the response.
 
 #### Scenario: Sync all accounts
 - **WHEN** an authenticated user POSTs `/sync` with `scope=all`
-- **THEN** the system queues a sync run including every Plaid account currently linked
+- **THEN** the system queues a sync run including every linked account whose connection is under its ceiling
 
 #### Scenario: Sync selected accounts
 - **WHEN** an authenticated user POSTs `/sync` with `scope=selected` and a non-empty `plaidAccountIds` array
-- **THEN** the system queues a sync run including only those accounts
+- **THEN** the system queues a sync run including only those accounts whose connection is under its ceiling
 
 #### Scenario: Sync with empty selection
 - **WHEN** an authenticated user POSTs `/sync` with `scope=selected` and an empty array
 - **THEN** the endpoint responds with 400 and no sync run is created
 
+#### Scenario: Some connections over the ceiling
+- **WHEN** a sync request includes accounts from a connection at or above its per-connection ceiling
+- **THEN** those accounts are excluded from the run, the remaining accounts sync normally, and the response reports the skipped connections with a retry hint
+
 ### Requirement: Sync uses Plaid cursor-based pagination
 
-The system SHALL pull new transactions per Plaid item using `/transactions/sync`, paging through `added`, `modified`, and `removed` until `has_more` is false, then persisting the new `next_cursor` on the `plaid_items` row.
+The system SHALL pull new transactions per Plaid item using `/transactions/sync` exactly once per item per run, paging through `added`, `modified`, and `removed` until `has_more` is false. The pulled delta SHALL be appended to the `plaid_txn_events` journal and the item's `next_cursor` SHALL be persisted on the `plaid_items` row **in the same database transaction**. The number of Plaid pulls per run SHALL equal the number of targeted items, independent of how many profiles consume each item.
 
 #### Scenario: First sync of a newly-linked item
-- **WHEN** a sync run targets an account whose item has an empty cursor
-- **THEN** the system pages through all available historical transactions, applies them to Actual, and stores the resulting cursor
+- **WHEN** a sync run pulls an item whose cursor is empty
+- **THEN** the system pages through all available historical transactions, appends them to the journal, and stores the resulting cursor atomically
 
-#### Scenario: Subsequent sync of a previously-synced item
-- **WHEN** a sync run targets an account whose item has a non-empty cursor
-- **THEN** the system pages from that cursor forward, applies the delta to Actual, and stores the updated cursor
+#### Scenario: One pull feeds many profiles
+- **WHEN** an item is connected to multiple profiles
+- **THEN** the system pulls from Plaid once, and each profile is served from the journal during drain — no additional Plaid pull is made per profile
 
 #### Scenario: Plaid returns ITEM_LOGIN_REQUIRED
-- **WHEN** Plaid responds with an `ITEM_LOGIN_REQUIRED` error during sync
-- **THEN** the item's status is set to `requires_relink`, the sync result for affected accounts is recorded with reason=`item_login_required`, and the UI surfaces a "re-link" affordance on the next page render
+- **WHEN** Plaid responds with an `ITEM_LOGIN_REQUIRED` error during the pull
+- **THEN** the item's status is set to `requires_relink`, no events are appended for that item, the cursor is unchanged, and affected accounts' results record reason=`item_login_required`
 
 ### Requirement: Transactions are normalized and pushed to Actual
 
-The system SHALL map each Plaid transaction to an Actual transaction with the following correspondences and push the batch via `@actual-app/api.importTransactions` against the mapped Actual account. Before mapping, the system SHALL filter the batch according to the target mapping's `pending_visible` flag (see "Pending transactions are filtered when the mapping disables them").
+During the DRAIN phase, for each profile connected to an item, the system SHALL read that profile's undelivered journal slice (events past its watermark, filtered to the accounts mapped within that profile), filter pending transactions per the profile's `pending_visible` setting, map each Plaid transaction to an Actual transaction, and push the batch via `@actual-app/api.importTransactions` against that profile's target Actual account. The existing pending promotion and removal lifecycle SHALL be applied per profile.
 
-| Plaid field | Actual field | Notes |
-| --- | --- | --- |
-| `transaction_id` | `imported_id` | for de-duplication |
-| `date` | `date` | ISO date |
-| `amount` | `amount` | multiply by -100 and round to integer (Plaid uses positive for outflow, Actual uses negative cents for outflow) |
-| `merchant_name` or `name` | `payee_name`, `imported_payee` | prefer `merchant_name` when present |
-| `!pending` | `cleared` | pending transactions land as uncleared |
+#### Scenario: Fan-out import to two budgets
+- **WHEN** an item's pulled transactions are drained to two connected profiles
+- **THEN** each profile imports its mapped accounts' transactions into its own budget using its own target accounts and pending setting, and each advances its watermark independently
 
-`importTransactions` SHALL be called once per Actual account per sync run with the full batch for that account.
-
-#### Scenario: Successful import of new transactions
-- **WHEN** a sync run pulls N new transactions for a mapped account
-- **THEN** the system calls `importTransactions(actualAccountId, mapped)` once and records the count returned in `added` as `txns_imported` for that account's result row
-
-#### Scenario: Duplicate transactions across runs
-- **WHEN** a sync run pulls transactions whose `transaction_id` matches transactions already imported (via `imported_id`)
-- **THEN** Actual's de-duplication on `imported_id` SHALL prevent double-insertion and the count reflects only new transactions
-
-#### Scenario: Pending transaction with pending_visible=true
-- **WHEN** a Plaid transaction has `pending=true` and the target mapping has `pending_visible=true`
-- **THEN** the resulting Actual transaction has `cleared=false`
+#### Scenario: Drain applies pending lifecycle per profile
+- **WHEN** a profile's slice contains pending promotions or removals
+- **THEN** the system applies promotions and removals against that profile's budget exactly as the single-budget lifecycle did
 
 ### Requirement: Pending transactions are filtered when the mapping disables them
 
@@ -136,15 +126,23 @@ The promotion SHALL be applied regardless of the target mapping's `pending_visib
 
 ### Requirement: One Actual lifecycle per sync run
 
-The system SHALL call `actual.init` and `actual.downloadBudget` exactly once at the start of each sync run, perform all per-account `importTransactions` calls, then call `actual.sync` and `actual.shutdown` exactly once at the end of the run. The Actual local cache directory SHALL persist between runs to enable incremental downloads.
+The system SHALL run the Actual client lifecycle (`init` → `downloadBudget` → imports → `sync` → `shutdown`) **once per profile per run**, using that profile's connection settings (`server_url`, decrypted server password, `budget_id`, and decrypted encryption password when set) and a per-profile cache directory `data/actual-cache/<profileId>`. Because `@actual-app/api` is a process singleton, per-profile lifecycles SHALL run sequentially. The per-profile cache directory SHALL be wiped after the profile's drain completes.
 
-#### Scenario: Multi-account sync run
-- **WHEN** a sync run targets accounts across multiple Plaid items
-- **THEN** Actual is initialized once, every account's transactions are imported, and Actual is synced and shut down once
+#### Scenario: Multi-profile drain
+- **WHEN** a run drains to multiple profiles
+- **THEN** each profile is initialized, downloaded, imported, synced, and shut down in turn, one at a time
 
-#### Scenario: One account's import fails inside a multi-account run
-- **WHEN** importing transactions for one account throws an error
-- **THEN** the error is recorded for that account's result row, the run continues for remaining accounts, and Actual is still synced and shut down at the end
+#### Scenario: One profile's budget is unreachable
+- **WHEN** initializing or downloading a profile's budget fails
+- **THEN** that profile's watermark is not advanced, its accounts' results record the failure, the run continues for other profiles, and the failed profile retries from the journal on a later run
+
+#### Scenario: Wrong encryption password
+- **WHEN** `downloadBudget` fails because the profile's encryption password is incorrect
+- **THEN** the failure is recorded distinctly for that profile, its watermark is not advanced, and other profiles are unaffected
+
+#### Scenario: Cache directory is cleaned up
+- **WHEN** a profile's drain finishes (success or failure)
+- **THEN** its `data/actual-cache/<profileId>` directory is wiped so a plaintext budget copy does not persist at rest between runs
 
 ### Requirement: Sync is observable while running
 

@@ -1,0 +1,113 @@
+<div class="card">
+  <h1><%= it.profile ? it.t("profile.editTitle") : it.t("profile.newTitle") %></h1>
+  <% if (it.errorKey) { %><p class="error"><%= it.t(it.errorKey) %></p><% } %>
+
+  <form method="post" action="<%= it.profile ? ('/profiles/' + it.profile.id) : '/profiles' %>">
+    <div class="field">
+      <label for="name"><%= it.t("profile.name") %></label>
+      <input id="name" name="name" type="text" value="<%= it.profile ? it.profile.name : '' %>" required />
+    </div>
+
+    <fieldset class="server-fieldset">
+      <legend><%= it.t("profile.serverDetails") %></legend>
+      <div class="field-row">
+        <div class="field">
+          <label for="serverUrl"><%= it.t("profile.serverUrl") %></label>
+          <input id="serverUrl" name="serverUrl" type="url" value="<%= it.profile ? it.profile.server_url : (it.defaults ? it.defaults.serverUrl : '') %>" placeholder="https://budget.example.com" required />
+        </div>
+        <div class="field">
+          <label for="serverPassword"><%= it.t("profile.serverPassword") %>
+            <% if (it.profile) { %>
+              <span class="muted"><%= it.t("profile.keepBlank") %></span>
+            <% } else if (it.defaults && it.defaults.hasServerPassword) { %>
+              <span class="muted"><%= it.t("profile.serverPwDefault") %></span>
+            <% } %>
+          </label>
+          <input id="serverPassword" name="serverPassword" type="password" autocomplete="off" oncopy="return false" oncut="return false" <%= (it.profile || (it.defaults && it.defaults.hasServerPassword)) ? '' : 'required' %> />
+        </div>
+      </div>
+    </fieldset>
+
+    <div class="field">
+      <label for="budget-select"><%= it.t("profile.budgetId") %></label>
+      <div class="budget-row">
+        <select id="budget-select" name="budgetId" required>
+          <option value="<%= it.profile ? it.profile.budget_id : '' %>"><%= it.profile ? it.profile.budget_id : it.t("profile.loadBudgetsFirst") %></option>
+        </select>
+        <button type="button" id="load-budgets-btn" class="secondary"><%= it.t("profile.loadBudgets") %></button>
+      </div>
+      <p class="muted"><span id="budget-status"></span> <a href="#" id="budget-manual"><%= it.t("profile.enterManually") %></a></p>
+    </div>
+
+    <div class="field">
+      <label for="encryptionPassword"><%= it.t("profile.encPassword") %> <span class="muted"><%= it.profile ? it.t("profile.encHelpEdit") : it.t("profile.encHelp") %></span></label>
+      <input id="encryptionPassword" name="encryptionPassword" type="password" autocomplete="off" />
+    </div>
+
+    <button type="submit"><i class="fa-solid <%= it.profile ? 'fa-floppy-disk' : 'fa-plus' %>" aria-hidden="true"></i><%= it.profile ? it.t("common.save") : it.t("profile.create") %></button>
+    <a href="/"><button type="button" class="secondary"><%= it.t("common.cancel") %></button></a>
+  </form>
+</div>
+
+<script>
+  (function () {
+    var IS_NEW = <%= it.profile ? "false" : "true" %>;
+    var MSG = {
+      loading: <%~ JSON.stringify(it.t('profile.budgetsLoading')) %>,
+      error: <%~ JSON.stringify(it.t('profile.budgetsError')) %>,
+      choose: <%~ JSON.stringify(it.t('profile.chooseBudget')) %>,
+    };
+    var url = document.getElementById('serverUrl');
+    var pw = document.getElementById('serverPassword');
+    var select = document.getElementById('budget-select');
+    var status = document.getElementById('budget-status');
+    var loadBtn = document.getElementById('load-budgets-btn');
+    var manualLink = document.getElementById('budget-manual');
+    var current = select ? select.value : '';
+
+    async function loadBudgets() {
+      if (!url || !url.value) return;
+      status.textContent = MSG.loading;
+      try {
+        const res = await fetch('/profiles/budgets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ serverUrl: url.value, serverPassword: pw ? pw.value : '' }),
+        });
+        const body = await res.json();
+        if (!res.ok || !body.budgets) { status.textContent = MSG.error; return; }
+        select.innerHTML = '';
+        const ph = document.createElement('option');
+        ph.value = ''; ph.textContent = MSG.choose; select.appendChild(ph);
+        body.budgets.forEach(function (b) {
+          const o = document.createElement('option');
+          o.value = b.syncId; o.textContent = b.name;
+          if (b.syncId === current) o.selected = true;
+          select.appendChild(o);
+        });
+        status.textContent = '';
+      } catch (e) {
+        status.textContent = MSG.error;
+      }
+    }
+
+    loadBtn?.addEventListener('click', loadBudgets);
+    // Auto-load on blur once both fields have values (new profile only; on edit
+    // the password is blank and the env default may target a different server).
+    function maybeAuto() { if (IS_NEW && url.value && pw && pw.value) loadBudgets(); }
+    url?.addEventListener('blur', maybeAuto);
+    pw?.addEventListener('blur', maybeAuto);
+    // New profile prefilled from env (URL set, password blank → server uses default).
+    if (IS_NEW && url && url.value) loadBudgets();
+
+    manualLink?.addEventListener('click', function (e) {
+      e.preventDefault();
+      const input = document.createElement('input');
+      input.type = 'text'; input.name = 'budgetId'; input.id = 'budget-select';
+      input.value = current || '';
+      input.required = true;
+      select.parentNode.replaceChild(input, select);
+      select = input;
+    });
+  })();
+</script>

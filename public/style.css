@@ -54,7 +54,7 @@ button, .button {
 button:hover, .button:hover { filter: brightness(1.05); }
 button.secondary { background: white; color: var(--fg); border: 1px solid var(--border); }
 
-input[type="text"], input[type="password"], select {
+input[type="text"], input[type="password"], input[type="url"], input[type="number"], select {
   font: inherit; padding: 0.5rem; border: 1px solid var(--border);
   border-radius: 0.375rem; background: white;
 }
@@ -102,3 +102,125 @@ th { font-size: 0.875rem; color: var(--muted); font-weight: 500; }
 .pending-toggle input { margin: 0; cursor: pointer; }
 
 .card.warn { border-left: 4px solid var(--warn); }
+
+/* sync-scheduling: trigger badges in history */
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.badge-manual { background: #e2e8f0; color: #1f2937; }
+.badge-scheduled { background: #dbeafe; color: #1e40af; }
+
+/* ui-polish: tabs */
+.tabs {
+  display: flex; gap: 0.25rem; margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.tab-btn {
+  background: none; color: var(--muted); border: 0; border-bottom: 2px solid transparent;
+  border-radius: 0; padding: 0.6rem 1rem; cursor: pointer; font: inherit;
+}
+.tab-btn:hover { color: var(--fg); filter: none; }
+.tab-btn.active { color: var(--fg); border-bottom-color: var(--accent); font-weight: 600; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ui-polish: larger, higher-contrast checkboxes */
+input[type="checkbox"].bigcheck {
+  width: 1.2rem; height: 1.2rem; accent-color: var(--accent);
+  cursor: pointer; vertical-align: middle;
+}
+.check-label { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+.conn-toolbar { padding: 0.6rem 1rem; }
+
+/* ui-polish: aligned mapping columns */
+.mapping-table .col-mapped { width: 16rem; }
+.mapping-table .col-pending { width: 8rem; text-align: center; }
+.mapping-table .col-pending .pending-na { display: inline-block; }
+.mapping-table .mapping-select { width: 100%; }
+
+/* ui-polish: spacing around the profiles header / New profile button */
+.profiles-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; margin: 0 0 1rem;
+}
+
+/* ui-polish: settings secret reveal */
+.reveal-row { display: flex; gap: 0.5rem; align-items: stretch; }
+.reveal-row input { flex: 1; }
+.reveal-btn { padding: 0.4rem 0.6rem; }
+
+/* ui-polish: icon buttons */
+.icon-btn {
+  background: none; border: 1px solid transparent; color: var(--muted);
+  padding: 0.35rem; border-radius: 0.375rem; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  line-height: 0; text-decoration: none;
+}
+.icon-btn:hover { color: var(--fg); border-color: var(--border); background: white; filter: none; }
+.icon-btn svg { display: block; }
+
+/* ui-polish: sync action layout */
+.sync-actions-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.sync-result { margin-top: 1rem; }
+
+/* ui-polish: calm-at-rest list rows — actions revealed on hover/focus,
+   but always visible on touch devices (no hover) for accessibility. */
+.row-actions { transition: opacity 0.12s ease; }
+@media (hover: hover) and (pointer: fine) {
+  .list-row .row-actions { opacity: 0; }
+  .list-row:hover .row-actions,
+  .list-row:focus-within .row-actions { opacity: 1; }
+}
+
+/* ui-polish: mobile-first responsiveness */
+main { padding: 1rem; }
+.mapping-table .col-mapped { width: auto; }
+.account-table { display: block; overflow-x: auto; }
+
+@media (min-width: 40rem) {
+  main { padding: 1.5rem; }
+  .account-table { display: table; overflow-x: visible; }
+  .mapping-table .col-mapped { width: 16rem; }
+}
+
+/* brand sub-label "for Actual Budget" */
+.brand-sub { color: var(--muted); font-weight: 400; font-style: italic; }
+
+/* profile form: side-by-side server fields + budget loader */
+.server-fieldset { border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.75rem 1rem; margin: 0 0 1rem; }
+.server-fieldset legend { font-size: 0.875rem; color: var(--muted); padding: 0 0.35rem; }
+.field-row { display: flex; flex-direction: column; gap: 1rem; }
+.field-row .field { flex: 1; margin-bottom: 0; }
+.budget-row { display: flex; gap: 0.5rem; align-items: center; }
+.budget-row select { flex: 1; }
+@media (min-width: 40rem) {
+  .field-row { flex-direction: row; }
+}
+
+/* section headers with a description line */
+.section-header { margin: 0 0 1rem; }
+.section-header h1 { margin: 0 0 0.25rem; }
+.section-header p { margin: 0; }
+.profiles-header { align-items: flex-start; }
+.profiles-header h1 { margin: 0 0 0.25rem; }
+.profiles-header p { margin: 0; }
+
+/* icon spacing inside text buttons (not the icon-only .icon-btn) */
+button:not(.icon-btn) > i, .button:not(.icon-btn) > i { margin-right: 0.4rem; }
+
+/* profiles header: keep the New-profile button intact; let the description wrap
+   within its column (and the whole button drop below only if space is tight). */
+.profiles-header { flex-wrap: wrap; }
+.profiles-header > div { flex: 1 1 18rem; min-width: 0; }
+.profiles-header > div p { max-width: 60ch; }
+.profiles-header > a { flex: 0 0 auto; }
+.profiles-header button { white-space: nowrap; }
+
+/* info icon for column-header tooltips */
+.info-icon { color: var(--muted); cursor: help; font-size: 0.85em; }

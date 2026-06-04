@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 
+import { requireUserId } from "../auth/middleware.js";
 import { decrypt, encrypt } from "../crypto/tokens.js";
 import { plaidItems, plaidAccounts } from "../db/queries.js";
 import {
@@ -28,6 +29,9 @@ export function registerLinkRoutes(app: FastifyInstance): void {
       return reply.code(400).send({ error: "public_token required" });
     }
 
+    const userId = requireUserId(req, reply);
+    if (userId === undefined) return;
+
     try {
       const result = await exchangePublicToken(publicToken);
 
@@ -36,6 +40,7 @@ export function registerLinkRoutes(app: FastifyInstance): void {
         institutionId: result.institutionId,
         institutionName: result.institutionName,
         accessTokenEnc: encrypt(result.accessToken),
+        ownerUserId: userId,
       });
 
       for (const acct of result.accounts) {
@@ -70,7 +75,9 @@ export function registerLinkRoutes(app: FastifyInstance): void {
   app.post<{ Params: { itemId: string } }>(
     "/link/items/:itemId/update-token",
     async (req, reply) => {
-      const item = plaidItems.get(req.params.itemId);
+      const userId = requireUserId(req, reply);
+      if (userId === undefined) return;
+      const item = plaidItems.getOwned(req.params.itemId, userId);
       if (!item) {
         return reply.code(404).send({ error: "item_not_found" });
       }
@@ -88,7 +95,9 @@ export function registerLinkRoutes(app: FastifyInstance): void {
   app.post<{ Params: { itemId: string } }>(
     "/link/items/:itemId/mark-active",
     async (req, reply) => {
-      const item = plaidItems.get(req.params.itemId);
+      const userId = requireUserId(req, reply);
+      if (userId === undefined) return;
+      const item = plaidItems.getOwned(req.params.itemId, userId);
       if (!item) {
         return reply.code(404).send({ error: "item_not_found" });
       }
@@ -100,7 +109,9 @@ export function registerLinkRoutes(app: FastifyInstance): void {
   app.delete<{ Params: { itemId: string } }>(
     "/link/items/:itemId",
     async (req, reply) => {
-      const item = plaidItems.get(req.params.itemId);
+      const userId = requireUserId(req, reply);
+      if (userId === undefined) return;
+      const item = plaidItems.getOwned(req.params.itemId, userId);
       if (!item) {
         return reply.code(404).send({ error: "item_not_found" });
       }

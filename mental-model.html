@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>plaid-importer — mental model</title>
+    <style>
+      :root {
+        --bg: #faf9f6; --fg: #1a1a1a; --muted: #6b6b6b; --accent: #2d5fb8;
+        --border: #d8d4cd; --card: #ffffff; --code: #f1efe9;
+        --ok: #1b6e3d; --warn: #b76e00;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; background: var(--bg); color: var(--fg);
+        font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      }
+      .wrap { max-width: 60rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+      header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; }
+      header p { margin: 0; color: var(--muted); }
+      h2 { margin: 2.25rem 0 0.5rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+      h3 { margin: 1.25rem 0 0.35rem; font-size: 1rem; }
+      section { background: var(--card); border: 1px solid var(--border); border-radius: 0.6rem; padding: 1rem 1.25rem; margin-top: 1rem; }
+      code { background: var(--code); padding: 0.1rem 0.35rem; border-radius: 0.3rem; font-size: 0.9em; }
+      pre { background: var(--code); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.85rem; overflow-x: auto; font-size: 0.82rem; line-height: 1.45; }
+      ul { margin: 0.4rem 0 0.4rem 1.1rem; padding: 0; }
+      li { margin: 0.2rem 0; }
+      table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; font-size: 0.9rem; }
+      th, td { border: 1px solid var(--border); padding: 0.4rem 0.55rem; text-align: left; vertical-align: top; }
+      th { background: var(--code); font-weight: 600; }
+      .tag { display: inline-block; background: var(--code); border: 1px solid var(--border); border-radius: 1rem; padding: 0.05rem 0.55rem; font-size: 0.8rem; color: var(--muted); margin: 0 0.25rem 0.25rem 0; }
+      .note { border-left: 3px solid var(--warn); padding-left: 0.75rem; color: #4a4a4a; }
+      a { color: var(--accent); }
+      .muted { color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>plaid-importer</h1>
+        <p>A self-hosted web app that imports bank transactions (via Plaid) into one or more
+          <a href="https://actualbudget.org/">Actual Budget</a> servers.</p>
+      </header>
+
+      <section>
+        <span class="tag">Node 22</span><span class="tag">Fastify</span>
+        <span class="tag">SQLite (better-sqlite3)</span><span class="tag">eta templates</span>
+        <span class="tag">@actual-app/api</span><span class="tag">Plaid SDK</span>
+        <span class="tag">AGPL-3.0</span>
+        <p class="muted" style="margin:0.5rem 0 0">Server-rendered, single long-running container, one SQLite file for state. No SPA.</p>
+      </section>
+
+      <h2>What it does</h2>
+      <section>
+        <p>Users link banks through Plaid, define <strong>profiles</strong> (each pointing at one
+          Actual budget), map a bank account to an Actual account within a profile, and sync —
+          manually or on a schedule. A single bank account can map into several profiles, and one
+          Plaid pull fans out to all of them.</p>
+      </section>
+
+      <h2>Request &amp; layering</h2>
+      <section>
+<pre>browser ──HTTP──> Fastify
+                   ├─ session cookie auth (per-user)            src/auth/*
+                   ├─ routes (home, link, profiles, sync,       src/routes/*
+                   │   schedules, history, settings, auth)
+                   ├─ eta server-rendered views + i18n          src/views, src/i18n
+                   ├─ SQLite (state)                            src/db/*
+                   ├─ Plaid client (pull transactions)          src/plaid/*
+                   └─ Actual client (push to budgets)           src/actual/*
+in-process scheduler ticks and triggers syncs                  src/scheduler/*</pre>
+      </section>
+
+      <h2>Auth &amp; multi-user</h2>
+      <section>
+        <ul>
+          <li>Accounts live in a <code>users</code> table (bcrypt), with roles <code>admin</code> / <code>member</code>.</li>
+          <li>Login issues an HttpOnly, SameSite=Lax session cookie carrying <code>user_id</code>.</li>
+          <li><strong>Registration</strong> at <code>/register</code> is gated by a secret an admin sets under <code>/settings</code>.
+            <em>First-user bootstrap:</em> while zero users exist, registration is open and the first
+            registrant becomes admin.</li>
+          <li><strong>Env seed:</strong> on first boot, <code>APP_USER</code>/<code>APP_PASSWORD</code> seed the admin so an
+            existing single-user deployment keeps working. After that they are ignored.</li>
+          <li>Every user's Plaid connections, profiles, mappings, and history are private to them
+            (owner-scoped queries). Trusted-multi-user threat model.</li>
+        </ul>
+      </section>
+
+      <h2>Core model: connections, profiles, mappings</h2>
+      <section>
+<pre>User
+ ├─ Plaid Items (connections) ──&lt; Plaid Accounts        the "source"
+ └─ Profiles (one per Actual budget) ──&lt; profile_account_mappings
+        (server URL, budget id, encrypted secrets)        (profile + account)
+                                                          → actual_account_id
+                                                          → pending_visible</pre>
+        <p>The mapping key is <code>(profile_id, plaid_account_id)</code>, so the same account can feed
+          many budgets, each with its own target account and "show pending" setting.</p>
+      </section>
+
+      <h2>The sync engine: PULL once, DRAIN to many</h2>
+      <section>
+        <p>Plaid's <code>/transactions/sync</code> is a consume-once stream. To fan out to many budgets
+          without paying per budget, each connection is pulled <strong>once</strong> into a durable local
+          journal; profiles then deliver from the journal independently.</p>
+<pre>PULL  (per connection, cost = number of connections)
+  syncItem(cursor) → delta
+  in ONE db txn: append events to plaid_txn_events (payload encrypted)
+                 + advance the item cursor
+
+DRAIN (per profile, local — no extra Plaid cost)
+  for each profile connected to the pulled connection:
+    read journal events &gt; its watermark, filtered to its mapped accounts
+    apply pending-promotion / import / removal lifecycle into its budget
+    advance watermark on success (down budget simply retries next run)
+
+PRUNE  delete events delivered to every active connected profile</pre>
+        <ul>
+          <li>Per-(profile, connection) <strong>watermark</strong> tracks delivery; a late-joining profile starts at the journal head (future transactions only).</li>
+          <li>Idempotent on Actual's <code>imported_id</code>; replays are safe.</li>
+          <li>The Actual API is a process singleton, so drains run sequentially and a run-level lock prevents overlap (manual vs scheduled).</li>
+        </ul>
+      </section>
+
+      <h2>Scheduling</h2>
+      <section>
+        <ul>
+          <li>A schedule stores a profile, the accounts to sync, and an interval; an in-process runner fires due schedules and records them as <code>triggered_by="scheduled"</code> (badged in History).</li>
+          <li>Schedules reuse each mapping's stored settings; <code>next_run_at</code> is persisted so they survive restarts.</li>
+          <li>Because execution is the normal fan-out, syncing an account updates it in <em>every</em> profile that maps it, from a single pull.</li>
+        </ul>
+      </section>
+
+      <h2>Per-connection sync limit</h2>
+      <section>
+        <p>An admin can cap Plaid usage: each connection may be synced at most N times per X hours
+          (set under <code>/settings</code>, disabled by default). Over-limit connections are
+          <strong>skipped</strong> and the rest still sync; counting is per connection, so batching one-by-one
+          is not penalized.</p>
+      </section>
+
+      <h2>Security model</h2>
+      <section>
+        <h3>Encryption at rest</h3>
+        <table>
+          <tr><th>What</th><th>Protected by</th></tr>
+          <tr><td>Plaid access tokens</td><td><code>TOKEN_ENCRYPTION_KEY</code> (AES-256-GCM)</td></tr>
+          <tr><td>Profile server &amp; encryption passwords</td><td><code>TOKEN_ENCRYPTION_KEY</code></td></tr>
+          <tr><td>Journal transaction payloads</td><td><code>TOKEN_ENCRYPTION_KEY</code></td></tr>
+          <tr><td>Budget data on the Actual server</td><td>Actual end-to-end encryption (per-profile encryption password)</td></tr>
+        </table>
+        <h3 style="margin-top:1rem">Known exposure</h3>
+        <p class="note">To write into a budget the app must hold a <strong>plaintext</strong> copy locally during a
+          sync (the Actual client needs it). Each profile uses its own cache dir which is wiped after
+          the drain, shrinking the plaintext window to "only during an active sync."</p>
+        <h3>SSRF guard</h3>
+        <p>Profile server URLs must be <code>https</code>. Blocking private/loopback hosts is opt-in via
+          <code>BLOCK_PRIVATE_ACTUAL_HOSTS</code> (off by default, since a self-hosted Actual server is
+          normally on a LAN address).</p>
+      </section>
+
+      <h2>Data model (SQLite)</h2>
+      <section>
+        <table>
+          <tr><th>Table</th><th>Role</th></tr>
+          <tr><td><code>users</code>, <code>settings</code></td><td>Accounts/roles; key-value settings (registration secret, sync limit)</td></tr>
+          <tr><td><code>plaid_items</code>, <code>plaid_accounts</code></td><td>Connections and their accounts (item owns <code>owner_user_id</code> + cursor)</td></tr>
+          <tr><td><code>profiles</code></td><td>One per Actual budget: server URL, budget id, encrypted secrets</td></tr>
+          <tr><td><code>profile_account_mappings</code></td><td>(profile, account) → target Actual account + pending flag</td></tr>
+          <tr><td><code>plaid_txn_events</code></td><td>The journal: pulled deltas, encrypted payloads</td></tr>
+          <tr><td><code>profile_item_delivery</code></td><td>Per-(profile, connection) delivery watermark</td></tr>
+          <tr><td><code>sync_runs</code>, <code>sync_account_results</code></td><td>Audit: runs (owner, trigger) and per-(profile, account) outcomes</td></tr>
+          <tr><td><code>sync_orphan_deletes</code></td><td>Failed-deletion records surfaced for acknowledgement</td></tr>
+          <tr><td><code>schedules</code></td><td>Recurring sync definitions</td></tr>
+          <tr><td><code>account_mappings</code> <span class="muted">(legacy)</span></td><td>Pre-profiles 1:1 mappings; retained for rollback, folded into Default on upgrade</td></tr>
+        </table>
+      </section>
+
+      <h2>Internationalization</h2>
+      <section>
+        <p>All user-facing strings come from a catalog (<code>en</code>, <code>es</code>) with English fallback;
+          locale is resolved from <code>Accept-Language</code>. Server templates and client JS both read it.</p>
+      </section>
+
+      <h2>Deployment (overview)</h2>
+      <section>
+        <ul>
+          <li>Built as a container; pushed to a registry; run with <code>/app/data</code> mounted for the SQLite DB and Actual cache. Reverse-proxy terminates TLS so the public URL is HTTPS.</li>
+          <li>SQL migrations run at boot (idempotent); a boot-time seed creates the admin and a "Default" profile from env on first upgrade.</li>
+          <li>Config is environment-driven; see <code>.env.example</code>. Deploy specifics live in <code>DEPLOY.md</code>.</li>
+        </ul>
+        <p class="muted">Examples here use placeholder hosts like <code>budget.example.com</code>; this document contains no secrets.</p>
+      </section>
+
+      <p class="muted" style="margin-top:2rem">Living overview — keep current as the system changes. Per-change deltas live under <code>openspec/changes/</code>.</p>
+    </div>
+  </body>
+</html>

@@ -2,8 +2,8 @@
 
 A small self-hosted web app that imports transactions from your bank accounts
 (via Plaid) into your self-hosted [Actual Budget](https://actualbudget.org/)
-server. Single user, simple UX: link an account, map it to an Actual account,
-click "Sync."
+server. Multi-user with private per-user connections; simple UX: link an
+account, map it to an Actual account, click "Sync."
 
 ## Setup
 
@@ -24,6 +24,57 @@ openssl rand -base64 32  # TOKEN_ENCRYPTION_KEY
 ```
 
 Visit `http://localhost:8080` and log in with the credentials from `.env`.
+
+### Users & registration
+
+`APP_USER` / `APP_PASSWORD` are **seed-only**: on first boot, if no users
+exist, an admin account is created from them so existing single-user
+deployments keep working with the same login. After that, accounts live in the
+database:
+
+- Additional people self-register at `/register`.
+- Registration is gated by a secret the admin sets under **Settings** (`/settings`).
+- **First-user bootstrap:** if you start with an empty database and no env seed,
+  the first person to register becomes the admin (no secret required); the gate
+  engages for everyone after.
+- Each user's Plaid connections, mappings, and sync history are private to them.
+
+### Profiles (multi-budget)
+
+Each **profile** targets one Actual budget: its own server URL, budget (Sync ID),
+and encrypted server/encryption passwords. Manage profiles from the home page
+("New profile" / "Edit"). A single Plaid account can be mapped into several
+profiles at once, each with its own target Actual account and "show pending"
+setting; one sync then fans the transactions out to every connected budget.
+
+`ACTUAL_SERVER_URL`/`ACTUAL_SERVER_PASSWORD`/`ACTUAL_SYNC_ID`/`ACTUAL_ENCRYPTION_PASSWORD`
+are **seed-only**: on first boot they create a "Default" profile and fold your
+existing mappings into it, then they're ignored. Profile server URLs must be
+`https`. Private/LAN hosts are allowed by default (your Actual server is usually
+self-hosted); set `BLOCK_PRIVATE_ACTUAL_HOSTS=true` to forbid them if you expose
+registration to less-trusted users.
+
+Syncing pulls each connection from Plaid **once** into a local, encrypted
+transaction journal, then delivers to each connected profile's budget; a budget
+that's unreachable simply retries on the next sync without re-pulling from Plaid.
+
+### Scheduled syncs
+
+Create schedules under **Schedules**: pick a profile, choose which of its mapped
+accounts to sync, and an interval (every N hours). An in-process runner fires due
+schedules and records them as **scheduled** runs (shown with a badge in History,
+distinct from manual). Schedules reuse each account's stored "show pending"
+setting. A schedule won't start if another sync is already running (it retries on
+the next tick), and `next_run_at` is persisted so schedules survive restarts.
+Intervals are evaluated in server time.
+
+### Per-connection sync limit
+
+To cap Plaid usage, an admin can set a ceiling under **Settings**: each bank
+connection may be synced at most N times per X hours. It's **per connection**, so
+syncing banks one at a time isn't penalized. Over-limit connections are skipped
+(the rest still sync) and the result shows when they can be retried. Disabled by
+default (leave the fields blank or 0).
 
 ### First-run walkthrough
 

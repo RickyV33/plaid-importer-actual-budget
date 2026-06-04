@@ -1,20 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="<%= it.locale ?? 'en' %>">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><%= it.title ?? "plaid-importer" %></title>
     <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
+    <!-- Client i18n catalog. In <head> so page scripts can read it on parse. -->
+    <script id="i18n-data" type="application/json"><%~ it.i18nClient %></script>
   </head>
   <body>
     <header class="topbar">
-      <a href="/" class="brand">plaid-importer</a>
+      <a href="/" class="brand">Plaid Importer <span class="brand-sub">for Actual Budget</span></a>
       <nav>
-        <a href="/">Home</a>
-        <a href="/history">History</a>
+        <a href="/"><%= it.t("nav.home") %></a>
+        <a href="/schedules"><%= it.t("nav.schedules") %></a>
+        <a href="/history"><%= it.t("nav.history") %></a>
+        <% if (it.isAdmin) { %>
+          <a href="/settings"><%= it.t("nav.settings") %></a>
+        <% } %>
         <% if (it.authed) { %>
           <form method="post" action="/logout" class="inline">
-            <button type="submit" class="linklike">Logout</button>
+            <button type="submit" class="linklike"><%= it.t("nav.logout") %></button>
           </form>
         <% } %>
       </nav>

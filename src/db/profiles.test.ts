@@ -1,0 +1,139 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import crypto from "node:crypto";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "plaid-importer-profiles-test-"));
+
+process.env.APP_URL ??= "http://localhost:8080";
+process.env.APP_USER ??= "test";
+process.env.APP_PASSWORD ??= "test";
+process.env.SESSION_SECRET ??= "x".repeat(32);
+process.env.PLAID_CLIENT_ID ??= "test";
+process.env.PLAID_SECRET ??= "test";
+process.env.ACTUAL_SERVER_URL ??= "https://budget.example.com";
+process.env.ACTUAL_SERVER_PASSWORD ??= "actual-pw";
+process.env.ACTUAL_SYNC_ID ??= "sync-1";
+process.env.ACTUAL_ENCRYPTION_PASSWORD ??= "enc-pw";
+process.env.TOKEN_ENCRYPTION_KEY ??= crypto.randomBytes(32).toString("base64");
+process.env.DATABASE_PATH = path.join(tmpDir, "test.db");
+process.env.ACTUAL_CACHE_DIR = path.join(tmpDir, "actual-cache");
+
+const { runMigrations } = await import("./migrate.js");
+const { decrypt } = await import("../crypto/tokens.js");
+const {
+  users,
+  plaidItems,
+  plaidAccounts,
+  accountMappings,
+  profiles,
+  profileAccountMappings,
+  profileItemDelivery,
+  plaidTxnEvents,
+} = await import("./queries.js");
+const { seedDefaultProfile } = await import("../profiles/seed.js");
+
+runMigrations();
+
+const adminId = users.create({ username: "admin", passwordHash: "x", role: "admin" });
+plaidItems.upsert({ id: "item-1", institutionId: "ins", institutionName: "Bank", accessTokenEnc: "enc", ownerUserId: adminId });
+plaidAccounts.upsert({ itemId: "item-1", plaidAccountId: "acct-1", name: "Checking", officialName: null, mask: "0001", type: "depository", subtype: "checking" });
+accountMappings.upsert({ plaidAccountId: "acct-1", actualAccountId: "actual-1", actualAccountName: "Actual Checking" });
+accountMappings.setPendingVisible("acct-1", true);
+
+test("seedDefaultProfile: folds existing mappings, preserves pending_visible, idempotent", () => {
+  assert.equal(profiles.count(), 0);
+  seedDefaultProfile();
+  assert.equal(profiles.count(), 1);
+
+  const list = profiles.listByOwner(adminId);
+  const def = list[0]!;
+  assert.equal(def.name, "Default");
+  assert.equal(def.budget_id, "sync-1");
+  assert.equal(decrypt(def.server_password_enc), "actual-pw");
+  assert.equal(def.encryption_password_enc && decrypt(def.encryption_password_enc), "enc-pw");
+
+  const m = profileAccountMappings.get(def.id, "acct-1");
+  assert.ok(m, "mapping folded");
+  assert.equal(m?.actual_account_id, "actual-1");
+  assert.equal(m?.pending_visible, 1, "pending_visible preserved");
+
+  // delivery row ensured for the item
+  assert.equal(profileItemDelivery.getWatermark(def.id, "item-1"), 0);
+
+  // idempotent
+  seedDefaultProfile();
+  assert.equal(profiles.count(), 1);
+});
+
+test("appendDeltaAndAdvanceCursor: writes events and advances the cursor atomically", () => {
+  plaidTxnEvents.appendDeltaAndAdvanceCursor({
+    itemId: "item-1",
+    events: [
+      { plaidAccountId: "acct-1", eventType: "added", plaidTxnId: "T1", payloadEnc: "x" },
+      { plaidAccountId: "acct-1", eventType: "added", plaidTxnId: "T2", payloadEnc: "y" },
+    ],
+    nextCursor: "cursor-A",
+  });
+  assert.equal(plaidItems.get("item-1")?.cursor, "cursor-A");
+  assert.equal(plaidTxnEvents.maxEventIdForItem("item-1"), 2);
+  assert.equal(plaidTxnEvents.listForItemSince("item-1", 0).length, 2);
+  assert.equal(plaidTxnEvents.listForItemSince("item-1", 1).length, 1);
+});
+
+test("profileItemDelivery: ensure is a no-op when present; watermark + min + prune", () => {
+  const def = profiles.listByOwner(adminId)[0]!;
+  // ensure does not overwrite an existing watermark
+  profileItemDelivery.setWatermark(def.id, "item-1", 1);
+  profileItemDelivery.ensure(def.id, "item-1", 99);
+  assert.equal(profileItemDelivery.getWatermark(def.id, "item-1"), 1);
+
+  // min across connected profiles
+  assert.equal(profileItemDelivery.minDeliveredForItem("item-1"), 1);
+
+  // prune up to min should remove event id<=1
+  const before = plaidTxnEvents.listForItemSince("item-1", 0).length;
+  const removed = plaidTxnEvents.pruneForItem("item-1", 1);
+  assert.equal(removed, 1);
+  assert.equal(plaidTxnEvents.listForItemSince("item-1", 0).length, before - 1);
+});
+
+test("minDeliveredForItem: null when no profile is connected", () => {
+  assert.equal(profileItemDelivery.minDeliveredForItem("item-unknown"), null);
+});
+
+test("profileAccountMappings: same account maps independently across profiles", () => {
+  const def = profiles.listByOwner(adminId)[0]!;
+  const second = profiles.create({
+    ownerUserId: adminId,
+    name: "Second",
+    serverUrl: "https://b.example.com",
+    budgetId: "sync-2",
+    serverPasswordEnc: "x",
+    encryptionPasswordEnc: null,
+  });
+  profileAccountMappings.upsert({ profileId: second, plaidAccountId: "acct-1", actualAccountId: "actual-B", actualAccountName: "B" });
+
+  // default still pending-visible, second defaults to off — independent
+  assert.equal(profileAccountMappings.get(def.id, "acct-1")?.pending_visible, 1);
+  assert.equal(profileAccountMappings.get(second, "acct-1")?.pending_visible, 0);
+  profileAccountMappings.setPendingVisible(second, "acct-1", true);
+  assert.equal(profileAccountMappings.get(def.id, "acct-1")?.pending_visible, 1);
+  assert.equal(profileAccountMappings.get(second, "acct-1")?.pending_visible, 1);
+
+  // both profiles are connected to item-1
+  assert.equal(profiles.listConnectedToItem("item-1").length, 2);
+});
+
+test("findByOwnerServerBudget: detects same-owner duplicate budget, allows distinct", () => {
+  const def = profiles.listByOwner(adminId)[0]!;
+  const dup = profiles.findByOwnerServerBudget(adminId, def.server_url, def.budget_id);
+  assert.ok(dup, "finds the existing profile for this server+budget");
+  assert.equal(profiles.findByOwnerServerBudget(adminId, def.server_url, "different-budget"), undefined);
+
+  // Different owner, same server+budget is allowed (not found under admin scope).
+  const other = users.create({ username: "other", passwordHash: "x", role: "member" });
+  assert.equal(profiles.findByOwnerServerBudget(other, def.server_url, def.budget_id), undefined);
+});
