@@ -4,6 +4,10 @@
 </div>
 
 <section class="tab-panel active" data-panel="connections">
+  <div class="section-header">
+    <h1><%= it.t("home.connections") %></h1>
+    <p class="muted"><%= it.t("home.connectionsDesc") %></p>
+  </div>
   <% if (it.items.length === 0) { %>
     <div class="card">
       <p class="muted"><%= it.t("home.noBanks") %></p>
@@ -79,7 +83,10 @@
 
 <section class="tab-panel" data-panel="profiles">
   <div class="profiles-header">
-    <h1><%= it.t("home.profiles") %></h1>
+    <div>
+      <h1><%= it.t("home.profiles") %></h1>
+      <p class="muted"><%= it.t("home.profilesDesc") %></p>
+    </div>
     <a href="/profiles/new"><button type="button"><%= it.t("home.newProfile") %></button></a>
   </div>
 

@@ -1,4 +1,5 @@
 <h1><%= it.t("schedules.title") %></h1>
+<p class="muted"><%= it.t("schedules.desc") %></p>
 
 <% if (it.schedules.length === 0) { %>
   <div class="card"><p class="muted"><%= it.t("schedules.none") %></p></div>
@@ -29,6 +30,7 @@
 
 <div class="card">
   <h2><%= it.t("schedules.new") %></h2>
+  <p class="muted"><%= it.t("schedules.newDesc") %></p>
   <% if (it.profiles.length === 0) { %>
     <p class="muted"><%= it.t("schedules.needProfile") %></p>
   <% } else { %>

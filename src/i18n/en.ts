@@ -53,7 +53,9 @@ export const en: Record<string, string> = {
 
   // home — connections
   "home.connections": "Connections",
+  "home.connectionsDesc": "Banks you've linked through Plaid. Syncing pulls new transactions from each connection.",
   "home.profiles": "Profiles",
+  "home.profilesDesc": "A profile points at one Actual budget. Map a connection's accounts to a profile to import into it — one account can feed multiple profiles.",
   "home.noBanks": "No banks linked yet.",
   "home.linkAccount": "Link an account",
   "home.linkAnother": "Link another account",
@@ -122,7 +124,9 @@ export const en: Record<string, string> = {
 
   // schedules
   "schedules.title": "Schedules",
+  "schedules.desc": "Run syncs automatically on a recurring interval. Scheduled runs appear tagged in History.",
   "schedules.none": "No schedules yet.",
+  "schedules.newDesc": "Choose a profile, the accounts to sync, and how often it should run.",
   "schedules.everyHours": "every {hours}h",
   "schedules.enabled": "enabled",
   "schedules.disabled": "disabled",

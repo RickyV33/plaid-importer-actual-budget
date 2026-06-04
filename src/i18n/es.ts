@@ -53,7 +53,9 @@ export const es: Record<string, string> = {
 
   // home — connections
   "home.connections": "Conexiones",
+  "home.connectionsDesc": "Bancos que has vinculado mediante Plaid. La sincronización importa las transacciones nuevas de cada conexión.",
   "home.profiles": "Perfiles",
+  "home.profilesDesc": "Un perfil apunta a un presupuesto de Actual. Asigna las cuentas de una conexión a un perfil para importarlas; una cuenta puede alimentar varios perfiles.",
   "home.noBanks": "Aún no hay bancos vinculados.",
   "home.linkAccount": "Vincular una cuenta",
   "home.linkAnother": "Vincular otra cuenta",
@@ -122,7 +124,9 @@ export const es: Record<string, string> = {
 
   // schedules
   "schedules.title": "Programaciones",
+  "schedules.desc": "Ejecuta sincronizaciones automáticamente en un intervalo recurrente. Las ejecuciones programadas aparecen etiquetadas en el Historial.",
   "schedules.none": "Aún no hay programaciones.",
+  "schedules.newDesc": "Elige un perfil, las cuentas a sincronizar y la frecuencia.",
   "schedules.everyHours": "cada {hours} h",
   "schedules.enabled": "activada",
   "schedules.disabled": "desactivada",
