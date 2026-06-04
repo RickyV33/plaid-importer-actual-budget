@@ -37,7 +37,7 @@ None — this is a greenfield change.
 - **Dependencies (new)**: `fastify`, `@fastify/cookie`, `@fastify/session`, `@fastify/static`, `@fastify/formbody`, `eta`, `better-sqlite3`, `plaid`, `@actual-app/api`, `zod`, `pino`, `bcrypt`, `tsx` (dev), `typescript` (dev).
 - **Dependencies (removed)**: `github.com/go-chi/chi/v5` (and the Go module entirely).
 - **Runtime**: Node 22 LTS. Single container deployable to the same unraid host as the Actual server.
-- **External services**: Plaid (production tier) for the bank side; the user's existing Actual server at `https://budget.jankbyrick.com` for the budget side.
+- **External services**: Plaid (production tier) for the bank side; the user's existing Actual server at `https://budget.example.com` for the budget side.
 - **Persistence**: One SQLite file under `./data/plaid-importer.db`. One Actual local-cache directory under `./data/actual-cache/`. Both mounted as a single volume in production.
 - **Security**: Plaid access tokens encrypted at rest with AES-256-GCM. Session cookies signed with HMAC. Single-user credential lives in env, not the database.
 - **Network**: Publicly accessible via a reverse proxy that terminates TLS and forwards to the container. The public URL serves as `APP_URL` and the base of `PLAID_REDIRECT_URI`, which must be registered exactly in the Plaid dashboard. Because the app is publicly reachable, `POST /login` is rate-limited per IP.

@@ -1,6 +1,6 @@
 ## Context
 
-The owner self-hosts Actual Budget at `https://budget.jankbyrick.com`, behind a private network. Today, transactions land in Actual through manual entry or an aging Node CLI (`source/actualplaid/`) that is awkward to run for an ongoing personal-finance workflow: it uses interactive prompts, depends on deprecated Plaid tiers, has no UI for the recurring "pull new transactions" task, and ships a 16k-line CLI scaffolding most of which does not serve our use case.
+The owner self-hosts Actual Budget at `https://budget.example.com`, behind a private network. Today, transactions land in Actual through manual entry or an aging Node CLI (`source/actualplaid/`) that is awkward to run for an ongoing personal-finance workflow: it uses interactive prompts, depends on deprecated Plaid tiers, has no UI for the recurring "pull new transactions" task, and ships a 16k-line CLI scaffolding most of which does not serve our use case.
 
 The exploration phase (see conversation history) settled three load-bearing questions:
 
