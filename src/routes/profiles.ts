@@ -6,7 +6,7 @@ import { z } from "zod";
 import { config } from "../config.js";
 import { connectionForProfile, listBudgets, profileCacheDir } from "../actual/client.js";
 import { invalidateAccountsCache, listAccountsForProfile } from "../actual/accounts.js";
-import { requireUserId } from "../auth/middleware.js";
+import { requireAdmin, requireUserId } from "../auth/middleware.js";
 import { encrypt } from "../crypto/tokens.js";
 import {
   plaidAccounts,
@@ -46,19 +46,51 @@ export function registerProfileRoutes(app: FastifyInstance): void {
 
   app.get("/profiles/new", async (req, reply) => {
     if (requireUserId(req, reply) === undefined) return;
-    let budgets: Array<{ syncId: string; name: string }> = [];
-    if (config.ACTUAL_SERVER_URL && config.ACTUAL_SERVER_PASSWORD) {
-      try {
-        budgets = await listBudgets({
-          serverUrl: config.ACTUAL_SERVER_URL,
-          serverPassword: config.ACTUAL_SERVER_PASSWORD,
-          cacheDir: path.join(config.ACTUAL_CACHE_DIR, "_budgetlist"),
-        });
-      } catch (err) {
-        app.log.warn({ err }, "list_budgets_failed");
-      }
+    return render(reply, "profile_form", newFormData());
+  });
+
+  // Fetch the budgets available on a server, for the dynamic dropdown. A blank
+  // password falls back to the configured ACTUAL_SERVER_PASSWORD (server-side,
+  // never echoed), so the env-default case works without exposing the secret.
+  const budgetsBody = z.object({
+    serverUrl: z.string().min(1),
+    serverPassword: z.string().optional().default(""),
+  });
+  app.post("/profiles/budgets", async (req, reply) => {
+    if (requireUserId(req, reply) === undefined) return;
+    const parsed = budgetsBody.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "invalid_body" });
+    const serverPassword =
+      parsed.data.serverPassword.length > 0
+        ? parsed.data.serverPassword
+        : config.ACTUAL_SERVER_PASSWORD ?? "";
+    if (serverPassword.length === 0) return reply.code(400).send({ error: "password_required" });
+    try {
+      await assertSafeServerUrl(parsed.data.serverUrl, { blockPrivate: config.blockPrivateActualHosts });
+    } catch {
+      return reply.code(400).send({ error: "invalid_url" });
     }
-    return render(reply, "profile_form", newFormData({ budgets }));
+    try {
+      const budgets = await listBudgets({
+        serverUrl: parsed.data.serverUrl,
+        serverPassword,
+        cacheDir: path.join(config.ACTUAL_CACHE_DIR, "_budgetlist"),
+      });
+      return reply.send({ budgets });
+    } catch (err) {
+      app.log.warn({ err }, "list_budgets_failed");
+      return reply.code(502).send({ error: "unreachable" });
+    }
+  });
+
+  // Admin-only: delete any user's profile (oversight).
+  app.post<{ Params: { id: string } }>("/admin/profiles/:id/delete", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const id = Number.parseInt(req.params.id, 10);
+    if (!profiles.get(id)) return reply.code(404).send({ error: "not_found" });
+    profiles.remove(id);
+    invalidateAccountsCache(id);
+    return reply.code(204).send();
   });
 
   app.get<{ Params: { id: string } }>("/profiles/:id/edit", async (req, reply) => {

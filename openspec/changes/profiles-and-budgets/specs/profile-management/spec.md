@@ -30,19 +30,35 @@ The system SHALL reject creating or editing a profile when the same owner alread
 
 ### Requirement: New-profile form conveniences
 
-When creating a profile, the system SHALL prefill the server URL from `ACTUAL_SERVER_URL` (if set) and, when `ACTUAL_SERVER_URL` + `ACTUAL_SERVER_PASSWORD` are set, offer a dropdown of budgets fetched from that server (name → Sync ID); if the budget list cannot be fetched it SHALL fall back to a text input. The server password field SHALL NOT be prefilled with the configured secret (to avoid rendering it into HTML); leaving it blank SHALL use `ACTUAL_SERVER_PASSWORD` as the value, and the field SHALL block copy/cut.
+When creating a profile, the system SHALL prefill the server URL from `ACTUAL_SERVER_URL` (if set) and present the server URL and password fields together. The system SHALL provide an endpoint that lists a server's budgets (name → Sync ID) given a server URL and password, and the form SHALL populate a budget dropdown from it — automatically once server details are present, or on demand — with a fallback to manual Sync ID entry if the list cannot be fetched. The server password field SHALL NOT be prefilled with the configured secret (to avoid rendering it into HTML); leaving it blank SHALL use `ACTUAL_SERVER_PASSWORD` (server-side), and the field SHALL block copy/cut. The budget-list endpoint SHALL apply the same https/host guard as profile creation.
 
-#### Scenario: Server URL and budgets prefilled from env
-- **WHEN** an authenticated user opens the new-profile form and `ACTUAL_SERVER_URL`/`ACTUAL_SERVER_PASSWORD` are configured
-- **THEN** the server URL is prefilled and a budget dropdown lists the server's budgets by name with their Sync IDs as values
+#### Scenario: Budgets load from entered server details
+- **WHEN** a user provides a valid server URL and password (or leaves the password blank with `ACTUAL_SERVER_PASSWORD` configured) on the new-profile form
+- **THEN** the budget dropdown is populated with that server's budgets by name, each carrying its Sync ID as the value
 
 #### Scenario: Budget list unavailable
-- **WHEN** the budget list cannot be fetched (server unreachable, busy, or no env credentials)
-- **THEN** the budget field renders as a plain text input
+- **WHEN** the budget list cannot be fetched (server unreachable, busy, bad credentials)
+- **THEN** the form lets the user enter the Sync ID manually
 
 #### Scenario: Blank server password uses the configured default
 - **WHEN** a user submits the new-profile form with the server password left blank and `ACTUAL_SERVER_PASSWORD` is configured
 - **THEN** the profile is created using the configured server password, which is never rendered into the page
+
+### Requirement: Admin can review and remove any profile
+
+The system SHALL provide an admin-only view listing every profile across all users (owner, name, server URL, budget) and an admin-only action to delete any profile. Members SHALL NOT access it.
+
+#### Scenario: Admin lists all profiles
+- **WHEN** an `admin` opens the settings page
+- **THEN** all users' profiles are listed with their owner, name, and server URL
+
+#### Scenario: Admin removes a profile
+- **WHEN** an `admin` deletes any profile from that view
+- **THEN** the profile and its mappings/delivery rows are removed (budget data on the Actual server is untouched)
+
+#### Scenario: Member cannot access the admin profile list or delete
+- **WHEN** a `member` requests the admin profile list or delete action
+- **THEN** the system responds 403
 
 ### Requirement: Profiles are owner-scoped
 

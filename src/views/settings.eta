@@ -50,7 +50,49 @@
   </form>
 </div>
 
+<div class="card">
+  <h2><%= it.t("settings.allProfiles") %></h2>
+  <p class="muted"><%= it.t("settings.allProfilesHelp") %></p>
+  <% if (!it.allProfiles || it.allProfiles.length === 0) { %>
+    <p class="muted"><%= it.t("settings.noProfiles") %></p>
+  <% } else { %>
+    <table>
+      <thead>
+        <tr>
+          <th><%= it.t("settings.profileOwner") %></th>
+          <th><%= it.t("profile.name") %></th>
+          <th><%= it.t("profile.serverUrl") %></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% it.allProfiles.forEach(function(p) { %>
+          <tr class="list-row">
+            <td><%= p.owner %></td>
+            <td><%= p.name %></td>
+            <td class="muted"><%= p.serverUrl %> · <%= p.budgetId %></td>
+            <td class="row-actions">
+              <button type="button" class="icon-btn admin-profile-delete" data-id="<%= p.id %>" aria-label="<%= it.t('common.delete') %>" title="<%= it.t('common.delete') %>">
+                <i class="fa-solid fa-trash" aria-hidden="true"></i>
+              </button>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</div>
+
 <script>
+  document.querySelectorAll('.admin-profile-delete').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!window.confirm(<%~ JSON.stringify(it.t('settings.deleteProfileConfirm')) %>)) return;
+      const res = await fetch('/admin/profiles/' + encodeURIComponent(btn.dataset.id) + '/delete', { method: 'POST' });
+      if (res.status === 204) { window.location.reload(); return; }
+      alert(<%~ JSON.stringify(it.t('settings.deleteProfileFailed')) %>);
+    });
+  });
+
   document.querySelectorAll('.reveal-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const input = document.getElementById(btn.dataset.target);

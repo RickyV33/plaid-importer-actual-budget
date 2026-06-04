@@ -191,3 +191,14 @@ main { padding: 1rem; }
 
 /* brand sub-label "for Actual Budget" */
 .brand-sub { color: var(--muted); font-weight: 400; font-style: italic; }
+
+/* profile form: side-by-side server fields + budget loader */
+.server-fieldset { border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.75rem 1rem; margin: 0 0 1rem; }
+.server-fieldset legend { font-size: 0.875rem; color: var(--muted); padding: 0 0.35rem; }
+.field-row { display: flex; flex-direction: column; gap: 1rem; }
+.field-row .field { flex: 1; margin-bottom: 0; }
+.budget-row { display: flex; gap: 0.5rem; align-items: center; }
+.budget-row select { flex: 1; }
+@media (min-width: 40rem) {
+  .field-row { flex-direction: row; }
+}

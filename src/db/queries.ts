@@ -694,6 +694,17 @@ export const profiles = {
     return row?.c ?? 0;
   },
 
+  // Admin oversight: every profile with its owner's username.
+  listAllWithOwner(): Array<ProfileRow & { owner_username: string }> {
+    return db()
+      .prepare<[], ProfileRow & { owner_username: string }>(
+        `SELECT p.*, u.username AS owner_username
+           FROM profiles p JOIN users u ON u.id = p.owner_user_id
+         ORDER BY u.username, p.name`,
+      )
+      .all();
+  },
+
   // Profiles that have at least one mapped account belonging to the given item.
   listConnectedToItem(itemId: string): ProfileRow[] {
     return db()

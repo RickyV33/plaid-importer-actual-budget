@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 
 import { requireAdmin } from "../auth/middleware.js";
 import {
+  profiles,
   REGISTRATION_SECRET_KEY,
   settings,
   SYNC_RATELIMIT_MAX_KEY,
@@ -17,6 +18,13 @@ function viewData(extra: { saved?: boolean; errorKey?: string | null }) {
     currentSecret: settings.get(REGISTRATION_SECRET_KEY) ?? null,
     syncMax: settings.get(SYNC_RATELIMIT_MAX_KEY) ?? "",
     syncWindowHours: settings.get(SYNC_RATELIMIT_WINDOW_HOURS_KEY) ?? "",
+    allProfiles: profiles.listAllWithOwner().map((p) => ({
+      id: p.id,
+      name: p.name,
+      owner: p.owner_username,
+      serverUrl: p.server_url,
+      budgetId: p.budget_id,
+    })),
     saved: extra.saved ?? false,
     errorKey: extra.errorKey ?? null,
   };
