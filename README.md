@@ -14,7 +14,12 @@ Self-hosted web app that pulls your bank transactions from
 
 ## Screenshots
 
-<!-- TODO: drop gifs / screenshots here -->
+<!-- Drop image/gif files into docs/screenshots/, then uncomment / edit below.
+     Basic:        ![Linking a bank](docs/screenshots/link.gif)
+     Set a width:  <img src="docs/screenshots/home.png" alt="Home" width="720" /> -->
+
+<!-- ![Home](docs/screenshots/home.png) -->
+<!-- ![Syncing](docs/screenshots/sync.gif) -->
 
 ## Set up
 
