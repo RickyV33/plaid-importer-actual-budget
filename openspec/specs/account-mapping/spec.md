@@ -17,23 +17,23 @@ The system SHALL provide an authenticated `GET /accounts/actual` endpoint that o
 
 ### Requirement: Persist a one-to-one mapping per Plaid account
 
-The system SHALL provide an authenticated `POST /accounts/:plaidAccountId/mapping` endpoint that accepts `{ actualAccountId }` in the body and upserts a row in `account_mappings` linking the Plaid account to the Actual account. At most one mapping SHALL exist per `plaid_account_id`.
+The system SHALL provide an authenticated endpoint to map a Plaid account to an Actual account **within a specific profile**, upserting a row in `profile_account_mappings` keyed by `(profile_id, plaid_account_id)`. At most one mapping SHALL exist per `(profile_id, plaid_account_id)` pair, but the same `plaid_account_id` MAY be mapped independently across multiple profiles. Both the profile and the Plaid account SHALL be owned by the requesting user.
 
-#### Scenario: First mapping for a Plaid account
-- **WHEN** an authenticated user submits a mapping for a previously-unmapped Plaid account
-- **THEN** the system inserts a new `account_mappings` row and the home page reflects the new mapping
+#### Scenario: First mapping within a profile
+- **WHEN** an authenticated user maps a previously-unmapped Plaid account to an Actual account within a profile they own
+- **THEN** the system inserts a new `profile_account_mappings` row for `(profile, plaid account)` and the page reflects the mapping
 
-#### Scenario: Changing an existing mapping
-- **WHEN** an authenticated user submits a new `actualAccountId` for an already-mapped Plaid account
-- **THEN** the system updates the existing row in place; no new row is created
+#### Scenario: Changing an existing mapping within a profile
+- **WHEN** the user submits a new `actualAccountId` for an account already mapped in that profile
+- **THEN** the system updates that profile's row in place; no new row is created and other profiles' mappings are unaffected
 
-#### Scenario: Unknown Plaid account
-- **WHEN** the `plaidAccountId` does not exist in `plaid_accounts`
-- **THEN** the endpoint responds with 404
+#### Scenario: Same account mapped in a second profile
+- **WHEN** the user maps the same Plaid account within a different profile
+- **THEN** a separate `profile_account_mappings` row is created for the second profile, independent of the first
 
-#### Scenario: Unknown Actual account
-- **WHEN** the submitted `actualAccountId` does not appear in the most recent Actual accounts fetch
-- **THEN** the endpoint responds with 400 with a message indicating the Actual account was not found
+#### Scenario: Unknown or unowned profile/account
+- **WHEN** the profile or Plaid account does not exist or is owned by another user
+- **THEN** the endpoint responds 404 and stores nothing
 
 ### Requirement: Clearing a mapping
 
@@ -57,33 +57,41 @@ The system SHALL refuse to sync transactions for any Plaid account that has no m
 
 ### Requirement: Each mapping carries a pending-visible toggle
 
-Each row in `account_mappings` SHALL carry a `pending_visible` boolean (stored as `INTEGER NOT NULL DEFAULT 0`) controlling whether pending transactions from the linked Plaid account are imported into the linked Actual account. New mappings default to `false`. Existing mappings created before this change SHALL also have `pending_visible=false` after migration.
+Each row in `profile_account_mappings` SHALL carry a `pending_visible` boolean (stored as `INTEGER NOT NULL DEFAULT 0`) controlling whether pending transactions for that Plaid account are imported into the profile's target Actual account. The setting is **per profile**: the same Plaid account MAY show pending in one profile and hide it in another. New mappings default to `false`.
 
 #### Scenario: New mapping defaults to pending-hidden
-- **WHEN** a user creates a new mapping via `POST /accounts/:plaidAccountId/mapping`
+- **WHEN** a user creates a new mapping within a profile
 - **THEN** the row is persisted with `pending_visible=0`
 
-#### Scenario: Existing mappings after migration
-- **WHEN** the schema migration introducing `pending_visible` runs against a database with existing `account_mappings` rows
-- **THEN** every existing row has `pending_visible=0` after migration completes
+#### Scenario: Independent pending setting across profiles
+- **WHEN** the same Plaid account is mapped in two profiles and `pending_visible` is enabled in one
+- **THEN** only that profile imports pending transactions for the account; the other profile is unaffected
+
+#### Scenario: Folded mappings preserve pending-visible
+- **WHEN** the migration seed folds an existing `account_mappings` row into `profile_account_mappings` under the Default profile
+- **THEN** the new row preserves the original `pending_visible` value
 
 ### Requirement: User can toggle pending-visible per mapping
 
-The system SHALL provide an authenticated `POST /accounts/:plaidAccountId/mapping/pending-visible` endpoint that accepts `{ value: boolean }` in the body and updates the `pending_visible` column on the existing mapping. The endpoint SHALL respond with the updated row's state (rendered as the toggle partial for HTMX). The home page SHALL render the toggle next to each mapping dropdown with a tooltip describing the on/off behaviors.
+The system SHALL provide an authenticated endpoint that updates `pending_visible` on a specific `(profile_id, plaid_account_id)` mapping owned by the requesting user, and SHALL respond with the updated toggle state.
 
-#### Scenario: User enables pending-visible
-- **WHEN** an authenticated user submits `value=true` for a mapped Plaid account
-- **THEN** the mapping row's `pending_visible` becomes `1` and the next sync run includes pending transactions for that account
+#### Scenario: User enables pending-visible for a profile
+- **WHEN** an authenticated user enables pending-visible for a Plaid account within a profile they own
+- **THEN** that profile's mapping `pending_visible` becomes `1` and that profile's next drain includes pending transactions for the account
 
-#### Scenario: User disables pending-visible
-- **WHEN** an authenticated user submits `value=false` for a mapped Plaid account
-- **THEN** the mapping row's `pending_visible` becomes `0` and subsequent sync runs filter pending transactions out for that account; existing pending rows already in Actual are NOT removed by this action (toggle affects future syncs only)
+#### Scenario: User disables pending-visible for a profile
+- **WHEN** the user disables pending-visible for a mapping
+- **THEN** that profile's `pending_visible` becomes `0` and subsequent drains for that profile filter pending out; pending rows already in that budget are NOT removed by the toggle (affects future drains only)
 
-#### Scenario: Toggle for an unmapped account
-- **WHEN** an authenticated user POSTs the toggle endpoint for a `plaidAccountId` that has no mapping row
-- **THEN** the endpoint responds with 404 (no mapping to update)
+### Requirement: Mapping controls render in consistent aligned columns
 
-#### Scenario: Toggle persists across mapping updates
-- **WHEN** an authenticated user changes the `actualAccountId` for an already-mapped Plaid account
-- **THEN** the existing `pending_visible` value is preserved (the upsert MUST NOT reset `pending_visible` to default)
+The home page SHALL render the "Mapped to" dropdown and the "show pending" toggle in consistent, aligned columns across every account row, regardless of whether the account is currently mapped. The space for the "show pending" control SHALL be reserved on unmapped rows so controls line up vertically across all banks.
+
+#### Scenario: Aligned across mapped and unmapped rows
+- **WHEN** the home page renders accounts where some are mapped (showing the pending toggle) and some are not
+- **THEN** the "Mapped to" dropdowns align in one column and the "show pending" controls align in one column across all rows
+
+#### Scenario: Consistent across institutions
+- **WHEN** accounts from multiple banks/profiles are listed
+- **THEN** the mapping and pending controls present in the same aligned layout for every institution
 
