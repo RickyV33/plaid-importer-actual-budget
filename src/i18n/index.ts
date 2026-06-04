@@ -60,8 +60,6 @@ export const CLIENT_KEYS: string[] = [
   "home.pendingUpdateError",
   "home.deleteProfileConfirm",
   "home.deleteProfileFailed",
-  "home.pendingOn",
-  "home.pendingOff",
   "schedules.deleteConfirm",
   "schedules.deleteFailed",
 ];

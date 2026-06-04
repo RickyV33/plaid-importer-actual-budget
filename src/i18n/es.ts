@@ -21,6 +21,7 @@ export const es: Record<string, string> = {
   "register.secret": "Secreto de registro",
   "register.submit": "Crear cuenta",
   "register.haveAccount": "¿Ya tienes una cuenta? Inicia sesión",
+  "login.needAccount": "¿Necesitas una cuenta? Regístrate",
   "login.errRequired": "El usuario y la contraseña son obligatorios.",
   "login.errInvalid": "Credenciales no válidas.",
   "register.errRequired": "El usuario y la contraseña son obligatorios.",
@@ -76,8 +77,7 @@ export const es: Record<string, string> = {
   "home.mappedTo": "Asignada a",
   "home.showPending": "Mostrar pendientes",
   "home.unmapped": "Sin asignar",
-  "home.pendingOn": "Importa las transacciones pendientes como no conciliadas. Cuando se confirman, la entrada pendiente se elimina y se reemplaza. Las ediciones manuales en pendientes se pierden.",
-  "home.pendingOff": "Espera a que las transacciones se confirmen antes de importar. Evita duplicados por cambios de importe (propinas, preautorizaciones). Retraso de 1 a 3 días frente al tiempo real.",
+  "home.pendingHelp": "Cuando está activado, las transacciones que aún no se han confirmado se importan como no conciliadas y se actualizan en su lugar al confirmarse. Desactivado (predeterminado) espera a que la transacción se confirme antes de importarla, lo que evita duplicados por cambios de importe como propinas o retenciones de gasolina.",
   // home: client JS
   "home.syncing": "sincronizando…",
   "home.syncResult": "Sincronización {status}: se importaron {count} transacciones.",
@@ -124,7 +124,7 @@ export const es: Record<string, string> = {
 
   // schedules
   "schedules.title": "Programaciones",
-  "schedules.desc": "Ejecuta sincronizaciones automáticamente en un intervalo recurrente. Las ejecuciones programadas aparecen etiquetadas en el Historial.",
+  "schedules.desc": "Ejecuta sincronizaciones automáticamente en un intervalo recurrente; las ejecuciones programadas se etiquetan en el Historial. Sincronizar una cuenta la actualiza en todos los perfiles que la tienen asignada, con una sola descarga.",
   "schedules.none": "Aún no hay programaciones.",
   "schedules.newDesc": "Elige un perfil, las cuentas a sincronizar y la frecuencia.",
   "schedules.everyHours": "cada {hours} h",

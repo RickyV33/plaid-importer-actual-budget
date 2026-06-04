@@ -221,3 +221,6 @@ button:not(.icon-btn) > i, .button:not(.icon-btn) > i { margin-right: 0.4rem; }
 .profiles-header > div p { max-width: 60ch; }
 .profiles-header > a { flex: 0 0 auto; }
 .profiles-header button { white-space: nowrap; }
+
+/* info icon for column-header tooltips */
+.info-icon { color: var(--muted); cursor: help; font-size: 0.85em; }

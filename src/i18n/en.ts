@@ -21,6 +21,7 @@ export const en: Record<string, string> = {
   "register.secret": "Registration secret",
   "register.submit": "Create account",
   "register.haveAccount": "Already have an account? Sign in",
+  "login.needAccount": "Need an account? Register",
   "login.errRequired": "Username and password are required.",
   "login.errInvalid": "Invalid credentials.",
   "register.errRequired": "Username and password are required.",
@@ -76,8 +77,7 @@ export const en: Record<string, string> = {
   "home.mappedTo": "Mapped to",
   "home.showPending": "Show pending",
   "home.unmapped": "Not mapped",
-  "home.pendingOn": "Import pending transactions as uncleared. When they post, the pending entry is deleted and replaced. Manual edits to pending entries are lost.",
-  "home.pendingOff": "Wait for transactions to post before importing. Avoids duplicates from amount changes (tips, gas pre-auths). 1-3 day delay vs. live.",
+  "home.pendingHelp": "When on, transactions that haven't posted yet are imported as uncleared and updated in place once they post. Off (the default) waits until a transaction posts before importing, which avoids duplicates from amount changes like tips or gas holds.",
   // home: client JS
   "home.syncing": "syncing…",
   "home.syncResult": "Sync {status}: imported {count} transactions.",
@@ -124,7 +124,7 @@ export const en: Record<string, string> = {
 
   // schedules
   "schedules.title": "Schedules",
-  "schedules.desc": "Run syncs automatically on a recurring interval. Scheduled runs appear tagged in History.",
+  "schedules.desc": "Run syncs automatically on a recurring interval; scheduled runs are tagged in History. Syncing an account updates it in every profile that has it mapped, from a single pull.",
   "schedules.none": "No schedules yet.",
   "schedules.newDesc": "Choose a profile, the accounts to sync, and how often it should run.",
   "schedules.everyHours": "every {hours}h",

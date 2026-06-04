@@ -115,7 +115,7 @@
       <% } %>
       <% if (it.items.length > 0) { %>
         <table class="account-table mapping-table">
-          <thead><tr><th><%= it.t("home.account") %></th><th class="col-mapped"><%= it.t("home.mappedTo") %></th><th class="col-pending"><%= it.t("home.showPending") %></th></tr></thead>
+          <thead><tr><th><%= it.t("home.account") %></th><th class="col-mapped"><%= it.t("home.mappedTo") %></th><th class="col-pending"><%= it.t("home.showPending") %> <span class="info-icon" title="<%= it.t('home.pendingHelp') %>"><i class="fa-regular fa-circle-question" aria-hidden="true"></i></span></th></tr></thead>
           <tbody>
             <% profile.accounts.forEach(function(acct) { %>
               <tr>
@@ -130,9 +130,7 @@
                 </td>
                 <td class="col-pending">
                   <% if (acct.mappedActualId) { %>
-                    <label class="pending-toggle" title="<%= acct.pendingVisible ? it.t('home.pendingOn') : it.t('home.pendingOff') %>">
-                      <input type="checkbox" class="bigcheck pending-visible-check" data-profile-id="<%= profile.id %>" data-plaid-account-id="<%= acct.plaidAccountId %>" <%= acct.pendingVisible ? "checked" : "" %> />
-                    </label>
+                    <input type="checkbox" class="bigcheck pending-visible-check" data-profile-id="<%= profile.id %>" data-plaid-account-id="<%= acct.plaidAccountId %>" <%= acct.pendingVisible ? "checked" : "" %> />
                   <% } else { %>
                     <span class="muted pending-na">-</span>
                   <% } %>
@@ -199,8 +197,6 @@
         const url = '/profiles/' + encodeURIComponent(t2.dataset.profileId) + '/mappings/' + encodeURIComponent(t2.dataset.plaidAccountId) + '/pending-visible';
         const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: t2.checked }) });
         if (!res.ok) { alert(t('home.pendingUpdateError')); t2.checked = !t2.checked; return; }
-        const label = t2.closest('.pending-toggle');
-        if (label) label.setAttribute('title', t2.checked ? t('home.pendingOn') : t('home.pendingOff'));
       });
     });
 

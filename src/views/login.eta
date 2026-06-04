@@ -15,4 +15,5 @@
     <input type="hidden" name="next" value="<%= it.next %>" />
     <button type="submit"><%= it.t("login.submit") %></button>
   </form>
+  <p class="muted"><a href="/register"><%= it.t("login.needAccount") %></a></p>
 </div>
