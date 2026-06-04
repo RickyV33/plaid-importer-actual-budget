@@ -11,6 +11,9 @@ Self-hosted web app that pulls your bank transactions from
 > **You bring your own Plaid credentials.** This app needs a Plaid `client_id` /
 > `secret` with **production access** (Plaid's free tier is sandbox-only).
 > Getting production access is between you and Plaid.
+>
+> **Serve it over HTTPS.** Plaid's OAuth banks require an HTTPS callback URL;
+> without HTTPS only non-OAuth institutions can be linked. See [DEPLOY.md](DEPLOY.md).
 
 ## Screenshots
 
