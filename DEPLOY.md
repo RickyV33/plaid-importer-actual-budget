@@ -94,13 +94,13 @@ in front so the public `APP_URL` is HTTPS. Configuring that is up to you.
 
 ## Troubleshooting
 
-- **Exits with EACCES on `/app/data`** — the entrypoint chowns `/app/data` at
+- **Exits with EACCES on `/app/data`**: the entrypoint chowns `/app/data` at
   boot only when it runs as root; restore the image's default user if you
   overrode it.
-- **Healthcheck stuck "starting"** — usually a missing required env var; check
+- **Healthcheck stuck "starting"**: usually a missing required env var; check
   `docker logs plaid-importer`.
-- **Plaid OAuth redirect errors** — `PLAID_REDIRECT_URI` must match the Plaid
+- **Plaid OAuth redirect errors**: `PLAID_REDIRECT_URI` must match the Plaid
   dashboard exactly (scheme, host, path) and be HTTPS.
-- **"network-failure" from Actual** — the Actual server isn't reachable from the
+- **"network-failure" from Actual**: the Actual server isn't reachable from the
   container; from inside it, `wget -O- $ACTUAL_SERVER_URL/account/needs-bootstrap`
   should return 200.
