@@ -44,7 +44,7 @@
       <input id="encryptionPassword" name="encryptionPassword" type="password" autocomplete="off" />
     </div>
 
-    <button type="submit"><%= it.profile ? it.t("common.save") : it.t("profile.create") %></button>
+    <button type="submit"><i class="fa-solid <%= it.profile ? 'fa-floppy-disk' : 'fa-plus' %>" aria-hidden="true"></i><%= it.profile ? it.t("common.save") : it.t("profile.create") %></button>
     <a href="/"><button type="button" class="secondary"><%= it.t("common.cancel") %></button></a>
   </form>
 </div>

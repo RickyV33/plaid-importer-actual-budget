@@ -11,7 +11,7 @@
   <% if (it.items.length === 0) { %>
     <div class="card">
       <p class="muted"><%= it.t("home.noBanks") %></p>
-      <button type="button" id="link-btn"><%= it.t("home.linkAccount") %></button>
+      <button type="button" id="link-btn"><i class="fa-solid fa-link" aria-hidden="true"></i><%= it.t("home.linkAccount") %></button>
     </div>
   <% } else { %>
     <div class="card conn-toolbar">
@@ -71,9 +71,9 @@
 
     <div class="card sync-actions">
       <div class="sync-actions-row">
-        <button type="button" id="sync-selected-btn"><%= it.t("home.syncSelected") %></button>
-        <button type="button" class="secondary" id="sync-all-btn"><%= it.t("home.syncAll") %></button>
-        <button type="button" class="secondary" id="link-btn"><%= it.t("home.linkAnother") %></button>
+        <button type="button" id="sync-selected-btn"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i><%= it.t("home.syncSelected") %></button>
+        <button type="button" class="secondary" id="sync-all-btn"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i><%= it.t("home.syncAll") %></button>
+        <button type="button" class="secondary" id="link-btn"><i class="fa-solid fa-link" aria-hidden="true"></i><%= it.t("home.linkAnother") %></button>
         <span id="sync-status" class="muted"></span>
       </div>
       <div id="sync-result" class="sync-result"></div>
@@ -87,7 +87,7 @@
       <h1><%= it.t("home.profiles") %></h1>
       <p class="muted"><%= it.t("home.profilesDesc") %></p>
     </div>
-    <a href="/profiles/new"><button type="button"><%= it.t("home.newProfile") %></button></a>
+    <a href="/profiles/new"><button type="button"><i class="fa-solid fa-plus" aria-hidden="true"></i><%= it.t("home.newProfile") %></button></a>
   </div>
 
   <% if (it.profiles.length === 0) { %>

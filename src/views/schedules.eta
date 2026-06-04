@@ -58,7 +58,7 @@
           </div>
         <% }) %>
       </div>
-      <button type="submit"><%= it.t("schedules.create") %></button>
+      <button type="submit"><i class="fa-solid fa-plus" aria-hidden="true"></i><%= it.t("schedules.create") %></button>
     </form>
     <p class="muted"><%= it.t("schedules.tip") %></p>
   <% } %>
