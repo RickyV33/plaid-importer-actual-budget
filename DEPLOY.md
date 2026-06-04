@@ -39,7 +39,7 @@ docker run -d --name plaid-importer \
   code.jankbyrick.com/rick/plaid-importer:latest
 ```
 
-- `/app/data` holds the SQLite DB and the Actual cache — keep it on a persistent
+- `/app/data` holds the SQLite DB and the Actual cache; keep it on a persistent
   volume.
 - The container runs schema migrations on boot, then serves on `:8080`. The
   healthcheck (`GET /healthz`) returns 200 once it's up.
