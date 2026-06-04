@@ -51,7 +51,7 @@ export const es: Record<string, string> = {
   "settings.deleteProfileConfirm": "¿Eliminar este perfil? Se eliminan sus asignaciones; los datos del presupuesto se conservan.",
   "settings.deleteProfileFailed": "No se pudo eliminar el perfil.",
 
-  // home — connections
+  // home: connections
   "home.connections": "Conexiones",
   "home.connectionsDesc": "Bancos que has vinculado mediante Plaid. La sincronización importa las transacciones nuevas de cada conexión.",
   "home.profiles": "Perfiles",
@@ -75,10 +75,10 @@ export const es: Record<string, string> = {
   "home.actualUnreachable": "No se pudo conectar con el servidor de Actual de este perfil.",
   "home.mappedTo": "Asignada a",
   "home.showPending": "Mostrar pendientes",
-  "home.unmapped": "— sin asignar —",
+  "home.unmapped": "Sin asignar",
   "home.pendingOn": "Importa las transacciones pendientes como no conciliadas. Cuando se confirman, la entrada pendiente se elimina y se reemplaza. Las ediciones manuales en pendientes se pierden.",
   "home.pendingOff": "Espera a que las transacciones se confirmen antes de importar. Evita duplicados por cambios de importe (propinas, preautorizaciones). Retraso de 1 a 3 días frente al tiempo real.",
-  // home — client JS
+  // home: client JS
   "home.syncing": "sincronizando…",
   "home.syncResult": "Sincronización {status}: se importaron {count} transacciones.",
   "home.skipped": "Omitidas (límite alcanzado): {list}",

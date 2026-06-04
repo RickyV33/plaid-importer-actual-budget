@@ -92,7 +92,7 @@
     }
 
     loadBtn?.addEventListener('click', loadBudgets);
-    // Auto-load on blur once both fields have values (new profile only — on edit
+    // Auto-load on blur once both fields have values (new profile only; on edit
     // the password is blank and the env default may target a different server).
     function maybeAuto() { if (IS_NEW && url.value && pw && pw.value) loadBudgets(); }
     url?.addEventListener('blur', maybeAuto);

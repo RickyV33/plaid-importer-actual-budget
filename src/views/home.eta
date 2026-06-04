@@ -134,7 +134,7 @@
                       <input type="checkbox" class="bigcheck pending-visible-check" data-profile-id="<%= profile.id %>" data-plaid-account-id="<%= acct.plaidAccountId %>" <%= acct.pendingVisible ? "checked" : "" %> />
                     </label>
                   <% } else { %>
-                    <span class="muted pending-na">—</span>
+                    <span class="muted pending-na">-</span>
                   <% } %>
                 </td>
               </tr>
