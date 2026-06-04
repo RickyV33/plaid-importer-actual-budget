@@ -1,21 +1,22 @@
 #!/usr/bin/env bash
-# Build + push the plaid-importer container to the Forgejo registry.
+# Build + push the plaid-importer container to your container registry.
 #
 # Usage:
 #   ./deploy.sh              # build + push :latest
 #   ./deploy.sh v1           # build + push :v1 AND :latest
 #
-# One-time: `docker login registry.jankbyrick.com`.
+# Config comes from the environment (e.g. exported in ~/.zshrc):
+#   REGISTRY        registry host to push to       (required)
+#   PULL_REGISTRY   host shown in the pull hint     (default: $REGISTRY)
+#   OWNER           registry namespace / user       (required)
+#   IMAGE_NAME      image name                      (default: plaid-importer)
+# One-time: `docker login "$REGISTRY"`.
 
 set -euo pipefail
 
-# registry.jankbyrick.com is a LAN-only hostname (A record → private IP) that
-# bypasses Cloudflare's 100 MB body limit. Forgejo stores the package under
-# rick/plaid-importer regardless of which hostname is used to push, so Unraid
-# can still pull from code.jankbyrick.com (pulls aren't capped).
-REGISTRY="${REGISTRY:-registry.jankbyrick.com}"
-PULL_REGISTRY="${PULL_REGISTRY:-code.jankbyrick.com}"
-OWNER="${OWNER:-rick}"
+REGISTRY="${REGISTRY:?set REGISTRY (e.g. export REGISTRY=registry.example.com in ~/.zshrc)}"
+PULL_REGISTRY="${PULL_REGISTRY:-$REGISTRY}"
+OWNER="${OWNER:?set OWNER (e.g. export OWNER=you in ~/.zshrc)}"
 IMAGE_NAME="${IMAGE_NAME:-plaid-importer}"
 TAG="${1:-latest}"
 
