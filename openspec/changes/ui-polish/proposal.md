@@ -12,15 +12,23 @@ A batch of home-page and settings UX polish after the profiles rework. The page 
 - **Settings secret reveal**: render the registration secret obfuscated by default with an eye-toggle button to show/hide the current value (instead of always-plaintext).
 - **Padding** below the "New profile" button (and general spacing pass on the profiles header).
 
+## What Changes (frontend conventions retrofit)
+
+Bringing the UI in line with AGENTS.md frontend conventions:
+- **i18n-ready (en + es)**: all user-facing strings (server-rendered and client-side) move into a single message catalog with English fallback; locale resolved from `Accept-Language`.
+- **CRUD actions use icons (SVG via Font Awesome)**: create/edit/delete/sync affordances become icon buttons, not text-only.
+- **List rows calm at rest, actions on hover/focus**: profile and schedule rows reveal their edit/delete icon actions only on hover or keyboard focus.
+- **Mobile-first, flexbox**: base styles target the smallest viewport; larger layouts layered via min-width media queries.
+
 ## Capabilities
 
 ### New Capabilities
-None.
+- `i18n`: a message catalog (`en`, `es`) with English fallback, an `Accept-Language`-based locale resolver, and a `t()` helper exposed to server templates and to client JS.
 
 ### Modified Capabilities
-- `plaid-link`: the home view gains tabs and a profile-scoped "select all" affordance.
-- `account-mapping`: mapping/pending controls render in consistent aligned columns, with the pending tooltip restored.
-- `user-management`: the settings page renders the registration secret hidden by default with a reveal toggle.
+- `plaid-link`: the home view gains tabs, a profile-scoped "select all", icon-based actions, and calm-at-rest connection/profile rows; all strings localized.
+- `account-mapping`: mapping/pending controls render in consistent aligned columns, pending tooltip restored, localized.
+- `user-management`: the settings page renders the registration secret hidden by default with an SVG reveal toggle; localized.
 
 ## Impact
 

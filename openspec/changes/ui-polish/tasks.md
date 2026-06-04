@@ -28,6 +28,25 @@
 
 - [x] 7.1 Add padding below the "New profile" button / general spacing pass on the profiles header in `public/style.css`.
 
+## 9. i18n (en + es)
+
+- [x] 9.1 Add `src/i18n/` — `en` and `es` catalogs (flat key→string), a `resolveLocale(acceptLanguage)`, and a `translator(locale)` returning `t(key, params?)` with English fallback. Unit-test resolver + fallback.
+- [x] 9.2 Integrate into `src/views/render.ts`: derive locale from `reply.request` headers, inject `t` + `locale` into template data automatically (no per-route changes).
+- [ ] 9.3 Replace hardcoded strings in all `.eta` templates with `it.t(...)`.
+- [ ] 9.4 Expose needed keys to client JS (e.g. `window.__i18n`) and replace hardcoded alert/result strings.
+
+## 10. Icons (Font Awesome / SVG)
+
+- [ ] 10.1 Add Font Awesome to `layout.eta`; replace text-only CRUD actions (new/edit/delete/sync/link/relink) with icon buttons (accessible labels).
+
+## 11. Calm-at-rest rows
+
+- [ ] 11.1 Profile and schedule rows render calm at rest; reveal edit/delete icon actions on hover/focus (keyboard-accessible). Style in `public/style.css`.
+
+## 12. Mobile-first
+
+- [ ] 12.1 Refactor `public/style.css` to mobile-first: base styles for small viewports, `min-width` media queries for larger; flexbox layout; tables/columns reflow or scroll on narrow screens.
+
 ## 8. Verify
 
 - [ ] 8.1 Manually verify (needs your eyes in a browser): tabs switch; select-all is scoped; checkboxes are clearly visible; pending tooltip shows; columns align across mapped/unmapped rows; secret hides/reveals; spacing looks right.
