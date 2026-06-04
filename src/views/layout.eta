@@ -26,5 +26,6 @@
     <main>
       <%~ it.body %>
     </main>
+    <script id="i18n-data" type="application/json"><%~ it.i18nClient %></script>
   </body>
 </html>

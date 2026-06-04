@@ -1,25 +1,26 @@
-<h1>Schedules</h1>
-<% if (it.error) { %><p class="error"><%= it.error %></p><% } %>
+<h1><%= it.t("schedules.title") %></h1>
 
 <% if (it.schedules.length === 0) { %>
-  <div class="card"><p class="muted">No schedules yet.</p></div>
+  <div class="card"><p class="muted"><%= it.t("schedules.none") %></p></div>
 <% } else { %>
   <% it.schedules.forEach(function(s) { %>
-    <div class="card">
+    <div class="card list-row">
       <div class="item-header">
         <div>
-          <h2 class="item-title"><%= s.profileName %> · every <%= s.intervalHours %>h</h2>
+          <h2 class="item-title"><%= s.profileName %> · <%= it.t("schedules.everyHours", { hours: s.intervalHours }) %></h2>
           <p class="muted">
-            <%= s.enabled ? "enabled" : "disabled" %> ·
-            <%= s.accountNames.length %> account(s): <%= s.accountNames.join(", ") %>
-            <% if (s.nextRunAt) { %> · next <%= new Date(s.nextRunAt).toLocaleString() %><% } %>
+            <%= s.enabled ? it.t("schedules.enabled") : it.t("schedules.disabled") %> ·
+            <%= it.t("schedules.accountsCount", { count: s.accountNames.length, names: s.accountNames.join(", ") }) %>
+            <% if (s.nextRunAt) { %> · <%= it.t("schedules.next", { when: new Date(s.nextRunAt).toLocaleString() }) %><% } %>
           </p>
         </div>
-        <div class="item-actions">
+        <div class="item-actions row-actions">
           <form method="post" action="/schedules/<%= s.id %>/toggle" class="inline">
-            <button type="submit" class="secondary"><%= s.enabled ? "Disable" : "Enable" %></button>
+            <button type="submit" class="secondary"><%= s.enabled ? it.t("schedules.disable") : it.t("schedules.enable") %></button>
           </form>
-          <button type="button" class="schedule-delete-btn secondary" data-id="<%= s.id %>">Delete</button>
+          <button type="button" class="icon-btn schedule-delete-btn" data-id="<%= s.id %>" aria-label="<%= it.t('common.delete') %>" title="<%= it.t('common.delete') %>">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m1 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /></svg>
+          </button>
         </div>
       </div>
     </div>
@@ -27,13 +28,13 @@
 <% } %>
 
 <div class="card">
-  <h2>New schedule</h2>
+  <h2><%= it.t("schedules.new") %></h2>
   <% if (it.profiles.length === 0) { %>
-    <p class="muted">Create a profile and map some accounts first.</p>
+    <p class="muted"><%= it.t("schedules.needProfile") %></p>
   <% } else { %>
     <form method="post" action="/schedules">
       <div class="field">
-        <label for="profileId">Profile</label>
+        <label for="profileId"><%= it.t("schedules.profile") %></label>
         <select id="profileId" name="profileId" required>
           <% it.profiles.forEach(function(p) { %>
             <option value="<%= p.id %>"><%= p.name %></option>
@@ -41,34 +42,35 @@
         </select>
       </div>
       <div class="field">
-        <label for="intervalHours">Run every (hours)</label>
+        <label for="intervalHours"><%= it.t("schedules.runEvery") %></label>
         <input id="intervalHours" name="intervalHours" type="number" min="1" step="1" value="24" required />
       </div>
       <div class="field">
-        <label>Accounts</label>
+        <label><%= it.t("schedules.accounts") %></label>
         <% it.profiles.forEach(function(p) { %>
           <div class="sched-accounts" data-profile-id="<%= p.id %>">
             <% p.accounts.forEach(function(a) { %>
-              <label class="muted"><input type="checkbox" name="plaidAccountIds" value="<%= a.id %>" /> <%= a.name %></label>
+              <label class="check-label muted"><input type="checkbox" class="bigcheck" name="plaidAccountIds" value="<%= a.id %>" /> <%= a.name %></label>
             <% }) %>
-            <% if (p.accounts.length === 0) { %><span class="muted">(no mapped accounts in this profile)</span><% } %>
+            <% if (p.accounts.length === 0) { %><span class="muted"><%= it.t("schedules.noMapped") %></span><% } %>
           </div>
         <% }) %>
       </div>
-      <button type="submit">Create schedule</button>
+      <button type="submit"><%= it.t("schedules.create") %></button>
     </form>
-    <p class="muted">Tip: accounts are grouped by profile above; pick from the profile you selected.</p>
+    <p class="muted"><%= it.t("schedules.tip") %></p>
   <% } %>
 </div>
 
 <script>
   (function () {
+    var MSG = JSON.parse(document.getElementById('i18n-data').textContent);
     document.querySelectorAll('.schedule-delete-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        if (!window.confirm('Delete this schedule?')) return;
+        if (!window.confirm(MSG['schedules.deleteConfirm'])) return;
         const res = await fetch('/schedules/' + encodeURIComponent(btn.dataset.id) + '/delete', { method: 'POST' });
         if (res.status === 204) { window.location.reload(); return; }
-        alert('Could not delete schedule.');
+        alert(MSG['schedules.deleteFailed']);
       });
     });
   })();

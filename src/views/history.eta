@@ -3,19 +3,19 @@
 </div>
 
 <div class="card">
-  <h1>Sync history</h1>
+  <h1><%= it.t("history.title") %></h1>
 
   <% if (it.runs.length === 0) { %>
-    <p class="muted">No sync runs yet.</p>
+    <p class="muted"><%= it.t("history.none") %></p>
   <% } else { %>
     <table>
       <thead>
         <tr>
-          <th>Started</th>
-          <th>Trigger</th>
-          <th>Scope</th>
-          <th>Status</th>
-          <th>Imported</th>
+          <th><%= it.t("history.started") %></th>
+          <th><%= it.t("history.trigger") %></th>
+          <th><%= it.t("history.scope") %></th>
+          <th><%= it.t("history.status") %></th>
+          <th><%= it.t("history.imported") %></th>
         </tr>
       </thead>
       <tbody>
@@ -25,9 +25,9 @@
             <td><span class="badge badge-<%= run.triggeredBy === 'scheduled' ? 'scheduled' : 'manual' %>"><%= run.triggeredBy %></span></td>
             <td><%= run.scope %></td>
             <td>
-              <% if (run.status === "success") { %><span class="success">success</span><% } %>
-              <% if (run.status === "failure") { %><span class="error">failure</span><% } %>
-              <% if (run.status === "running") { %><span class="warn">running</span><% } %>
+              <% if (run.status === "success") { %><span class="success"><%= it.t("history.success") %></span><% } %>
+              <% if (run.status === "failure") { %><span class="error"><%= it.t("history.failure") %></span><% } %>
+              <% if (run.status === "running") { %><span class="warn"><%= it.t("history.running") %></span><% } %>
             </td>
             <td><%= run.totalImported %></td>
           </tr>
@@ -35,14 +35,14 @@
             <tr>
               <td colspan="5">
                 <details>
-                  <summary class="muted">per-account results</summary>
+                  <summary class="muted"><%= it.t("history.perAccount") %></summary>
                   <table>
                     <thead>
                       <tr>
-                        <th>Account</th>
-                        <th>Status</th>
-                        <th>Imported</th>
-                        <th>Reason</th>
+                        <th><%= it.t("home.account") %></th>
+                        <th><%= it.t("history.status") %></th>
+                        <th><%= it.t("history.imported") %></th>
+                        <th><%= it.t("history.reason") %></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -66,10 +66,10 @@
 
     <div style="margin-top: 1rem;">
       <% if (it.offset > 0) { %>
-        <a class="button secondary" href="/history?offset=<%= it.prevOffset %>">← newer</a>
+        <a class="button secondary" href="/history?offset=<%= it.prevOffset %>"><%= it.t("history.newer") %></a>
       <% } %>
       <% if (it.hasMore) { %>
-        <a class="button secondary" href="/history?offset=<%= it.nextOffset %>">older →</a>
+        <a class="button secondary" href="/history?offset=<%= it.nextOffset %>"><%= it.t("history.older") %></a>
       <% } %>
     </div>
   <% } %>
