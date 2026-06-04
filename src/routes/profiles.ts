@@ -13,7 +13,7 @@ import {
   profileItemDelivery,
   profiles,
 } from "../db/queries.js";
-import { assertSafeServerUrl, UnsafeServerUrlError } from "../profiles/hostname.js";
+import { assertSafeServerUrl } from "../profiles/hostname.js";
 import { render } from "../views/render.js";
 
 const profileSchema = z.object({
@@ -27,7 +27,7 @@ const profileSchema = z.object({
 export function registerProfileRoutes(app: FastifyInstance): void {
   app.get("/profiles/new", async (req, reply) => {
     if (requireUserId(req, reply) === undefined) return;
-    return render(reply, "profile_form", { title: "New profile", authed: true, profile: null, error: null });
+    return render(reply, "profile_form", { title: "New profile", authed: true, profile: null, errorKey: null });
   });
 
   app.get<{ Params: { id: string } }>("/profiles/:id/edit", async (req, reply) => {
@@ -35,7 +35,7 @@ export function registerProfileRoutes(app: FastifyInstance): void {
     if (userId === undefined) return;
     const profile = profiles.getOwned(Number.parseInt(req.params.id, 10), userId);
     if (!profile) return reply.code(404).send({ error: "not_found" });
-    return render(reply, "profile_form", { title: "Edit profile", authed: true, profile, error: null });
+    return render(reply, "profile_form", { title: "Edit profile", authed: true, profile, errorKey: null });
   });
 
   app.post("/profiles", async (req, reply) => {
@@ -43,20 +43,19 @@ export function registerProfileRoutes(app: FastifyInstance): void {
     if (userId === undefined) return;
     const parsed = profileSchema.safeParse(req.body);
     if (!parsed.success) {
-      return render(reply.code(400), "profile_form", { title: "New profile", authed: true, profile: null, error: "All fields except encryption password are required." });
+      return render(reply.code(400), "profile_form", { title: "New profile", authed: true, profile: null, errorKey: "profile.errRequired" });
     }
     const d = parsed.data;
     if (d.serverPassword.length === 0) {
-      return render(reply.code(400), "profile_form", { title: "New profile", authed: true, profile: null, error: "Server password is required." });
+      return render(reply.code(400), "profile_form", { title: "New profile", authed: true, profile: null, errorKey: "profile.errServerPw" });
     }
     try {
       await assertSafeServerUrl(d.serverUrl, { blockPrivate: config.blockPrivateActualHosts });
-    } catch (err) {
-      const msg = err instanceof UnsafeServerUrlError ? err.message : "Invalid server URL.";
-      return render(reply.code(400), "profile_form", { title: "New profile", authed: true, profile: null, error: msg });
+    } catch {
+      return render(reply.code(400), "profile_form", { title: "New profile", authed: true, profile: null, errorKey: "profile.errServerUrl" });
     }
     if (profiles.findByOwnerServerBudget(userId, d.serverUrl, d.budgetId)) {
-      return render(reply.code(409), "profile_form", { title: "New profile", authed: true, profile: null, error: "You already have a profile for this server and budget." });
+      return render(reply.code(409), "profile_form", { title: "New profile", authed: true, profile: null, errorKey: "profile.errDuplicate" });
     }
     profiles.create({
       ownerUserId: userId,
@@ -78,18 +77,17 @@ export function registerProfileRoutes(app: FastifyInstance): void {
 
     const parsed = profileSchema.safeParse(req.body);
     if (!parsed.success) {
-      return render(reply.code(400), "profile_form", { title: "Edit profile", authed: true, profile: existing, error: "Name, server URL and budget id are required." });
+      return render(reply.code(400), "profile_form", { title: "Edit profile", authed: true, profile: existing, errorKey: "profile.errRequired" });
     }
     const d = parsed.data;
     try {
       await assertSafeServerUrl(d.serverUrl, { blockPrivate: config.blockPrivateActualHosts });
-    } catch (err) {
-      const msg = err instanceof UnsafeServerUrlError ? err.message : "Invalid server URL.";
-      return render(reply.code(400), "profile_form", { title: "Edit profile", authed: true, profile: existing, error: msg });
+    } catch {
+      return render(reply.code(400), "profile_form", { title: "Edit profile", authed: true, profile: existing, errorKey: "profile.errServerUrl" });
     }
     const dup = profiles.findByOwnerServerBudget(userId, d.serverUrl, d.budgetId);
     if (dup && dup.id !== id) {
-      return render(reply.code(409), "profile_form", { title: "Edit profile", authed: true, profile: existing, error: "You already have another profile for this server and budget." });
+      return render(reply.code(409), "profile_form", { title: "Edit profile", authed: true, profile: existing, errorKey: "profile.errDuplicate" });
     }
     // Blank secret fields keep the existing stored values.
     profiles.update(id, {

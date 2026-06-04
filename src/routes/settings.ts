@@ -9,7 +9,7 @@ import {
 } from "../db/queries.js";
 import { render } from "../views/render.js";
 
-function viewData(extra: { saved?: boolean; error?: string | null }) {
+function viewData(extra: { saved?: boolean; errorKey?: string | null }) {
   return {
     title: "Settings",
     authed: true,
@@ -18,7 +18,7 @@ function viewData(extra: { saved?: boolean; error?: string | null }) {
     syncMax: settings.get(SYNC_RATELIMIT_MAX_KEY) ?? "",
     syncWindowHours: settings.get(SYNC_RATELIMIT_WINDOW_HOURS_KEY) ?? "",
     saved: extra.saved ?? false,
-    error: extra.error ?? null,
+    errorKey: extra.errorKey ?? null,
   };
 }
 
@@ -32,7 +32,7 @@ export function registerSettingsRoutes(app: FastifyInstance): void {
     if (!requireAdmin(req, reply)) return;
     const secret = (req.body.registration_secret ?? "").trim();
     if (secret.length === 0) {
-      return render(reply.code(400), "settings", viewData({ error: "Registration secret cannot be empty." }));
+      return render(reply.code(400), "settings", viewData({ errorKey: "settings.errSecretEmpty" }));
     }
     settings.set(REGISTRATION_SECRET_KEY, secret);
     return render(reply, "settings", viewData({ saved: true }));
@@ -51,7 +51,7 @@ export function registerSettingsRoutes(app: FastifyInstance): void {
         const max = Number(maxRaw);
         const wh = Number(windowRaw);
         if (!Number.isInteger(max) || max < 0 || !Number.isInteger(wh) || wh < 0) {
-          return render(reply.code(400), "settings", viewData({ error: "Sync limit values must be non-negative whole numbers." }));
+          return render(reply.code(400), "settings", viewData({ errorKey: "settings.errSyncInvalid" }));
         }
       }
       settings.set(SYNC_RATELIMIT_MAX_KEY, disabled ? "" : maxRaw);

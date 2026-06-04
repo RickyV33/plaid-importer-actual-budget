@@ -1,29 +1,29 @@
 <div class="card">
-  <h1><%= it.profile ? "Edit profile" : "New profile" %></h1>
-  <% if (it.error) { %><p class="error"><%= it.error %></p><% } %>
+  <h1><%= it.profile ? it.t("profile.editTitle") : it.t("profile.newTitle") %></h1>
+  <% if (it.errorKey) { %><p class="error"><%= it.t(it.errorKey) %></p><% } %>
 
   <form method="post" action="<%= it.profile ? ('/profiles/' + it.profile.id) : '/profiles' %>">
     <div class="field">
-      <label for="name">Name</label>
+      <label for="name"><%= it.t("profile.name") %></label>
       <input id="name" name="name" type="text" value="<%= it.profile ? it.profile.name : '' %>" required />
     </div>
     <div class="field">
-      <label for="serverUrl">Actual server URL (https)</label>
+      <label for="serverUrl"><%= it.t("profile.serverUrl") %></label>
       <input id="serverUrl" name="serverUrl" type="url" value="<%= it.profile ? it.profile.server_url : '' %>" placeholder="https://budget.example.com" required />
     </div>
     <div class="field">
-      <label for="budgetId">Budget (Sync ID)</label>
+      <label for="budgetId"><%= it.t("profile.budgetId") %></label>
       <input id="budgetId" name="budgetId" type="text" value="<%= it.profile ? it.profile.budget_id : '' %>" required />
     </div>
     <div class="field">
-      <label for="serverPassword">Server password<% if (it.profile) { %> <span class="muted">(leave blank to keep current)</span><% } %></label>
+      <label for="serverPassword"><%= it.t("profile.serverPassword") %><% if (it.profile) { %> <span class="muted"><%= it.t("profile.keepBlank") %></span><% } %></label>
       <input id="serverPassword" name="serverPassword" type="password" autocomplete="off" <%= it.profile ? '' : 'required' %> />
     </div>
     <div class="field">
-      <label for="encryptionPassword">Encryption password <span class="muted">(only if the budget is end-to-end encrypted<% if (it.profile) { %>; blank keeps current<% } %>)</span></label>
+      <label for="encryptionPassword"><%= it.t("profile.encPassword") %> <span class="muted"><%= it.profile ? it.t("profile.encHelpEdit") : it.t("profile.encHelp") %></span></label>
       <input id="encryptionPassword" name="encryptionPassword" type="password" autocomplete="off" />
     </div>
-    <button type="submit"><%= it.profile ? "Save" : "Create profile" %></button>
-    <a href="/"><button type="button" class="secondary">Cancel</button></a>
+    <button type="submit"><%= it.profile ? it.t("common.save") : it.t("profile.create") %></button>
+    <a href="/"><button type="button" class="secondary"><%= it.t("common.cancel") %></button></a>
   </form>
 </div>

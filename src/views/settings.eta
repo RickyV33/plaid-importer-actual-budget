@@ -1,24 +1,22 @@
-<h1>Settings</h1>
+<h1><%= it.t("settings.title") %></h1>
 
 <% if (it.saved) { %>
-  <p class="success">Registration secret updated.</p>
+  <p class="success"><%= it.t("settings.saved") %></p>
 <% } %>
-<% if (it.error) { %>
-  <p class="error"><%= it.error %></p>
+<% if (it.errorKey) { %>
+  <p class="error"><%= it.t(it.errorKey) %></p>
 <% } %>
 
 <div class="card">
-  <h2>Registration secret</h2>
-  <p class="muted">
-    New users must supply this secret to register. Share it only with people you want to invite.
-  </p>
+  <h2><%= it.t("settings.regSecret") %></h2>
+  <p class="muted"><%= it.t("settings.regSecretHelp") %></p>
 
   <% if (it.currentSecret) { %>
     <div class="field">
-      <label for="current_secret">Current secret</label>
+      <label for="current_secret"><%= it.t("settings.currentSecret") %></label>
       <div class="reveal-row">
         <input id="current_secret" type="password" value="<%= it.currentSecret %>" readonly onclick="this.select()" />
-        <button type="button" class="secondary reveal-btn" data-target="current_secret" aria-label="Show secret" title="Show / hide">
+        <button type="button" class="secondary reveal-btn" data-target="current_secret" aria-label="<%= it.t('settings.showHide') %>" title="<%= it.t('settings.showHide') %>">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" /><circle cx="12" cy="12" r="3" />
           </svg>
@@ -26,34 +24,31 @@
       </div>
     </div>
   <% } else { %>
-    <p class="warn">No secret is set yet — registration is closed to new members until you set one.</p>
+    <p class="warn"><%= it.t("settings.noSecret") %></p>
   <% } %>
 
   <form method="post" action="/settings">
     <div class="field">
-      <label for="registration_secret"><%= it.currentSecret ? "Change secret" : "Set secret" %></label>
+      <label for="registration_secret"><%= it.currentSecret ? it.t("settings.changeSecret") : it.t("settings.setSecret") %></label>
       <input id="registration_secret" name="registration_secret" type="text" autocomplete="off" required />
     </div>
-    <button type="submit">Save</button>
+    <button type="submit"><%= it.t("common.save") %></button>
   </form>
 </div>
 
 <div class="card">
-  <h2>Per-connection sync limit</h2>
-  <p class="muted">
-    Each bank connection may be synced at most N times per window of X hours.
-    Over-limit connections are skipped; the rest still sync. Leave blank (or 0) to disable.
-  </p>
+  <h2><%= it.t("settings.syncLimit") %></h2>
+  <p class="muted"><%= it.t("settings.syncLimitHelp") %></p>
   <form method="post" action="/settings/sync-limit">
     <div class="field">
-      <label for="sync_max">Max syncs per connection</label>
+      <label for="sync_max"><%= it.t("settings.syncMax") %></label>
       <input id="sync_max" name="sync_max" type="number" min="0" step="1" value="<%= it.syncMax %>" />
     </div>
     <div class="field">
-      <label for="sync_window_hours">Window (hours)</label>
+      <label for="sync_window_hours"><%= it.t("settings.syncWindow") %></label>
       <input id="sync_window_hours" name="sync_window_hours" type="number" min="0" step="1" value="<%= it.syncWindowHours %>" />
     </div>
-    <button type="submit">Save</button>
+    <button type="submit"><%= it.t("common.save") %></button>
   </form>
 </div>
 
@@ -64,7 +59,6 @@
       if (!input) return;
       const show = input.type === 'password';
       input.type = show ? 'text' : 'password';
-      btn.setAttribute('aria-label', show ? 'Hide secret' : 'Show secret');
       btn.classList.toggle('revealed', show);
     });
   });

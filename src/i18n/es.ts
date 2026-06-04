@@ -41,6 +41,9 @@ export const es: Record<string, string> = {
   "settings.syncLimitHelp": "Cada conexión bancaria puede sincronizarse como máximo N veces por ventana de X horas. Las conexiones que superen el límite se omiten; las demás se sincronizan. Deja en blanco (o 0) para desactivar.",
   "settings.syncMax": "Máx. sincronizaciones por conexión",
   "settings.syncWindow": "Ventana (horas)",
+  "settings.saved": "Guardado.",
+  "settings.errSecretEmpty": "El secreto de registro no puede estar vacío.",
+  "settings.errSyncInvalid": "Los valores del límite deben ser números enteros no negativos.",
 
   // home — connections
   "home.connections": "Conexiones",
@@ -98,6 +101,10 @@ export const es: Record<string, string> = {
   "profile.encHelp": "(solo si el presupuesto está cifrado de extremo a extremo)",
   "profile.encHelpEdit": "(solo si el presupuesto está cifrado de extremo a extremo; en blanco mantiene la actual)",
   "profile.create": "Crear perfil",
+  "profile.errRequired": "El nombre, la URL del servidor y el ID del presupuesto son obligatorios.",
+  "profile.errServerPw": "La contraseña del servidor es obligatoria.",
+  "profile.errServerUrl": "La URL del servidor no es válida o no está permitida.",
+  "profile.errDuplicate": "Ya tienes un perfil para este servidor y presupuesto.",
 
   // schedules
   "schedules.title": "Programaciones",
