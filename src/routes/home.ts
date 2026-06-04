@@ -29,9 +29,14 @@ type HomeItemView = {
 };
 
 type ProfileAccountView = HomeAccount & {
-  institutionName: string | null;
   mappedActualId: string | null;
   pendingVisible: boolean;
+};
+
+type ProfileConnectionView = {
+  itemId: string;
+  institutionName: string | null;
+  accounts: ProfileAccountView[];
 };
 
 type ProfileView = {
@@ -41,7 +46,7 @@ type ProfileView = {
   budgetId: string;
   actualError: boolean;
   actualAccounts: { id: string; name: string }[];
-  accounts: ProfileAccountView[];
+  connections: ProfileConnectionView[];
 };
 
 export function registerHomeRoute(app: FastifyInstance): void {
@@ -51,7 +56,6 @@ export function registerHomeRoute(app: FastifyInstance): void {
 
     const items = plaidItems.listByOwner(userId);
     const accounts = plaidAccounts.listByOwner(userId);
-    const itemInstitution = new Map(items.map((i) => [i.id, i.institution_name]));
 
     const itemViews: HomeItemView[] = items.map((item) => ({
       id: item.id,
@@ -83,15 +87,20 @@ export function registerHomeRoute(app: FastifyInstance): void {
         budgetId: p.budget_id,
         actualError,
         actualAccounts,
-        accounts: accounts.map((a) => {
-          const m = mappings.get(a.plaid_account_id);
-          return {
-            ...toHomeAccount(a),
-            institutionName: itemInstitution.get(a.item_id) ?? null,
-            mappedActualId: m?.actual_account_id ?? null,
-            pendingVisible: Boolean(m?.pending_visible),
-          };
-        }),
+        connections: items
+          .map((item) => ({
+            itemId: item.id,
+            institutionName: item.institution_name,
+            accounts: accountsForItem(accounts, item).map((a) => {
+              const m = mappings.get(a.plaid_account_id);
+              return {
+                ...toHomeAccount(a),
+                mappedActualId: m?.actual_account_id ?? null,
+                pendingVisible: Boolean(m?.pending_visible),
+              };
+            }),
+          }))
+          .filter((c) => c.accounts.length > 0),
       });
     }
 

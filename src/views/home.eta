@@ -114,35 +114,36 @@
         <p class="warn"><%= it.t("home.actualUnreachable") %></p>
       <% } %>
       <% if (it.items.length > 0) { %>
-        <table class="account-table mapping-table">
-          <thead><tr><th><%= it.t("home.account") %></th><th class="col-mapped"><%= it.t("home.mappedTo") %></th><th class="col-pending"><%= it.t("home.showPending") %> <span class="info-icon" title="<%= it.t('home.pendingHelp') %>"><i class="fa-regular fa-circle-question" aria-hidden="true"></i></span></th></tr></thead>
-          <tbody>
-            <% profile.accounts.forEach(function(acct) { %>
-              <tr>
-                <td>
-                  <span class="acct-name" title="<%= (acct.institutionName ? acct.institutionName + ' :: ' : '') + acct.name %><%= acct.mask ? ' ····' + acct.mask : '' %>">
-                    <% if (acct.institutionName) { %><span class="muted"><%= acct.institutionName %> :: </span><% } %><%= acct.name %><% if (acct.mask) { %> <span class="muted">····<%= acct.mask %></span><% } %>
-                  </span>
-                </td>
-                <td class="col-mapped">
-                  <select class="mapping-select" data-profile-id="<%= profile.id %>" data-plaid-account-id="<%= acct.plaidAccountId %>">
-                    <option value=""><%= it.t("home.unmapped") %></option>
-                    <% profile.actualAccounts.forEach(function(a) { %>
-                      <option value="<%= a.id %>" <%= a.id === acct.mappedActualId ? "selected" : "" %>><%= a.name %></option>
-                    <% }) %>
-                  </select>
-                </td>
-                <td class="col-pending">
-                  <% if (acct.mappedActualId) { %>
-                    <input type="checkbox" class="bigcheck pending-visible-check" data-profile-id="<%= profile.id %>" data-plaid-account-id="<%= acct.plaidAccountId %>" <%= acct.pendingVisible ? "checked" : "" %> />
-                  <% } else { %>
-                    <span class="muted pending-na">-</span>
-                  <% } %>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
+        <% profile.connections.forEach(function(conn) { %>
+          <div class="conn-group">
+            <h3 class="conn-name"><%= conn.institutionName ?? "(unknown institution)" %></h3>
+            <table class="account-table mapping-table">
+              <thead><tr><th><%= it.t("home.account") %></th><th class="col-mapped"><%= it.t("home.mappedTo") %></th><th class="col-pending"><%= it.t("home.showPending") %> <span class="info-icon" title="<%= it.t('home.pendingHelp') %>"><i class="fa-regular fa-circle-question" aria-hidden="true"></i></span></th></tr></thead>
+              <tbody>
+                <% conn.accounts.forEach(function(acct) { %>
+                  <tr>
+                    <td><%= acct.name %><% if (acct.mask) { %> <span class="muted">····<%= acct.mask %></span><% } %></td>
+                    <td class="col-mapped">
+                      <select class="mapping-select" data-profile-id="<%= profile.id %>" data-plaid-account-id="<%= acct.plaidAccountId %>">
+                        <option value=""><%= it.t("home.unmapped") %></option>
+                        <% profile.actualAccounts.forEach(function(a) { %>
+                          <option value="<%= a.id %>" <%= a.id === acct.mappedActualId ? "selected" : "" %>><%= a.name %></option>
+                        <% }) %>
+                      </select>
+                    </td>
+                    <td class="col-pending">
+                      <% if (acct.mappedActualId) { %>
+                        <input type="checkbox" class="bigcheck pending-visible-check" data-profile-id="<%= profile.id %>" data-plaid-account-id="<%= acct.plaidAccountId %>" <%= acct.pendingVisible ? "checked" : "" %> />
+                      <% } else { %>
+                        <span class="muted pending-na">-</span>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% }) %>
       <% } %>
     </div>
   <% }) %>
