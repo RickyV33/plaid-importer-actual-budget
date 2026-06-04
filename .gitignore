@@ -4,3 +4,8 @@ data/
 dist/
 *.log
 .DS_Store
+
+# VS Code: ignore local settings but keep shared run configs
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json

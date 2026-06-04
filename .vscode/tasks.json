@@ -1,0 +1,68 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "dev: server (watch)",
+      "type": "shell",
+      "command": "npm run dev",
+      "problemMatcher": [],
+      "isBackground": true,
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "detail": "tsx watch src/server.ts on :8080 (runs in the dev container when attached)"
+    },
+    {
+      "label": "test: all",
+      "type": "shell",
+      "command": "npm test",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": [],
+      "detail": "node --test over src/**/*.test.ts via tsx"
+    },
+    {
+      "label": "test: current file",
+      "type": "shell",
+      "command": "node --test --import tsx/esm \"${relativeFile}\"",
+      "group": "test",
+      "problemMatcher": [],
+      "detail": "Run only the test file open in the editor"
+    },
+    {
+      "label": "typecheck",
+      "type": "shell",
+      "command": "npx tsc --noEmit",
+      "group": { "kind": "build", "isDefault": false },
+      "problemMatcher": ["$tsc"],
+      "detail": "Type-check without emitting (stands in for lint/format)"
+    },
+    {
+      "label": "migrate",
+      "type": "shell",
+      "command": "npm run migrate",
+      "problemMatcher": [],
+      "detail": "Apply SQL migrations against DATABASE_PATH"
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "npm run build",
+      "group": "build",
+      "problemMatcher": ["$tsc"],
+      "detail": "tsc + copy .eta/.sql assets into dist/"
+    },
+    {
+      "label": "build image (deploy.sh)",
+      "type": "shell",
+      "command": "./deploy.sh",
+      "problemMatcher": [],
+      "detail": "Build + push the container image. Runs on the HOST (needs docker/buildx), not the dev container."
+    },
+    {
+      "label": "shell",
+      "type": "shell",
+      "command": "exec $SHELL",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "detail": "Open an interactive shell in the task environment"
+    }
+  ]
+}
