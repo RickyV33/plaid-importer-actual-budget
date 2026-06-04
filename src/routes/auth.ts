@@ -24,15 +24,15 @@ export function decideRegistration(args: {
   usernameTaken: boolean;
 }): RegistrationDecision {
   if (args.username.length === 0 || args.password.length === 0) {
-    return { ok: false, status: 400, error: "Username and password are required." };
+    return { ok: false, status: 400, error: "register.errRequired" };
   }
   if (args.usersExist) {
     if (!args.expectedSecret || args.submittedSecret !== args.expectedSecret) {
-      return { ok: false, status: 403, error: "Invalid registration secret." };
+      return { ok: false, status: 403, error: "register.errSecret" };
     }
   }
   if (args.usernameTaken) {
-    return { ok: false, status: 409, error: "That username is taken." };
+    return { ok: false, status: 409, error: "register.errTaken" };
   }
   return { ok: true, role: args.usersExist ? "member" : "admin" };
 }
@@ -44,7 +44,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
       title: "Sign in",
       authed: false,
       next,
-      error: null,
+      errorKey: null,
     });
   });
 
@@ -70,7 +70,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
           title: "Sign in",
           authed: false,
           next,
-          error: "Username and password are required.",
+          errorKey: "login.errRequired",
         });
       }
 
@@ -80,7 +80,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
           title: "Sign in",
           authed: false,
           next,
-          error: "Invalid credentials.",
+          errorKey: "login.errInvalid",
         });
       }
 
@@ -96,7 +96,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
       title: "Register",
       authed: false,
       usersExist: users.count() > 0,
-      error: null,
+      errorKey: null,
     });
   });
 
@@ -132,7 +132,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
           title: "Register",
           authed: false,
           usersExist,
-          error: decision.error,
+          errorKey: decision.error,
         });
       }
 

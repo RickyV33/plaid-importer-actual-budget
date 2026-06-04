@@ -21,6 +21,11 @@ export const en: Record<string, string> = {
   "register.secret": "Registration secret",
   "register.submit": "Create account",
   "register.haveAccount": "Already have an account? Sign in",
+  "login.errRequired": "Username and password are required.",
+  "login.errInvalid": "Invalid credentials.",
+  "register.errRequired": "Username and password are required.",
+  "register.errSecret": "Invalid registration secret.",
+  "register.errTaken": "That username is taken.",
 
   // settings
   "settings.title": "Settings",

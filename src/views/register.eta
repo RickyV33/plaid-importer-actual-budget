@@ -1,27 +1,27 @@
 <div class="card login-card">
-  <h1>Register</h1>
-  <% if (it.error) { %>
-    <p class="error"><%= it.error %></p>
+  <h1><%= it.t("register.title") %></h1>
+  <% if (it.errorKey) { %>
+    <p class="error"><%= it.t(it.errorKey) %></p>
   <% } %>
   <% if (!it.usersExist) { %>
-    <p class="muted">No users exist yet — the first account becomes the administrator.</p>
+    <p class="muted"><%= it.t("register.firstAdmin") %></p>
   <% } %>
   <form method="post" action="/register">
     <div class="field">
-      <label for="username">Username</label>
+      <label for="username"><%= it.t("login.username") %></label>
       <input id="username" name="username" type="text" autocomplete="username" autofocus required />
     </div>
     <div class="field">
-      <label for="password">Password</label>
+      <label for="password"><%= it.t("login.password") %></label>
       <input id="password" name="password" type="password" autocomplete="new-password" required />
     </div>
     <% if (it.usersExist) { %>
       <div class="field">
-        <label for="registration_secret">Registration secret</label>
+        <label for="registration_secret"><%= it.t("register.secret") %></label>
         <input id="registration_secret" name="registration_secret" type="password" autocomplete="off" required />
       </div>
     <% } %>
-    <button type="submit">Create account</button>
+    <button type="submit"><%= it.t("register.submit") %></button>
   </form>
-  <p class="muted"><a href="/login">Already have an account? Sign in</a></p>
+  <p class="muted"><a href="/login"><%= it.t("register.haveAccount") %></a></p>
 </div>

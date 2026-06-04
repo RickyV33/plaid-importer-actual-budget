@@ -19,11 +19,11 @@ test("first-user bootstrap: open registration, first user is admin", () => {
 test("gated: once users exist, missing/wrong secret is rejected with 403", () => {
   assert.deepEqual(
     decideRegistration({ ...base, usersExist: true, expectedSecret: "letmein", submittedSecret: "" }),
-    { ok: false, status: 403, error: "Invalid registration secret." },
+    { ok: false, status: 403, error: "register.errSecret" },
   );
   assert.deepEqual(
     decideRegistration({ ...base, usersExist: true, expectedSecret: "letmein", submittedSecret: "nope" }),
-    { ok: false, status: 403, error: "Invalid registration secret." },
+    { ok: false, status: 403, error: "register.errSecret" },
   );
 });
 
@@ -56,5 +56,5 @@ test("duplicate username is a 409 (even with a valid secret)", () => {
     submittedSecret: "letmein",
     usernameTaken: true,
   });
-  assert.deepEqual(d, { ok: false, status: 409, error: "That username is taken." });
+  assert.deepEqual(d, { ok: false, status: 409, error: "register.errTaken" });
 });
