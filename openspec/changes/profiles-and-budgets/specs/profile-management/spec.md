@@ -12,6 +12,22 @@ The system SHALL store profiles in a `profiles` table owned by a user, each hold
 - **WHEN** a profile is displayed or edited in the UI
 - **THEN** the stored server/encryption passwords are not sent to the browser; leaving a secret field blank on edit keeps the existing value
 
+### Requirement: No duplicate profile for the same budget
+
+The system SHALL reject creating or editing a profile when the same owner already has another profile with the same `server_url` and `budget_id`, to avoid two profiles syncing to the same budget.
+
+#### Scenario: Duplicate budget rejected on create
+- **WHEN** a user creates a profile whose `server_url` + `budget_id` match an existing profile they own
+- **THEN** the system rejects it with a validation error and stores nothing
+
+#### Scenario: Edit that collides is rejected
+- **WHEN** a user edits a profile so its `server_url` + `budget_id` match another profile they own
+- **THEN** the system rejects the change and keeps the existing values
+
+#### Scenario: Same budget across different owners is allowed
+- **WHEN** two different users each create a profile pointing at the same `server_url` + `budget_id`
+- **THEN** both are allowed (the uniqueness is per owner)
+
 ### Requirement: Profiles are owner-scoped
 
 The system SHALL scope all profile operations to the authenticated owner. A user SHALL NOT view, edit, delete, or sync a profile owned by another user.
@@ -26,14 +42,18 @@ The system SHALL scope all profile operations to the authenticated owner. A user
 
 ### Requirement: Profile server URL guardrails
 
-The system SHALL reject a profile whose `server_url` is not `https` or whose host resolves to a loopback, private, or link-local address (e.g. `127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`, `::1`, `fc00::/7`).
+The system SHALL reject a profile whose `server_url` is not `https`. Additionally, when the operator opts in via `BLOCK_PRIVATE_ACTUAL_HOSTS=true`, the system SHALL reject a `server_url` whose host is — or resolves to — a loopback, private, or link-local address (e.g. `127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`, `::1`, `fc00::/7`). This private-host guard is OFF by default because a self-hosted Actual server is normally reachable only on a private/LAN address.
 
 #### Scenario: Non-https URL rejected
 - **WHEN** a user submits a profile with an `http://` server URL
 - **THEN** the system rejects it with a validation error and stores nothing
 
-#### Scenario: Private/loopback host rejected
-- **WHEN** a user submits a profile whose host resolves to a private or loopback address
+#### Scenario: Private host allowed by default
+- **WHEN** a user submits an `https://` profile whose host is a private/LAN address and `BLOCK_PRIVATE_ACTUAL_HOSTS` is not set
+- **THEN** the profile is accepted (supports the common self-hosted-on-LAN case)
+
+#### Scenario: Private/loopback host rejected when the guard is enabled
+- **WHEN** `BLOCK_PRIVATE_ACTUAL_HOSTS=true` and a user submits a profile whose host resolves to a private or loopback address
 - **THEN** the system rejects it with a validation error and stores nothing
 
 #### Scenario: Public https host accepted

@@ -29,6 +29,7 @@ const {
   accountMappings,
   syncOrphanDeletes,
   syncRuns,
+  syncAccountResults,
   users,
 } = await import("./queries.js");
 
@@ -99,6 +100,27 @@ test("syncRuns.backfillOwner: claims pre-migration runs with NULL owner", () => 
   assert.equal(claimed, 1, "exactly one NULL-owner run claimed");
   const after = syncRuns.listRecentByOwner(ownerUserId, 50, 0).length;
   assert.equal(after, before + 1, "backfilled run now visible to the owner");
+});
+
+test("countPullsForItemSince: counts distinct runs touching a connection, windowed and isolated", () => {
+  seedMapping("plaid-RL", "actual-RL"); // creates item-plaid-RL + account plaid-RL
+  seedMapping("plaid-RL2", "actual-RL2"); // a different connection
+  const itemId = "item-plaid-RL";
+  const now = Date.now();
+
+  for (let i = 0; i < 2; i++) {
+    const runId = syncRuns.start({ triggeredBy: "manual", scope: "selected", ownerUserId });
+    syncAccountResults.record({ syncRunId: runId, plaidAccountId: "plaid-RL", status: "success", txnsImported: 1, reason: null, profileId: null });
+    syncRuns.finish({ id: runId, status: "success", totalImported: 1 });
+  }
+  // a run touching the OTHER connection must not count for this item
+  const otherRun = syncRuns.start({ triggeredBy: "manual", scope: "selected", ownerUserId });
+  syncAccountResults.record({ syncRunId: otherRun, plaidAccountId: "plaid-RL2", status: "success", txnsImported: 1, reason: null, profileId: null });
+  syncRuns.finish({ id: otherRun, status: "success", totalImported: 1 });
+
+  assert.equal(syncRuns.countPullsForItemSince(itemId, now - 3600_000), 2);
+  // window in the future excludes everything
+  assert.equal(syncRuns.countPullsForItemSince(itemId, now + 3600_000), 0);
 });
 
 test("accountMappings.setPendingVisible: returns 0 for non-existent mapping", () => {

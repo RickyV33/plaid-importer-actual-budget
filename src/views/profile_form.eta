@@ -1,0 +1,29 @@
+<div class="card">
+  <h1><%= it.profile ? "Edit profile" : "New profile" %></h1>
+  <% if (it.error) { %><p class="error"><%= it.error %></p><% } %>
+
+  <form method="post" action="<%= it.profile ? ('/profiles/' + it.profile.id) : '/profiles' %>">
+    <div class="field">
+      <label for="name">Name</label>
+      <input id="name" name="name" type="text" value="<%= it.profile ? it.profile.name : '' %>" required />
+    </div>
+    <div class="field">
+      <label for="serverUrl">Actual server URL (https)</label>
+      <input id="serverUrl" name="serverUrl" type="url" value="<%= it.profile ? it.profile.server_url : '' %>" placeholder="https://budget.example.com" required />
+    </div>
+    <div class="field">
+      <label for="budgetId">Budget (Sync ID)</label>
+      <input id="budgetId" name="budgetId" type="text" value="<%= it.profile ? it.profile.budget_id : '' %>" required />
+    </div>
+    <div class="field">
+      <label for="serverPassword">Server password<% if (it.profile) { %> <span class="muted">(leave blank to keep current)</span><% } %></label>
+      <input id="serverPassword" name="serverPassword" type="password" autocomplete="off" <%= it.profile ? '' : 'required' %> />
+    </div>
+    <div class="field">
+      <label for="encryptionPassword">Encryption password <span class="muted">(only if the budget is end-to-end encrypted<% if (it.profile) { %>; blank keeps current<% } %>)</span></label>
+      <input id="encryptionPassword" name="encryptionPassword" type="password" autocomplete="off" />
+    </div>
+    <button type="submit"><%= it.profile ? "Save" : "Create profile" %></button>
+    <a href="/"><button type="button" class="secondary">Cancel</button></a>
+  </form>
+</div>

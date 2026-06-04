@@ -1,46 +1,62 @@
 import type { FastifyInstance } from "fastify";
 
 import { requireAdmin } from "../auth/middleware.js";
-import { REGISTRATION_SECRET_KEY, settings } from "../db/queries.js";
+import {
+  REGISTRATION_SECRET_KEY,
+  settings,
+  SYNC_RATELIMIT_MAX_KEY,
+  SYNC_RATELIMIT_WINDOW_HOURS_KEY,
+} from "../db/queries.js";
 import { render } from "../views/render.js";
+
+function viewData(extra: { saved?: boolean; error?: string | null }) {
+  return {
+    title: "Settings",
+    authed: true,
+    isAdmin: true,
+    currentSecret: settings.get(REGISTRATION_SECRET_KEY) ?? null,
+    syncMax: settings.get(SYNC_RATELIMIT_MAX_KEY) ?? "",
+    syncWindowHours: settings.get(SYNC_RATELIMIT_WINDOW_HOURS_KEY) ?? "",
+    saved: extra.saved ?? false,
+    error: extra.error ?? null,
+  };
+}
 
 export function registerSettingsRoutes(app: FastifyInstance): void {
   app.get("/settings", async (req, reply) => {
     if (!requireAdmin(req, reply)) return;
-    return render(reply, "settings", {
-      title: "Settings",
-      authed: true,
-      isAdmin: true,
-      currentSecret: settings.get(REGISTRATION_SECRET_KEY) ?? null,
-      saved: false,
-      error: null,
-    });
+    return render(reply, "settings", viewData({}));
   });
 
-  app.post<{ Body: { registration_secret?: string } }>(
-    "/settings",
+  app.post<{ Body: { registration_secret?: string } }>("/settings", async (req, reply) => {
+    if (!requireAdmin(req, reply)) return;
+    const secret = (req.body.registration_secret ?? "").trim();
+    if (secret.length === 0) {
+      return render(reply.code(400), "settings", viewData({ error: "Registration secret cannot be empty." }));
+    }
+    settings.set(REGISTRATION_SECRET_KEY, secret);
+    return render(reply, "settings", viewData({ saved: true }));
+  });
+
+  app.post<{ Body: { sync_max?: string; sync_window_hours?: string } }>(
+    "/settings/sync-limit",
     async (req, reply) => {
       if (!requireAdmin(req, reply)) return;
-      const secret = (req.body.registration_secret ?? "").trim();
-      if (secret.length === 0) {
-        return render(reply.code(400), "settings", {
-          title: "Settings",
-          authed: true,
-          isAdmin: true,
-          currentSecret: settings.get(REGISTRATION_SECRET_KEY) ?? null,
-          saved: false,
-          error: "Registration secret cannot be empty.",
-        });
+      const maxRaw = (req.body.sync_max ?? "").trim();
+      const windowRaw = (req.body.sync_window_hours ?? "").trim();
+
+      // Blank/0 either field disables the ceiling.
+      const disabled = maxRaw === "" || windowRaw === "" || maxRaw === "0" || windowRaw === "0";
+      if (!disabled) {
+        const max = Number(maxRaw);
+        const wh = Number(windowRaw);
+        if (!Number.isInteger(max) || max < 0 || !Number.isInteger(wh) || wh < 0) {
+          return render(reply.code(400), "settings", viewData({ error: "Sync limit values must be non-negative whole numbers." }));
+        }
       }
-      settings.set(REGISTRATION_SECRET_KEY, secret);
-      return render(reply, "settings", {
-        title: "Settings",
-        authed: true,
-        isAdmin: true,
-        currentSecret: secret,
-        saved: true,
-        error: null,
-      });
+      settings.set(SYNC_RATELIMIT_MAX_KEY, disabled ? "" : maxRaw);
+      settings.set(SYNC_RATELIMIT_WINDOW_HOURS_KEY, disabled ? "" : windowRaw);
+      return render(reply, "settings", viewData({ saved: true }));
     },
   );
 }

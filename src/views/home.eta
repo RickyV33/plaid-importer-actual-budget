@@ -1,180 +1,201 @@
-<h1>Linked accounts</h1>
+<div class="tabs">
+  <button type="button" class="tab-btn active" data-tab="connections">Connections</button>
+  <button type="button" class="tab-btn" data-tab="profiles">Profiles</button>
+</div>
 
-<% if (it.actualError) { %>
-  <p class="warn"><%= it.actualError %></p>
-<% } %>
+<section class="tab-panel active" data-panel="connections">
+  <% if (it.items.length === 0) { %>
+    <div class="card">
+      <p class="muted">No banks linked yet.</p>
+      <button type="button" id="link-btn">Link an account</button>
+    </div>
+  <% } else { %>
+    <div class="card conn-toolbar">
+      <label class="check-label"><input type="checkbox" class="bigcheck" id="select-all-accounts" /> Select all accounts</label>
+    </div>
+    <% it.items.forEach(function(item) { %>
+      <div class="card item-card" data-item-id="<%= item.id %>">
+        <div class="item-header">
+          <div>
+            <h2 class="item-title"><%= item.institutionName ?? "(unknown institution)" %></h2>
+            <p class="muted item-meta">
+              <% if (item.status === "requires_relink") { %>
+                <span class="error">re-link needed</span> ·
+              <% } else if (item.status === "active") { %>
+                <span class="success">active</span> ·
+              <% } else { %>
+                <span class="warn"><%= item.status %></span> ·
+              <% } %>
+              <% if (item.lastSyncedAt) { %>
+                last sync <%= new Date(item.lastSyncedAt).toLocaleString() %>
+              <% } else { %>
+                never synced
+              <% } %>
+            </p>
+          </div>
+          <div class="item-actions">
+            <% if (item.status === "requires_relink") { %>
+              <button type="button" class="relink-btn" data-item-id="<%= item.id %>">Re-link</button>
+            <% } %>
+            <button type="button" class="remove-btn secondary" data-item-id="<%= item.id %>" data-institution="<%= item.institutionName ?? '' %>">Remove</button>
+          </div>
+        </div>
+        <table class="account-table">
+          <thead>
+            <tr>
+              <th style="width: 2.5rem;"><input type="checkbox" class="bigcheck item-select-all" data-item-id="<%= item.id %>" /></th>
+              <th>Account</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% item.accounts.forEach(function(acct) { %>
+              <tr>
+                <td><input type="checkbox" class="bigcheck account-check" value="<%= acct.plaidAccountId %>" /></td>
+                <td>
+                  <%= acct.name %>
+                  <% if (acct.mask) { %><span class="muted">····<%= acct.mask %></span><% } %>
+                  <% if (acct.type) { %><span class="muted">· <%= acct.type %></span><% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% }) %>
 
-<% if (it.items.length === 0) { %>
-  <div class="card">
-    <p class="muted">No accounts linked yet.</p>
-    <button type="button" id="link-btn">Link an account</button>
+    <div class="card sync-actions">
+      <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+        <button type="button" id="sync-selected-btn">Sync selected</button>
+        <button type="button" class="secondary" id="sync-all-btn">Sync all</button>
+        <button type="button" class="secondary" id="link-btn">Link another account</button>
+        <span id="sync-status" class="muted"></span>
+      </div>
+      <div id="sync-result" style="margin-top: 1rem;"></div>
+    </div>
+  <% } %>
+</section>
+
+<section class="tab-panel" data-panel="profiles">
+  <div class="profiles-header">
+    <h1>Profiles</h1>
+    <a href="/profiles/new"><button type="button">New profile</button></a>
   </div>
-<% } else { %>
-  <% it.items.forEach(function(item) { %>
-    <div class="card item-card" data-item-id="<%= item.id %>">
+
+  <% if (it.profiles.length === 0) { %>
+    <div class="card"><p class="muted">No profiles yet. Create one to map accounts to an Actual budget.</p></div>
+  <% } %>
+
+  <% it.profiles.forEach(function(profile) { %>
+    <div class="card profile-card" data-profile-id="<%= profile.id %>">
       <div class="item-header">
         <div>
-          <h2 class="item-title"><%= item.institutionName ?? "(unknown institution)" %></h2>
-          <p class="muted item-meta">
-            <% if (item.status === "requires_relink") { %>
-              <span class="error">re-link needed</span> ·
-            <% } else if (item.status === "active") { %>
-              <span class="success">active</span> ·
-            <% } else { %>
-              <span class="warn"><%= item.status %></span> ·
-            <% } %>
-            <% if (item.lastSyncedAt) { %>
-              last sync <%= new Date(item.lastSyncedAt).toLocaleString() %>
-            <% } else { %>
-              never synced
-            <% } %>
-          </p>
+          <h2 class="item-title"><%= profile.name %></h2>
+          <p class="muted"><%= profile.serverUrl %> · budget <%= profile.budgetId %></p>
         </div>
         <div class="item-actions">
-          <% if (item.status === "requires_relink") { %>
-            <button type="button" class="relink-btn" data-item-id="<%= item.id %>">Re-link</button>
-          <% } %>
-          <button
-            type="button"
-            class="remove-btn secondary"
-            data-item-id="<%= item.id %>"
-            data-institution="<%= item.institutionName ?? '' %>"
-          >Remove</button>
+          <a href="/profiles/<%= profile.id %>/edit"><button type="button" class="secondary">Edit</button></a>
+          <button type="button" class="profile-delete-btn secondary" data-profile-id="<%= profile.id %>" data-name="<%= profile.name %>">Delete</button>
         </div>
       </div>
-
-      <table class="account-table">
-        <thead>
-          <tr>
-            <th style="width: 2rem;">
-              <input type="checkbox" class="item-select-all" data-item-id="<%= item.id %>" />
-            </th>
-            <th>Account</th>
-            <th>Mapped to</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% item.accounts.forEach(function(acct) { %>
-            <tr>
-              <td>
-                <input
-                  type="checkbox"
-                  class="account-check"
-                  data-item-id="<%= item.id %>"
-                  value="<%= acct.plaidAccountId %>"
-                />
-              </td>
-              <td>
-                <%= acct.name %>
-                <% if (acct.mask) { %>
-                  <span class="muted">····<%= acct.mask %></span>
-                <% } %>
-                <% if (acct.type) { %>
-                  <span class="muted">· <%= acct.type %></span>
-                <% } %>
-              </td>
-              <td>
-                <select
-                  class="mapping-select"
-                  data-plaid-account-id="<%= acct.plaidAccountId %>"
-                >
-                  <option value="">— unmapped —</option>
-                  <% it.actualAccounts.forEach(function(a) { %>
-                    <option
-                      value="<%= a.id %>"
-                      <%= a.id === acct.mappedActualId ? "selected" : "" %>
-                    ><%= a.name %></option>
-                  <% }) %>
-                </select>
-                <% if (acct.mappedActualId) { %>
-                  <label
-                    class="pending-toggle muted"
-                    title="<%= acct.pendingVisible
-                      ? 'Import pending transactions as uncleared. When they post, the pending entry is deleted and replaced. Manual edits to pending entries are lost.'
-                      : 'Wait for transactions to post before importing. Avoids duplicates from amount changes (tips, gas pre-auths). 1–3 day delay vs. live.' %>"
-                  >
-                    <input
-                      type="checkbox"
-                      class="pending-visible-check"
-                      data-plaid-account-id="<%= acct.plaidAccountId %>"
-                      <%= acct.pendingVisible ? "checked" : "" %>
-                    />
-                    show pending
-                  </label>
-                <% } %>
-              </td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
+      <% if (profile.actualError) { %>
+        <p class="warn"><%= profile.actualError %></p>
+      <% } %>
+      <% if (it.items.length > 0) { %>
+        <table class="account-table mapping-table">
+          <thead><tr><th>Account</th><th class="col-mapped">Mapped to</th><th class="col-pending">Show pending</th></tr></thead>
+          <tbody>
+            <% profile.accounts.forEach(function(acct) { %>
+              <tr>
+                <td><%= acct.name %><% if (acct.mask) { %> <span class="muted">····<%= acct.mask %></span><% } %></td>
+                <td class="col-mapped">
+                  <select class="mapping-select" data-profile-id="<%= profile.id %>" data-plaid-account-id="<%= acct.plaidAccountId %>">
+                    <option value="">— unmapped —</option>
+                    <% profile.actualAccounts.forEach(function(a) { %>
+                      <option value="<%= a.id %>" <%= a.id === acct.mappedActualId ? "selected" : "" %>><%= a.name %></option>
+                    <% }) %>
+                  </select>
+                </td>
+                <td class="col-pending">
+                  <% if (acct.mappedActualId) { %>
+                    <label class="pending-toggle" title="<%= acct.pendingVisible ? 'Import pending transactions as uncleared. When they post, the pending entry is deleted and replaced. Manual edits to pending entries are lost.' : 'Wait for transactions to post before importing. Avoids duplicates from amount changes (tips, gas pre-auths). 1–3 day delay vs. live.' %>">
+                      <input type="checkbox" class="bigcheck pending-visible-check" data-profile-id="<%= profile.id %>" data-plaid-account-id="<%= acct.plaidAccountId %>" <%= acct.pendingVisible ? "checked" : "" %> />
+                    </label>
+                  <% } else { %>
+                    <span class="muted pending-na">—</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
     </div>
   <% }) %>
-
-  <div class="card sync-actions">
-    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-      <button type="button" id="sync-selected-btn">Sync selected</button>
-      <button type="button" class="secondary" id="sync-all-btn">Sync all</button>
-      <button type="button" class="secondary" id="link-btn">Link another account</button>
-      <span id="sync-status" class="muted"></span>
-    </div>
-    <div id="sync-result" style="margin-top: 1rem;"></div>
-  </div>
-<% } %>
+</section>
 
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script>
   (function () {
+    var PENDING_ON = 'Import pending transactions as uncleared. When they post, the pending entry is deleted and replaced. Manual edits to pending entries are lost.';
+    var PENDING_OFF = 'Wait for transactions to post before importing. Avoids duplicates from amount changes (tips, gas pre-auths). 1–3 day delay vs. live.';
+
+    // Tabs
+    function activate(tab) {
+      document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
+      document.querySelectorAll('.tab-panel').forEach((p) => p.classList.toggle('active', p.dataset.panel === tab));
+      try { sessionStorage.setItem('home-tab', tab); } catch (e) {}
+    }
+    document.querySelectorAll('.tab-btn').forEach((b) => b.addEventListener('click', () => activate(b.dataset.tab)));
+    (function () {
+      let initial = 'connections';
+      try { initial = sessionStorage.getItem('home-tab') || (location.hash === '#profiles' ? 'profiles' : 'connections'); } catch (e) {}
+      activate(initial);
+    })();
+
+    // Select-all (global) + per-item
+    document.getElementById('select-all-accounts')?.addEventListener('change', (e) => {
+      document.querySelectorAll('.account-check').forEach((c) => (c.checked = e.target.checked));
+      document.querySelectorAll('.item-select-all').forEach((c) => (c.checked = e.target.checked));
+    });
     document.querySelectorAll('.item-select-all').forEach((box) => {
       box.addEventListener('change', (e) => {
         const itemId = box.dataset.itemId;
-        document
-          .querySelectorAll('.account-check[data-item-id="' + itemId + '"]')
+        document.querySelectorAll('.item-card[data-item-id="' + itemId + '"] .account-check')
           .forEach((c) => (c.checked = e.target.checked));
       });
     });
 
     document.querySelectorAll('.mapping-select').forEach((sel) => {
       sel.addEventListener('change', async (e) => {
-        const target = e.target;
-        const plaidAccountId = target.dataset.plaidAccountId;
-        const actualAccountId = target.value;
-        const url = '/accounts/' + encodeURIComponent(plaidAccountId) + '/mapping';
-        if (!actualAccountId) {
-          await fetch(url, { method: 'DELETE' });
-          window.location.reload();
-          return;
+        const t = e.target;
+        const base = '/profiles/' + encodeURIComponent(t.dataset.profileId) + '/mappings/' + encodeURIComponent(t.dataset.plaidAccountId);
+        if (!t.value) {
+          await fetch(base, { method: 'DELETE' });
+        } else {
+          const res = await fetch(base, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ actualAccountId: t.value }) });
+          if (!res.ok) { alert('Could not save mapping. Check server logs.'); return; }
         }
-        await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ actualAccountId }),
-        });
         window.location.reload();
       });
     });
 
     document.querySelectorAll('.pending-visible-check').forEach((box) => {
       box.addEventListener('change', async (e) => {
-        const target = e.target;
-        const plaidAccountId = target.dataset.plaidAccountId;
-        const value = target.checked;
-        const url = '/accounts/' + encodeURIComponent(plaidAccountId) + '/mapping/pending-visible';
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ value }),
-        });
-        if (!res.ok) {
-          alert('Could not update setting. Check server logs.');
-          target.checked = !value;
-          return;
-        }
-        const label = target.closest('.pending-toggle');
-        if (label) {
-          label.setAttribute('title', value
-            ? 'Import pending transactions as uncleared. When they post, the pending entry is deleted and replaced. Manual edits to pending entries are lost.'
-            : 'Wait for transactions to post before importing. Avoids duplicates from amount changes (tips, gas pre-auths). 1–3 day delay vs. live.');
-        }
+        const t = e.target;
+        const url = '/profiles/' + encodeURIComponent(t.dataset.profileId) + '/mappings/' + encodeURIComponent(t.dataset.plaidAccountId) + '/pending-visible';
+        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: t.checked }) });
+        if (!res.ok) { alert('Could not update setting.'); t.checked = !t.checked; return; }
+        const label = t.closest('.pending-toggle');
+        if (label) label.setAttribute('title', t.checked ? PENDING_ON : PENDING_OFF);
+      });
+    });
+
+    document.querySelectorAll('.profile-delete-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!window.confirm('Delete profile "' + (btn.dataset.name || '') + '"? Its mappings are removed; transactions already in its budget are kept.')) return;
+        const res = await fetch('/profiles/' + encodeURIComponent(btn.dataset.profileId) + '/delete', { method: 'POST' });
+        if (res.status === 204) { window.location.reload(); return; }
+        alert('Could not delete profile.');
       });
     });
 
@@ -184,20 +205,19 @@
       status.textContent = 'syncing…';
       result.innerHTML = '';
       try {
-        const res = await fetch('/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+        const res = await fetch('/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         const body = await res.json();
         if (!res.ok) {
           result.innerHTML = '<p class="error">Sync failed: ' + (body.error ?? 'unknown') + '</p>';
         } else {
           const cls = body.status === 'success' ? 'success' : 'error';
-          result.innerHTML =
-            '<p class="' + cls + '">Sync ' + body.status +
-            ' — imported ' + body.totalImported + ' transactions.</p>';
-          setTimeout(() => window.location.reload(), 1200);
+          let html = '<p class="' + cls + '">Sync ' + body.status + ' — imported ' + body.totalImported + ' transactions.</p>';
+          if (body.skipped && body.skipped.length) {
+            const parts = body.skipped.map((s) => s.name + ' (retry in ~' + s.retryAfterMinutes + ' min)');
+            html += '<p class="warn">Skipped (sync limit reached): ' + parts.join(', ') + '</p>';
+          }
+          result.innerHTML = html;
+          setTimeout(() => window.location.reload(), 1800);
         }
       } catch (err) {
         result.innerHTML = '<p class="error">Network error: ' + err.message + '</p>';
@@ -206,62 +226,25 @@
       }
     }
 
-    document.getElementById('sync-all-btn')?.addEventListener('click', () => {
-      runSync({ scope: 'all' });
-    });
-
+    document.getElementById('sync-all-btn')?.addEventListener('click', () => runSync({ scope: 'all' }));
     document.getElementById('sync-selected-btn')?.addEventListener('click', () => {
       const ids = Array.from(document.querySelectorAll('.account-check:checked')).map((c) => c.value);
-      if (ids.length === 0) {
-        document.getElementById('sync-result').innerHTML =
-          '<p class="warn">Pick at least one account to sync.</p>';
-        return;
-      }
+      if (ids.length === 0) { document.getElementById('sync-result').innerHTML = '<p class="warn">Pick at least one account to sync.</p>'; return; }
       runSync({ scope: 'selected', plaidAccountIds: ids });
     });
 
     document.getElementById('link-btn')?.addEventListener('click', async function () {
       const res = await fetch('/link/token', { method: 'POST' });
-      if (!res.ok) {
-        alert('Could not get a link token. Check server logs.');
-        return;
-      }
+      if (!res.ok) { alert('Could not get a link token. Check server logs.'); return; }
       const { link_token } = await res.json();
-      sessionStorage.setItem('plaidLinkToken', link_token);
       const handler = Plaid.create({
         token: link_token,
-        onSuccess: async function (publicToken, metadata) {
-          console.log('[plaid] onSuccess', { metadata });
-          try {
-            const ex = await fetch('/link/exchange', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ public_token: publicToken }),
-            });
-            if (!ex.ok) {
-              const body = await ex.text();
-              console.error('[plaid] exchange failed', ex.status, body);
-              alert('Exchange failed (' + ex.status + '). Check server logs.\n' + body.slice(0, 300));
-              return;
-            }
-          } catch (err) {
-            console.error('[plaid] exchange threw', err);
-            alert('Exchange network error: ' + err.message);
-            return;
-          }
-          sessionStorage.removeItem('plaidLinkToken');
+        onSuccess: async function (publicToken) {
+          const ex = await fetch('/link/exchange', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ public_token: publicToken }) });
+          if (!ex.ok) { alert('Exchange failed (' + ex.status + '). Check server logs.'); return; }
           window.location.reload();
         },
-        onExit: function (err, metadata) {
-          console.log('[plaid] onExit', { err, metadata });
-          if (err) {
-            alert('Plaid Link exited with error: ' + (err.error_message || err.display_message || err.error_code || JSON.stringify(err)));
-          }
-          sessionStorage.removeItem('plaidLinkToken');
-        },
-        onEvent: function (eventName, metadata) {
-          console.log('[plaid] event', eventName, metadata);
-        },
+        onExit: function (err) { if (err) alert('Plaid Link exited: ' + (err.error_message || err.error_code || 'unknown')); },
       });
       handler.open();
     });
@@ -270,23 +253,13 @@
       btn.addEventListener('click', async () => {
         const itemId = btn.dataset.itemId;
         const institution = btn.dataset.institution || 'this connection';
-        const msg = 'Remove ' + institution + '? This stops syncing and disconnects from Plaid. Historical sync data is kept.';
-        if (!window.confirm(msg)) return;
+        if (!window.confirm('Remove ' + institution + '? This stops syncing and disconnects from Plaid.')) return;
         btn.disabled = true;
         try {
-          const res = await fetch('/link/items/' + encodeURIComponent(itemId), {
-            method: 'DELETE',
-          });
-          if (res.status === 204) {
-            window.location.reload();
-            return;
-          }
-          alert('Could not remove this connection. Check server logs.');
-          btn.disabled = false;
-        } catch (err) {
-          alert('Could not remove this connection: ' + err.message);
-          btn.disabled = false;
-        }
+          const res = await fetch('/link/items/' + encodeURIComponent(itemId), { method: 'DELETE' });
+          if (res.status === 204) { window.location.reload(); return; }
+          alert('Could not remove this connection.'); btn.disabled = false;
+        } catch (err) { alert('Could not remove: ' + err.message); btn.disabled = false; }
       });
     });
 
@@ -295,32 +268,16 @@
         const itemId = btn.dataset.itemId;
         btn.disabled = true;
         try {
-          const res = await fetch('/link/items/' + encodeURIComponent(itemId) + '/update-token', {
-            method: 'POST',
-          });
-          if (!res.ok) {
-            alert('Could not get an update-mode link token. Check server logs.');
-            return;
-          }
+          const res = await fetch('/link/items/' + encodeURIComponent(itemId) + '/update-token', { method: 'POST' });
+          if (!res.ok) { alert('Could not get an update-mode link token.'); return; }
           const { link_token } = await res.json();
-          sessionStorage.setItem('plaidLinkToken', link_token);
           const handler = Plaid.create({
             token: link_token,
-            onSuccess: async function () {
-              await fetch('/link/items/' + encodeURIComponent(itemId) + '/mark-active', {
-                method: 'POST',
-              });
-              sessionStorage.removeItem('plaidLinkToken');
-              window.location.reload();
-            },
-            onExit: function () {
-              sessionStorage.removeItem('plaidLinkToken');
-            },
+            onSuccess: async function () { await fetch('/link/items/' + encodeURIComponent(itemId) + '/mark-active', { method: 'POST' }); window.location.reload(); },
+            onExit: function () {},
           });
           handler.open();
-        } finally {
-          btn.disabled = false;
-        }
+        } finally { btn.disabled = false; }
       });
     });
   })();

@@ -54,7 +54,7 @@ button, .button {
 button:hover, .button:hover { filter: brightness(1.05); }
 button.secondary { background: white; color: var(--fg); border: 1px solid var(--border); }
 
-input[type="text"], input[type="password"], select {
+input[type="text"], input[type="password"], input[type="url"], input[type="number"], select {
   font: inherit; padding: 0.5rem; border: 1px solid var(--border);
   border-radius: 0.375rem; background: white;
 }
@@ -102,3 +102,55 @@ th { font-size: 0.875rem; color: var(--muted); font-weight: 500; }
 .pending-toggle input { margin: 0; cursor: pointer; }
 
 .card.warn { border-left: 4px solid var(--warn); }
+
+/* sync-scheduling: trigger badges in history */
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.badge-manual { background: #e2e8f0; color: #1f2937; }
+.badge-scheduled { background: #dbeafe; color: #1e40af; }
+
+/* ui-polish: tabs */
+.tabs {
+  display: flex; gap: 0.25rem; margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.tab-btn {
+  background: none; color: var(--muted); border: 0; border-bottom: 2px solid transparent;
+  border-radius: 0; padding: 0.6rem 1rem; cursor: pointer; font: inherit;
+}
+.tab-btn:hover { color: var(--fg); filter: none; }
+.tab-btn.active { color: var(--fg); border-bottom-color: var(--accent); font-weight: 600; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ui-polish: larger, higher-contrast checkboxes */
+input[type="checkbox"].bigcheck {
+  width: 1.2rem; height: 1.2rem; accent-color: var(--accent);
+  cursor: pointer; vertical-align: middle;
+}
+.check-label { display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+.conn-toolbar { padding: 0.6rem 1rem; }
+
+/* ui-polish: aligned mapping columns */
+.mapping-table .col-mapped { width: 16rem; }
+.mapping-table .col-pending { width: 8rem; text-align: center; }
+.mapping-table .col-pending .pending-na { display: inline-block; }
+.mapping-table .mapping-select { width: 100%; }
+
+/* ui-polish: spacing around the profiles header / New profile button */
+.profiles-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; margin: 0 0 1rem;
+}
+
+/* ui-polish: settings secret reveal */
+.reveal-row { display: flex; gap: 0.5rem; align-items: stretch; }
+.reveal-row input { flex: 1; }
+.reveal-btn { padding: 0.4rem 0.6rem; }

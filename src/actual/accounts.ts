@@ -1,4 +1,4 @@
-import { withActual } from "./client.js";
+import { withActual, type ActualConnection } from "./client.js";
 
 export type ActualAccountSummary = {
   id: string;
@@ -11,22 +11,29 @@ type CacheEntry = {
 };
 
 const TTL_MS = 60_000;
-let cache: CacheEntry | undefined;
+const cacheByProfile = new Map<number, CacheEntry>();
 
-export async function listAccounts(opts?: { force?: boolean }): Promise<ActualAccountSummary[]> {
-  if (!opts?.force && cache && Date.now() - cache.fetchedAt < TTL_MS) {
-    return cache.data;
+/** List the Actual accounts for a single profile's budget (cached per profile). */
+export async function listAccountsForProfile(
+  profileId: number,
+  conn: ActualConnection,
+  opts?: { force?: boolean },
+): Promise<ActualAccountSummary[]> {
+  const cached = cacheByProfile.get(profileId);
+  if (!opts?.force && cached && Date.now() - cached.fetchedAt < TTL_MS) {
+    return cached.data;
   }
 
-  const data = await withActual(async (api) => {
+  const data = await withActual(conn, async (api) => {
     const accounts = (await api.getAccounts()) as Array<{ id: string; name: string }>;
     return accounts.map((a) => ({ id: a.id, name: a.name }));
   });
 
-  cache = { fetchedAt: Date.now(), data };
+  cacheByProfile.set(profileId, { fetchedAt: Date.now(), data });
   return data;
 }
 
-export function invalidateAccountsCache(): void {
-  cache = undefined;
+export function invalidateAccountsCache(profileId?: number): void {
+  if (profileId === undefined) cacheByProfile.clear();
+  else cacheByProfile.delete(profileId);
 }

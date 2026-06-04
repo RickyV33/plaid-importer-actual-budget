@@ -1,0 +1,75 @@
+<h1>Schedules</h1>
+<% if (it.error) { %><p class="error"><%= it.error %></p><% } %>
+
+<% if (it.schedules.length === 0) { %>
+  <div class="card"><p class="muted">No schedules yet.</p></div>
+<% } else { %>
+  <% it.schedules.forEach(function(s) { %>
+    <div class="card">
+      <div class="item-header">
+        <div>
+          <h2 class="item-title"><%= s.profileName %> · every <%= s.intervalHours %>h</h2>
+          <p class="muted">
+            <%= s.enabled ? "enabled" : "disabled" %> ·
+            <%= s.accountNames.length %> account(s): <%= s.accountNames.join(", ") %>
+            <% if (s.nextRunAt) { %> · next <%= new Date(s.nextRunAt).toLocaleString() %><% } %>
+          </p>
+        </div>
+        <div class="item-actions">
+          <form method="post" action="/schedules/<%= s.id %>/toggle" class="inline">
+            <button type="submit" class="secondary"><%= s.enabled ? "Disable" : "Enable" %></button>
+          </form>
+          <button type="button" class="schedule-delete-btn secondary" data-id="<%= s.id %>">Delete</button>
+        </div>
+      </div>
+    </div>
+  <% }) %>
+<% } %>
+
+<div class="card">
+  <h2>New schedule</h2>
+  <% if (it.profiles.length === 0) { %>
+    <p class="muted">Create a profile and map some accounts first.</p>
+  <% } else { %>
+    <form method="post" action="/schedules">
+      <div class="field">
+        <label for="profileId">Profile</label>
+        <select id="profileId" name="profileId" required>
+          <% it.profiles.forEach(function(p) { %>
+            <option value="<%= p.id %>"><%= p.name %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="field">
+        <label for="intervalHours">Run every (hours)</label>
+        <input id="intervalHours" name="intervalHours" type="number" min="1" step="1" value="24" required />
+      </div>
+      <div class="field">
+        <label>Accounts</label>
+        <% it.profiles.forEach(function(p) { %>
+          <div class="sched-accounts" data-profile-id="<%= p.id %>">
+            <% p.accounts.forEach(function(a) { %>
+              <label class="muted"><input type="checkbox" name="plaidAccountIds" value="<%= a.id %>" /> <%= a.name %></label>
+            <% }) %>
+            <% if (p.accounts.length === 0) { %><span class="muted">(no mapped accounts in this profile)</span><% } %>
+          </div>
+        <% }) %>
+      </div>
+      <button type="submit">Create schedule</button>
+    </form>
+    <p class="muted">Tip: accounts are grouped by profile above; pick from the profile you selected.</p>
+  <% } %>
+</div>
+
+<script>
+  (function () {
+    document.querySelectorAll('.schedule-delete-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!window.confirm('Delete this schedule?')) return;
+        const res = await fetch('/schedules/' + encodeURIComponent(btn.dataset.id) + '/delete', { method: 'POST' });
+        if (res.status === 204) { window.location.reload(); return; }
+        alert('Could not delete schedule.');
+      });
+    });
+  })();
+</script>

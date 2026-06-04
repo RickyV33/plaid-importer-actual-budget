@@ -11,6 +11,7 @@
       <a href="/" class="brand">plaid-importer</a>
       <nav>
         <a href="/">Home</a>
+        <a href="/schedules">Schedules</a>
         <a href="/history">History</a>
         <% if (it.isAdmin) { %>
           <a href="/settings">Settings</a>

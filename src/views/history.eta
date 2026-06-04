@@ -22,7 +22,7 @@
         <% it.runs.forEach(function(run) { %>
           <tr>
             <td><%= new Date(run.startedAt).toLocaleString() %></td>
-            <td><%= run.triggeredBy %></td>
+            <td><span class="badge badge-<%= run.triggeredBy === 'scheduled' ? 'scheduled' : 'manual' %>"><%= run.triggeredBy %></span></td>
             <td><%= run.scope %></td>
             <td>
               <% if (run.status === "success") { %><span class="success">success</span><% } %>

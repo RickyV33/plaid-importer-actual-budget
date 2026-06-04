@@ -1,16 +1,33 @@
-## 1. Markup
+## 1. Tabs
 
-- [ ] 1.1 In `src/views/home.eta`, add a profile-level "select all" checkbox in each profile group header with a `data-profile-id` attribute.
-- [ ] 1.2 Always render the "show pending" control slot for each account row (visible/enabled when mapped, spaced-but-inert when unmapped) so columns are consistent.
+- [x] 1.1 In `src/views/home.eta`, wrap the Connections and Profiles sections in a simple tab structure (two tab buttons near the top + two panels).
+- [x] 1.2 Add client-side tab switching (show/hide panels, remember the active tab e.g. via `location.hash` or `sessionStorage`).
+- [x] 1.3 Style tabs in `public/style.css`.
 
-## 2. Behavior
+## 2. Select-all
 
-- [ ] 2.1 Add a client-side handler (mirroring the existing per-item select-all) that toggles all `.account-check[data-profile-id="…"]` boxes within the profile, scoped so it never crosses profile groups.
+- [x] 2.1 Add a profile-scoped "select all" control (and keep/replace the connections-list select-all) that toggles all relevant account checkboxes, scoped so it never crosses groups.
 
-## 3. Styling
+## 3. Custom checkbox
 
-- [ ] 3.1 In `public/style.css`, give the account table fixed/aligned columns for "Mapped to" and "show pending" so they line up across all rows and institutions (right-align or fixed widths).
+- [x] 3.1 Add a larger, higher-contrast custom checkbox style in `public/style.css` and apply it to the sync-selection and pending checkboxes.
 
-## 4. Verify
+## 4. Pending tooltip
 
-- [ ] 4.1 Manually verify with a profile containing both mapped and unmapped accounts that the columns align and the profile select-all toggles only that profile's accounts.
+- [x] 4.1 Restore the "show pending" tooltip (the on/off explanation copy that existed before the profiles rewrite) on the pending checkbox/label in `home.eta`, and keep the title text in sync when toggled.
+
+## 5. Column alignment
+
+- [x] 5.1 Render "Mapped to" and "show pending" in consistent aligned columns across all rows (reserve the pending slot when unmapped) via `public/style.css`.
+
+## 6. Settings secret reveal
+
+- [x] 6.1 In `src/views/settings.eta`, render the current registration secret as a password-type field (obfuscated) with an eye-toggle button that shows/hides the value client-side.
+
+## 7. Spacing
+
+- [x] 7.1 Add padding below the "New profile" button / general spacing pass on the profiles header in `public/style.css`.
+
+## 8. Verify
+
+- [ ] 8.1 Manually verify (needs your eyes in a browser): tabs switch; select-all is scoped; checkboxes are clearly visible; pending tooltip shows; columns align across mapped/unmapped rows; secret hides/reveals; spacing looks right.

@@ -11,11 +11,14 @@ import fastifyRateLimit from "@fastify/rate-limit";
 import { config } from "./config.js";
 import { runMigrations } from "./db/migrate.js";
 import { initCredentials, seedAdminFromEnv } from "./auth/credentials.js";
+import { seedDefaultProfile } from "./profiles/seed.js";
+import { registerScheduleRoutes } from "./routes/schedules.js";
+import { startScheduler } from "./scheduler/runner.js";
 import { authPreHandler } from "./auth/middleware.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerLinkRoutes } from "./routes/link.js";
-import { registerAccountRoutes } from "./routes/accounts.js";
+import { registerProfileRoutes } from "./routes/profiles.js";
 import { registerSyncRoutes } from "./routes/sync.js";
 import { registerHistoryRoutes } from "./routes/history.js";
 import { registerHomeRoute } from "./routes/home.js";
@@ -85,7 +88,8 @@ export async function build() {
   registerSettingsRoutes(app);
   registerHomeRoute(app);
   registerLinkRoutes(app);
-  registerAccountRoutes(app);
+  registerProfileRoutes(app);
+  registerScheduleRoutes(app);
   registerSyncRoutes(app);
   registerHistoryRoutes(app);
 
@@ -96,9 +100,11 @@ async function main() {
   runMigrations();
   await initCredentials();
   await seedAdminFromEnv();
+  seedDefaultProfile();
 
   const app = await build();
   await app.listen({ port: config.APP_PORT, host: config.APP_BIND });
+  startScheduler({ log: app.log });
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

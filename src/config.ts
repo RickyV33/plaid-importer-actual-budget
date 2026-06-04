@@ -32,6 +32,11 @@ const schema = z.object({
   TOKEN_ENCRYPTION_KEY: z.string().min(1),
 
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
+
+  // SSRF guard for profile server URLs. Off by default because the Actual server
+  // is usually self-hosted on the same LAN. Set to "true" only when exposing
+  // registration to less-trusted users who shouldn't reach internal hosts.
+  BLOCK_PRIVATE_ACTUAL_HOSTS: z.string().default("false"),
 });
 
 export type Config = z.infer<typeof schema> & {
@@ -39,6 +44,7 @@ export type Config = z.infer<typeof schema> & {
   products: string[];
   redirectUri: string | undefined;
   encryptionKeyBytes: Buffer;
+  blockPrivateActualHosts: boolean;
 };
 
 function loadConfig(): Config {
@@ -73,6 +79,7 @@ function loadConfig(): Config {
     products: env.PLAID_PRODUCTS.split(",").map((s) => s.trim()).filter(Boolean),
     redirectUri,
     encryptionKeyBytes: keyBytes,
+    blockPrivateActualHosts: env.BLOCK_PRIVATE_ACTUAL_HOSTS === "true",
   };
 }
 
