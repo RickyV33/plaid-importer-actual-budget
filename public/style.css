@@ -227,4 +227,4 @@ button:not(.icon-btn) > i, .button:not(.icon-btn) > i { margin-right: 0.4rem; }
 
 /* profiles: per-connection group: muted heading with its own table below */
 .conn-group { margin-top: 0.75rem; }
-.conn-name { font-size: 0.8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin: 0 0 0.25rem; }
+.conn-name { font-size: 1rem; font-weight: 600; margin: 0 0 0.35rem; }
