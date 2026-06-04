@@ -38,7 +38,7 @@ type ProfileView = {
   name: string;
   serverUrl: string;
   budgetId: string;
-  actualError: string | null;
+  actualError: boolean;
   actualAccounts: { id: string; name: string }[];
   accounts: ProfileAccountView[];
 };
@@ -65,13 +65,13 @@ export function registerHomeRoute(app: FastifyInstance): void {
         profileAccountMappings.listByProfile(p.id).map((m) => [m.plaid_account_id, m]),
       );
       let actualAccounts: { id: string; name: string }[] = [];
-      let actualError: string | null = null;
+      let actualError = false;
       if (accounts.length > 0) {
         try {
           actualAccounts = await listAccountsForProfile(p.id, connectionForProfile(p));
         } catch (err) {
           app.log.warn({ err, profileId: p.id }, "actual_accounts_fetch_failed_home");
-          actualError = "Could not reach this profile's Actual server.";
+          actualError = true;
         }
       }
       profileViews.push({

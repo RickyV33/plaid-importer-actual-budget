@@ -43,6 +43,9 @@ export function translator(locale: Locale): Translate {
 /** Keys safe to expose to client-side JS (alerts, dynamic result messages). */
 export const CLIENT_KEYS: string[] = [
   "common.networkError",
+  "home.syncing",
+  "home.skippedItem",
+  "home.thisConnection",
   "home.linkTokenError",
   "home.exchangeFailed",
   "home.pickAccount",

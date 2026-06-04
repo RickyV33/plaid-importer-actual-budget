@@ -32,8 +32,8 @@
 
 - [x] 9.1 Add `src/i18n/` — `en` and `es` catalogs (flat key→string), a `resolveLocale(acceptLanguage)`, and a `translator(locale)` returning `t(key, params?)` with English fallback. Unit-test resolver + fallback.
 - [x] 9.2 Integrate into `src/views/render.ts`: derive locale from `reply.request` headers, inject `t` + `locale` into template data automatically (no per-route changes).
-- [ ] 9.3 Replace hardcoded strings in all `.eta` templates with `it.t(...)`.
-- [ ] 9.4 Expose needed keys to client JS (e.g. `window.__i18n`) and replace hardcoded alert/result strings.
+- [x] 9.3 Replace hardcoded strings in all `.eta` templates with `it.t(...)`.
+- [x] 9.4 Expose needed keys to client JS (e.g. `window.__i18n`) and replace hardcoded alert/result strings.
 
 ## 10. Icons (Font Awesome / SVG)
 
