@@ -59,14 +59,17 @@ export async function listBudgets(conn: {
       password: conn.serverPassword,
       dataDir: conn.cacheDir,
     });
+    // Actual's "Sync ID" (what downloadBudget matches on) is the budget's
+    // groupId, NOT cloudFileId. See @actual-app/api downloadBudget:
+    //   (await getBudgets()).find((b) => b.groupId === syncId)
     const files = (await actual.getBudgets()) as Array<{
-      cloudFileId?: string;
+      groupId?: string | null;
       name?: string;
       hasKey?: boolean;
     }>;
     return files
-      .filter((f): f is { cloudFileId: string; name?: string; hasKey?: boolean } => Boolean(f.cloudFileId))
-      .map((f) => ({ syncId: f.cloudFileId, name: f.name ?? f.cloudFileId, hasKey: Boolean(f.hasKey) }));
+      .filter((f): f is { groupId: string; name?: string; hasKey?: boolean } => Boolean(f.groupId))
+      .map((f) => ({ syncId: f.groupId, name: f.name ?? f.groupId, hasKey: Boolean(f.hasKey) }));
   } finally {
     try {
       await actual.shutdown();
