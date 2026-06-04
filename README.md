@@ -34,6 +34,25 @@ You need a Docker host, an Actual Budget server, and Plaid production credential
 
 That's it. Migrations and first-run setup happen automatically on boot.
 
+### Key settings (`.env`)
+
+| Variable | What it does |
+| --- | --- |
+| `APP_URL` | Public HTTPS URL of the app (also the base of the Plaid OAuth redirect). |
+| `PLAID_CLIENT_ID`, `PLAID_SECRET`, `PLAID_ENV` | Your Plaid credentials. Set `PLAID_ENV=production`. |
+| `ACTUAL_SERVER_URL` | URL of your Actual server, e.g. `https://budget.example.com`. |
+| `ACTUAL_SERVER_PASSWORD` | The Actual server's password (used to log in to it). |
+| `ACTUAL_SYNC_ID` | Sync ID of the budget (Actual → Settings → Advanced). |
+| `ACTUAL_ENCRYPTION_PASSWORD` | Only if that budget is end-to-end encrypted. |
+| `APP_USER`, `APP_PASSWORD` | Seed the first admin account. |
+| `SESSION_SECRET` | Signs login cookies (`openssl rand -hex 32`). |
+| `TOKEN_ENCRYPTION_KEY` | Encrypts Plaid tokens and profile secrets at rest (`openssl rand -base64 32`). Keep it stable; rotating it makes stored secrets unreadable. |
+
+The `ACTUAL_*` and `APP_USER`/`APP_PASSWORD` values are **seed-only**: on first
+boot they create your admin and a "Default" profile, then they're ignored.
+After that, manage logins and budgets (profiles) in the app. Full list with
+defaults is in [`.env.example`](.env.example).
+
 ## How it works
 
 One Plaid pull per connection fans out to every budget that maps it, through a
