@@ -37,15 +37,15 @@
 
 ## 10. Icons (Font Awesome / SVG)
 
-- [ ] 10.1 Add Font Awesome to `layout.eta`; replace text-only CRUD actions (new/edit/delete/sync/link/relink) with icon buttons (accessible labels).
+- [x] 10.1 Replace text-only CRUD actions with accessible icon buttons. Used inline SVG (honors "prefer SVG") rather than a Font Awesome CDN dependency in this self-hosted app.
 
 ## 11. Calm-at-rest rows
 
-- [ ] 11.1 Profile and schedule rows render calm at rest; reveal edit/delete icon actions on hover/focus (keyboard-accessible). Style in `public/style.css`.
+- [x] 11.1 Profile and schedule rows render calm at rest; reveal edit/delete icon actions on hover/focus (keyboard-accessible). Style in `public/style.css`.
 
 ## 12. Mobile-first
 
-- [ ] 12.1 Refactor `public/style.css` to mobile-first: base styles for small viewports, `min-width` media queries for larger; flexbox layout; tables/columns reflow or scroll on narrow screens.
+- [x] 12.1 Refactor `public/style.css` to mobile-first: base styles for small viewports, `min-width` media queries for larger; flexbox layout; tables/columns reflow or scroll on narrow screens.
 
 ## 8. Verify
 

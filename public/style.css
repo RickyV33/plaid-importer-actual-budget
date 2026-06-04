@@ -154,3 +154,37 @@ input[type="checkbox"].bigcheck {
 .reveal-row { display: flex; gap: 0.5rem; align-items: stretch; }
 .reveal-row input { flex: 1; }
 .reveal-btn { padding: 0.4rem 0.6rem; }
+
+/* ui-polish: icon buttons */
+.icon-btn {
+  background: none; border: 1px solid transparent; color: var(--muted);
+  padding: 0.35rem; border-radius: 0.375rem; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  line-height: 0; text-decoration: none;
+}
+.icon-btn:hover { color: var(--fg); border-color: var(--border); background: white; filter: none; }
+.icon-btn svg { display: block; }
+
+/* ui-polish: sync action layout */
+.sync-actions-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.sync-result { margin-top: 1rem; }
+
+/* ui-polish: calm-at-rest list rows — actions revealed on hover/focus,
+   but always visible on touch devices (no hover) for accessibility. */
+.row-actions { transition: opacity 0.12s ease; }
+@media (hover: hover) and (pointer: fine) {
+  .list-row .row-actions { opacity: 0; }
+  .list-row:hover .row-actions,
+  .list-row:focus-within .row-actions { opacity: 1; }
+}
+
+/* ui-polish: mobile-first responsiveness */
+main { padding: 1rem; }
+.mapping-table .col-mapped { width: auto; }
+.account-table { display: block; overflow-x: auto; }
+
+@media (min-width: 40rem) {
+  main { padding: 1.5rem; }
+  .account-table { display: table; overflow-x: visible; }
+  .mapping-table .col-mapped { width: 16rem; }
+}
