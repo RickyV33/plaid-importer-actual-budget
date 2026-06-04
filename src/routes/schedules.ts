@@ -8,6 +8,7 @@ import { render } from "../views/render.js";
 const createSchema = z.object({
   intervalHours: z.coerce.number().int().positive(),
   plaidItemIds: z.union([z.string(), z.array(z.string())]).optional(),
+  startAtMs: z.coerce.number().int().positive().optional(),
 });
 
 function asArray(v: string | string[] | undefined): string[] {
@@ -60,11 +61,21 @@ export function registerScheduleRoutes(app: FastifyInstance): void {
     const itemIds = asArray(parsed.data.plaidItemIds).filter((id) => owned.has(id));
     if (itemIds.length === 0) return reply.code(400).send({ error: "no_connections_selected" });
 
+    // First-run time: use the chosen start (rolled forward to the next future
+    // slot so the time-of-day cadence holds), else one interval from now.
+    const nowTs = Date.now();
+    const intervalMs = parsed.data.intervalHours * 3600_000;
+    let nextRunAt = nowTs + intervalMs;
+    if (parsed.data.startAtMs) {
+      nextRunAt = parsed.data.startAtMs;
+      while (nextRunAt <= nowTs) nextRunAt += intervalMs;
+    }
+
     schedules.create({
       ownerUserId: userId,
       plaidItemIds: itemIds,
       intervalHours: parsed.data.intervalHours,
-      nextRunAt: Date.now() + parsed.data.intervalHours * 3600_000,
+      nextRunAt,
     });
     reply.redirect("/schedules");
   });

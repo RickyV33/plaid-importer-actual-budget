@@ -34,10 +34,15 @@
   <% if (it.connections.length === 0) { %>
     <p class="muted"><%= it.t("schedules.needConnections") %></p>
   <% } else { %>
-    <form method="post" action="/schedules">
+    <form id="create-schedule-form" method="post" action="/schedules">
       <div class="field">
         <label for="intervalHours"><%= it.t("schedules.runEvery") %></label>
         <input id="intervalHours" name="intervalHours" type="number" min="1" step="1" value="24" required />
+      </div>
+      <div class="field">
+        <label for="startAt"><%= it.t("schedules.startAt") %> <span class="muted"><%= it.t("schedules.startAtHelp") %></span></label>
+        <input id="startAt" type="datetime-local" />
+        <input type="hidden" name="startAtMs" id="startAtMs" />
       </div>
       <div class="field">
         <label><%= it.t("schedules.connections") %></label>
@@ -54,6 +59,15 @@
 <script>
   (function () {
     var MSG = JSON.parse(document.getElementById('i18n-data').textContent);
+
+    // Convert the local "first run" datetime to epoch ms in the browser so the
+    // server doesn't have to guess the user's timezone.
+    document.getElementById('create-schedule-form')?.addEventListener('submit', function () {
+      var sa = document.getElementById('startAt');
+      var hidden = document.getElementById('startAtMs');
+      if (sa && hidden) hidden.value = sa.value ? String(new Date(sa.value).getTime()) : '';
+    });
+
     document.querySelectorAll('.schedule-delete-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {
         if (!window.confirm(MSG['schedules.deleteConfirm'])) return;

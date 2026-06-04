@@ -137,6 +137,8 @@ export const en: Record<string, string> = {
   "schedules.new": "New schedule",
   "schedules.needConnections": "Link a bank connection first.",
   "schedules.runEvery": "Run every (hours)",
+  "schedules.startAt": "First run (optional)",
+  "schedules.startAtHelp": "Leave blank to start one interval from now.",
   "schedules.connections": "Connections",
   "schedules.create": "Create schedule",
   "schedules.tip": "Each connection is pulled once and fans out to every profile that maps its accounts.",
