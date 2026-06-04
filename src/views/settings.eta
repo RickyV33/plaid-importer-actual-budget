@@ -17,9 +17,7 @@
       <div class="reveal-row">
         <input id="current_secret" type="password" value="<%= it.currentSecret %>" readonly onclick="this.select()" />
         <button type="button" class="secondary reveal-btn" data-target="current_secret" aria-label="<%= it.t('settings.showHide') %>" title="<%= it.t('settings.showHide') %>">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" /><circle cx="12" cy="12" r="3" />
-          </svg>
+          <i class="fa-regular fa-eye" aria-hidden="true"></i>
         </button>
       </div>
     </div>
@@ -59,7 +57,11 @@
       if (!input) return;
       const show = input.type === 'password';
       input.type = show ? 'text' : 'password';
-      btn.classList.toggle('revealed', show);
+      const icon = btn.querySelector('i');
+      if (icon) {
+        icon.classList.toggle('fa-eye', !show);
+        icon.classList.toggle('fa-eye-slash', show);
+      }
     });
   });
 </script>
