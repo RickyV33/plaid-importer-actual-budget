@@ -28,6 +28,22 @@ The system SHALL reject creating or editing a profile when the same owner alread
 - **WHEN** two different users each create a profile pointing at the same `server_url` + `budget_id`
 - **THEN** both are allowed (the uniqueness is per owner)
 
+### Requirement: New-profile form conveniences
+
+When creating a profile, the system SHALL prefill the server URL from `ACTUAL_SERVER_URL` (if set) and, when `ACTUAL_SERVER_URL` + `ACTUAL_SERVER_PASSWORD` are set, offer a dropdown of budgets fetched from that server (name → Sync ID); if the budget list cannot be fetched it SHALL fall back to a text input. The server password field SHALL NOT be prefilled with the configured secret (to avoid rendering it into HTML); leaving it blank SHALL use `ACTUAL_SERVER_PASSWORD` as the value, and the field SHALL block copy/cut.
+
+#### Scenario: Server URL and budgets prefilled from env
+- **WHEN** an authenticated user opens the new-profile form and `ACTUAL_SERVER_URL`/`ACTUAL_SERVER_PASSWORD` are configured
+- **THEN** the server URL is prefilled and a budget dropdown lists the server's budgets by name with their Sync IDs as values
+
+#### Scenario: Budget list unavailable
+- **WHEN** the budget list cannot be fetched (server unreachable, busy, or no env credentials)
+- **THEN** the budget field renders as a plain text input
+
+#### Scenario: Blank server password uses the configured default
+- **WHEN** a user submits the new-profile form with the server password left blank and `ACTUAL_SERVER_PASSWORD` is configured
+- **THEN** the profile is created using the configured server password, which is never rendered into the page
+
 ### Requirement: Profiles are owner-scoped
 
 The system SHALL scope all profile operations to the authenticated owner. A user SHALL NOT view, edit, delete, or sync a profile owned by another user.

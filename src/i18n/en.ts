@@ -101,6 +101,8 @@ export const en: Record<string, string> = {
   "profile.encHelp": "(only if the budget is end-to-end encrypted)",
   "profile.encHelpEdit": "(only if the budget is end-to-end encrypted; blank keeps current)",
   "profile.create": "Create profile",
+  "profile.serverPwDefault": "Leave blank to use the server password from configuration.",
+  "profile.chooseBudget": "Choose a budget…",
   "profile.errRequired": "Name, server URL and budget id are required.",
   "profile.errServerPw": "Server password is required.",
   "profile.errServerUrl": "Server URL is invalid or not allowed.",

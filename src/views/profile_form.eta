@@ -9,15 +9,30 @@
     </div>
     <div class="field">
       <label for="serverUrl"><%= it.t("profile.serverUrl") %></label>
-      <input id="serverUrl" name="serverUrl" type="url" value="<%= it.profile ? it.profile.server_url : '' %>" placeholder="https://budget.example.com" required />
+      <input id="serverUrl" name="serverUrl" type="url" value="<%= it.profile ? it.profile.server_url : (it.defaults ? it.defaults.serverUrl : '') %>" placeholder="https://budget.example.com" required />
     </div>
     <div class="field">
       <label for="budgetId"><%= it.t("profile.budgetId") %></label>
-      <input id="budgetId" name="budgetId" type="text" value="<%= it.profile ? it.profile.budget_id : '' %>" required />
+      <% if (!it.profile && it.budgets && it.budgets.length > 0) { %>
+        <select id="budgetId" name="budgetId" required>
+          <option value=""><%= it.t("profile.chooseBudget") %></option>
+          <% it.budgets.forEach(function(b) { %>
+            <option value="<%= b.syncId %>"><%= b.name %></option>
+          <% }) %>
+        </select>
+      <% } else { %>
+        <input id="budgetId" name="budgetId" type="text" value="<%= it.profile ? it.profile.budget_id : '' %>" required />
+      <% } %>
     </div>
     <div class="field">
-      <label for="serverPassword"><%= it.t("profile.serverPassword") %><% if (it.profile) { %> <span class="muted"><%= it.t("profile.keepBlank") %></span><% } %></label>
-      <input id="serverPassword" name="serverPassword" type="password" autocomplete="off" <%= it.profile ? '' : 'required' %> />
+      <label for="serverPassword"><%= it.t("profile.serverPassword") %>
+        <% if (it.profile) { %>
+          <span class="muted"><%= it.t("profile.keepBlank") %></span>
+        <% } else if (it.defaults && it.defaults.hasServerPassword) { %>
+          <span class="muted"><%= it.t("profile.serverPwDefault") %></span>
+        <% } %>
+      </label>
+      <input id="serverPassword" name="serverPassword" type="password" autocomplete="off" oncopy="return false" oncut="return false" <%= (it.profile || (it.defaults && it.defaults.hasServerPassword)) ? '' : 'required' %> />
     </div>
     <div class="field">
       <label for="encryptionPassword"><%= it.t("profile.encPassword") %> <span class="muted"><%= it.profile ? it.t("profile.encHelpEdit") : it.t("profile.encHelp") %></span></label>

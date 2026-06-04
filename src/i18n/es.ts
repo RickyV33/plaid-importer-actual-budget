@@ -101,6 +101,8 @@ export const es: Record<string, string> = {
   "profile.encHelp": "(solo si el presupuesto está cifrado de extremo a extremo)",
   "profile.encHelpEdit": "(solo si el presupuesto está cifrado de extremo a extremo; en blanco mantiene la actual)",
   "profile.create": "Crear perfil",
+  "profile.serverPwDefault": "Déjalo en blanco para usar la contraseña del servidor de la configuración.",
+  "profile.chooseBudget": "Elige un presupuesto…",
   "profile.errRequired": "El nombre, la URL del servidor y el ID del presupuesto son obligatorios.",
   "profile.errServerPw": "La contraseña del servidor es obligatoria.",
   "profile.errServerUrl": "La URL del servidor no es válida o no está permitida.",

@@ -1,8 +1,10 @@
+import path from "node:path";
+
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 
 import { config } from "../config.js";
-import { connectionForProfile, profileCacheDir } from "../actual/client.js";
+import { connectionForProfile, listBudgets, profileCacheDir } from "../actual/client.js";
 import { invalidateAccountsCache, listAccountsForProfile } from "../actual/accounts.js";
 import { requireUserId } from "../auth/middleware.js";
 import { encrypt } from "../crypto/tokens.js";
@@ -25,9 +27,38 @@ const profileSchema = z.object({
 });
 
 export function registerProfileRoutes(app: FastifyInstance): void {
+  // Defaults for the New-profile form. The server URL is prefilled from env;
+  // the server password is NOT rendered into HTML (it would leak the operator's
+  // secret to every user) — instead the field may be left blank and the backend
+  // substitutes the configured password.
+  const newFormData = (extra: Record<string, unknown> = {}) => ({
+    title: "New profile",
+    authed: true,
+    profile: null,
+    errorKey: null,
+    defaults: {
+      serverUrl: config.ACTUAL_SERVER_URL ?? "",
+      hasServerPassword: Boolean(config.ACTUAL_SERVER_PASSWORD),
+    },
+    budgets: [] as Array<{ syncId: string; name: string }>,
+    ...extra,
+  });
+
   app.get("/profiles/new", async (req, reply) => {
     if (requireUserId(req, reply) === undefined) return;
-    return render(reply, "profile_form", { title: "New profile", authed: true, profile: null, errorKey: null });
+    let budgets: Array<{ syncId: string; name: string }> = [];
+    if (config.ACTUAL_SERVER_URL && config.ACTUAL_SERVER_PASSWORD) {
+      try {
+        budgets = await listBudgets({
+          serverUrl: config.ACTUAL_SERVER_URL,
+          serverPassword: config.ACTUAL_SERVER_PASSWORD,
+          cacheDir: path.join(config.ACTUAL_CACHE_DIR, "_budgetlist"),
+        });
+      } catch (err) {
+        app.log.warn({ err }, "list_budgets_failed");
+      }
+    }
+    return render(reply, "profile_form", newFormData({ budgets }));
   });
 
   app.get<{ Params: { id: string } }>("/profiles/:id/edit", async (req, reply) => {
@@ -43,26 +74,29 @@ export function registerProfileRoutes(app: FastifyInstance): void {
     if (userId === undefined) return;
     const parsed = profileSchema.safeParse(req.body);
     if (!parsed.success) {
-      return render(reply.code(400), "profile_form", { title: "New profile", authed: true, profile: null, errorKey: "profile.errRequired" });
+      return render(reply.code(400), "profile_form", newFormData({ errorKey: "profile.errRequired" }));
     }
     const d = parsed.data;
-    if (d.serverPassword.length === 0) {
-      return render(reply.code(400), "profile_form", { title: "New profile", authed: true, profile: null, errorKey: "profile.errServerPw" });
+    // Blank server password falls back to the configured default (never echoed).
+    const serverPassword =
+      d.serverPassword.length > 0 ? d.serverPassword : config.ACTUAL_SERVER_PASSWORD ?? "";
+    if (serverPassword.length === 0) {
+      return render(reply.code(400), "profile_form", newFormData({ errorKey: "profile.errServerPw" }));
     }
     try {
       await assertSafeServerUrl(d.serverUrl, { blockPrivate: config.blockPrivateActualHosts });
     } catch {
-      return render(reply.code(400), "profile_form", { title: "New profile", authed: true, profile: null, errorKey: "profile.errServerUrl" });
+      return render(reply.code(400), "profile_form", newFormData({ errorKey: "profile.errServerUrl" }));
     }
     if (profiles.findByOwnerServerBudget(userId, d.serverUrl, d.budgetId)) {
-      return render(reply.code(409), "profile_form", { title: "New profile", authed: true, profile: null, errorKey: "profile.errDuplicate" });
+      return render(reply.code(409), "profile_form", newFormData({ errorKey: "profile.errDuplicate" }));
     }
     profiles.create({
       ownerUserId: userId,
       name: d.name,
       serverUrl: d.serverUrl,
       budgetId: d.budgetId,
-      serverPasswordEnc: encrypt(d.serverPassword),
+      serverPasswordEnc: encrypt(serverPassword),
       encryptionPasswordEnc: d.encryptionPassword.length > 0 ? encrypt(d.encryptionPassword) : null,
     });
     reply.redirect("/");

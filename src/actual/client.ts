@@ -36,6 +36,52 @@ export function connectionForProfile(profile: ProfileRow): ActualConnection {
   };
 }
 
+export type BudgetSummary = { syncId: string; name: string; hasKey: boolean };
+
+/**
+ * List the budgets available on an Actual server (name + Sync ID). Only needs
+ * server auth — no budget download. Used to offer a budget dropdown when
+ * creating a profile. Serialized via the same singleton guard as syncs.
+ */
+export async function listBudgets(conn: {
+  serverUrl: string;
+  serverPassword: string;
+  cacheDir: string;
+}): Promise<BudgetSummary[]> {
+  if (inFlight) {
+    throw new Error("Actual client busy — try again in a moment.");
+  }
+  inFlight = true;
+  fs.mkdirSync(conn.cacheDir, { recursive: true });
+  try {
+    await actual.init({
+      serverURL: conn.serverUrl,
+      password: conn.serverPassword,
+      dataDir: conn.cacheDir,
+    });
+    const files = (await actual.getBudgets()) as Array<{
+      cloudFileId?: string;
+      name?: string;
+      hasKey?: boolean;
+    }>;
+    return files
+      .filter((f): f is { cloudFileId: string; name?: string; hasKey?: boolean } => Boolean(f.cloudFileId))
+      .map((f) => ({ syncId: f.cloudFileId, name: f.name ?? f.cloudFileId, hasKey: Boolean(f.hasKey) }));
+  } finally {
+    try {
+      await actual.shutdown();
+    } catch {
+      // non-fatal
+    }
+    try {
+      fs.rmSync(conn.cacheDir, { recursive: true, force: true });
+    } catch {
+      // best-effort
+    }
+    inFlight = false;
+  }
+}
+
 /**
  * Run `fn` against an initialized Actual client for a specific profile's budget.
  * The local cache dir holds a *plaintext* copy of the budget while this runs, so
