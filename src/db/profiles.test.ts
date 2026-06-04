@@ -15,58 +15,40 @@ process.env.PLAID_CLIENT_ID ??= "test";
 process.env.PLAID_SECRET ??= "test";
 process.env.ACTUAL_SERVER_URL ??= "https://budget.example.com";
 process.env.ACTUAL_SERVER_PASSWORD ??= "actual-pw";
-process.env.ACTUAL_SYNC_ID ??= "sync-1";
-process.env.ACTUAL_ENCRYPTION_PASSWORD ??= "enc-pw";
 process.env.TOKEN_ENCRYPTION_KEY ??= crypto.randomBytes(32).toString("base64");
 process.env.DATABASE_PATH = path.join(tmpDir, "test.db");
 process.env.ACTUAL_CACHE_DIR = path.join(tmpDir, "actual-cache");
 
 const { runMigrations } = await import("./migrate.js");
-const { decrypt } = await import("../crypto/tokens.js");
+const { encrypt } = await import("../crypto/tokens.js");
 const {
   users,
   plaidItems,
   plaidAccounts,
-  accountMappings,
   profiles,
   profileAccountMappings,
   profileItemDelivery,
   plaidTxnEvents,
 } = await import("./queries.js");
-const { seedDefaultProfile } = await import("../profiles/seed.js");
 
 runMigrations();
 
 const adminId = users.create({ username: "admin", passwordHash: "x", role: "admin" });
 plaidItems.upsert({ id: "item-1", institutionId: "ins", institutionName: "Bank", accessTokenEnc: "enc", ownerUserId: adminId });
 plaidAccounts.upsert({ itemId: "item-1", plaidAccountId: "acct-1", name: "Checking", officialName: null, mask: "0001", type: "depository", subtype: "checking" });
-accountMappings.upsert({ plaidAccountId: "acct-1", actualAccountId: "actual-1", actualAccountName: "Actual Checking" });
-accountMappings.setPendingVisible("acct-1", true);
 
-test("seedDefaultProfile: folds existing mappings, preserves pending_visible, idempotent", () => {
-  assert.equal(profiles.count(), 0);
-  seedDefaultProfile();
-  assert.equal(profiles.count(), 1);
-
-  const list = profiles.listByOwner(adminId);
-  const def = list[0]!;
-  assert.equal(def.name, "Default");
-  assert.equal(def.budget_id, "sync-1");
-  assert.equal(decrypt(def.server_password_enc), "actual-pw");
-  assert.equal(def.encryption_password_enc && decrypt(def.encryption_password_enc), "enc-pw");
-
-  const m = profileAccountMappings.get(def.id, "acct-1");
-  assert.ok(m, "mapping folded");
-  assert.equal(m?.actual_account_id, "actual-1");
-  assert.equal(m?.pending_visible, 1, "pending_visible preserved");
-
-  // delivery row ensured for the item
-  assert.equal(profileItemDelivery.getWatermark(def.id, "item-1"), 0);
-
-  // idempotent
-  seedDefaultProfile();
-  assert.equal(profiles.count(), 1);
+// A profile mapping acct-1 (created directly; profiles are made in the UI).
+const defProfileId = profiles.create({
+  ownerUserId: adminId,
+  name: "Default",
+  serverUrl: "https://budget.example.com",
+  budgetId: "sync-1",
+  serverPasswordEnc: encrypt("actual-pw"),
+  encryptionPasswordEnc: null,
 });
+profileAccountMappings.upsert({ profileId: defProfileId, plaidAccountId: "acct-1", actualAccountId: "actual-1", actualAccountName: "Actual Checking" });
+profileAccountMappings.setPendingVisible(defProfileId, "acct-1", true);
+profileItemDelivery.ensure(defProfileId, "item-1", 0);
 
 test("appendDeltaAndAdvanceCursor: writes events and advances the cursor atomically", () => {
   plaidTxnEvents.appendDeltaAndAdvanceCursor({
@@ -85,15 +67,11 @@ test("appendDeltaAndAdvanceCursor: writes events and advances the cursor atomica
 
 test("profileItemDelivery: ensure is a no-op when present; watermark + min + prune", () => {
   const def = profiles.listByOwner(adminId)[0]!;
-  // ensure does not overwrite an existing watermark
   profileItemDelivery.setWatermark(def.id, "item-1", 1);
   profileItemDelivery.ensure(def.id, "item-1", 99);
   assert.equal(profileItemDelivery.getWatermark(def.id, "item-1"), 1);
-
-  // min across connected profiles
   assert.equal(profileItemDelivery.minDeliveredForItem("item-1"), 1);
 
-  // prune up to min should remove event id<=1
   const before = plaidTxnEvents.listForItemSince("item-1", 0).length;
   const removed = plaidTxnEvents.pruneForItem("item-1", 1);
   assert.equal(removed, 1);
@@ -116,14 +94,12 @@ test("profileAccountMappings: same account maps independently across profiles", 
   });
   profileAccountMappings.upsert({ profileId: second, plaidAccountId: "acct-1", actualAccountId: "actual-B", actualAccountName: "B" });
 
-  // default still pending-visible, second defaults to off — independent
   assert.equal(profileAccountMappings.get(def.id, "acct-1")?.pending_visible, 1);
   assert.equal(profileAccountMappings.get(second, "acct-1")?.pending_visible, 0);
   profileAccountMappings.setPendingVisible(second, "acct-1", true);
   assert.equal(profileAccountMappings.get(def.id, "acct-1")?.pending_visible, 1);
   assert.equal(profileAccountMappings.get(second, "acct-1")?.pending_visible, 1);
 
-  // both profiles are connected to item-1
   assert.equal(profiles.listConnectedToItem("item-1").length, 2);
 });
 
@@ -133,7 +109,6 @@ test("findByOwnerServerBudget: detects same-owner duplicate budget, allows disti
   assert.ok(dup, "finds the existing profile for this server+budget");
   assert.equal(profiles.findByOwnerServerBudget(adminId, def.server_url, "different-budget"), undefined);
 
-  // Different owner, same server+budget is allowed (not found under admin scope).
   const other = users.create({ username: "other", passwordHash: "x", role: "member" });
   assert.equal(profiles.findByOwnerServerBudget(other, def.server_url, def.budget_id), undefined);
 });

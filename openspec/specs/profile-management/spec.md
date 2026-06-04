@@ -115,15 +115,15 @@ The system SHALL allow attaching an owned Plaid account to an owned profile, cre
 - **WHEN** a Plaid account is detached from a profile (mapping removed)
 - **THEN** that profile no longer receives the account's transactions, and any `profile_item_delivery` row left with no remaining mapped accounts for that item is cleared so it cannot pin the journal
 
-### Requirement: Default profile is seeded from environment
+### Requirement: Environment provides optional new-profile defaults
 
-On startup, after migrations, the system SHALL create a single "Default" profile from the `ACTUAL_SERVER_URL`/`ACTUAL_SERVER_PASSWORD`/`ACTUAL_SYNC_ID`/`ACTUAL_ENCRYPTION_PASSWORD` env vars if and only if no profiles exist and those env values are present. The Default profile SHALL be owned by the seeded admin, and the seed SHALL fold existing `account_mappings` rows into `profile_account_mappings` under it. The seed SHALL be a no-op when any profile already exists.
+The system SHALL treat `ACTUAL_SERVER_URL` and `ACTUAL_SERVER_PASSWORD` as optional defaults for the New-profile form (URL pre-filled; a blank server password on the form falls back to `ACTUAL_SERVER_PASSWORD`). The system SHALL NOT auto-create any profile from the environment; profiles are created in the UI.
 
-#### Scenario: Existing single-budget deployment upgrades
+#### Scenario: Server URL prefilled from env
+- **WHEN** `ACTUAL_SERVER_URL` is set and a user opens the New-profile form
+- **THEN** the server URL field is pre-filled with it
+
+#### Scenario: No profile auto-created
 - **WHEN** the process boots with `ACTUAL_*` env set and no profiles exist
-- **THEN** a "Default" profile is created with encrypted secrets, all existing items are claimable under the admin, and every `account_mappings` row is copied to `profile_account_mappings` under Default preserving `actual_account_id` and `pending_visible`
-
-#### Scenario: Seed skipped when profiles exist
-- **WHEN** the process boots and at least one profile already exists
-- **THEN** no profile is created or modified, and existing `account_mappings` rows are not re-folded
+- **THEN** no profile is created automatically
 

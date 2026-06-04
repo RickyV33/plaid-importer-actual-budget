@@ -117,10 +117,8 @@ docker login code.jankbyrick.com -u <user> -p <token> >/dev/null 2>&1
 | Env `PLAID_LANGUAGE`          | `en`                                                                        |
 | Env `PLAID_PRODUCTS`          | `transactions`                                                              |
 | Env `PLAID_REDIRECT_URI`      | `${APP_URL}/link/oauth-return` — must match Plaid dashboard exactly         |
-| Env `ACTUAL_SERVER_URL`       | `https://budget.jankbyrick.com`                                             |
-| Env `ACTUAL_SERVER_PASSWORD`  | your Actual server password                                                 |
-| Env `ACTUAL_SYNC_ID`          | from Actual → Settings → Advanced → Sync ID                                 |
-| Env `ACTUAL_ENCRYPTION_PASSWORD` | only if your budget is e2e-encrypted                                     |
+| Env `ACTUAL_SERVER_URL`       | optional; default Actual server URL the New-profile form pre-fills          |
+| Env `ACTUAL_SERVER_PASSWORD`  | optional; default server password used when the form field is left blank    |
 | Env `LOG_LEVEL`               | `info` (or `debug` while shaking it out)                                    |
 | Restart policy                | `Unless stopped`                                                            |
 

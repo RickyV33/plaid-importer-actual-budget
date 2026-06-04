@@ -11,7 +11,6 @@ import fastifyRateLimit from "@fastify/rate-limit";
 import { config } from "./config.js";
 import { runMigrations } from "./db/migrate.js";
 import { initCredentials, seedAdminFromEnv } from "./auth/credentials.js";
-import { seedDefaultProfile } from "./profiles/seed.js";
 import { registerScheduleRoutes } from "./routes/schedules.js";
 import { startScheduler } from "./scheduler/runner.js";
 import { authPreHandler } from "./auth/middleware.js";
@@ -100,7 +99,6 @@ async function main() {
   runMigrations();
   await initCredentials();
   await seedAdminFromEnv();
-  seedDefaultProfile();
 
   const app = await build();
   await app.listen({ port: config.APP_PORT, host: config.APP_BIND });
