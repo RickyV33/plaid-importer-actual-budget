@@ -1,201 +1,43 @@
-# plaid-importer
+# Plaid Importer for Actual Budget
 
-A small self-hosted web app that imports transactions from your bank accounts
-(via Plaid) into your self-hosted [Actual Budget](https://actualbudget.org/)
-server. Multi-user with private per-user connections; simple UX: link an
-account, map it to an Actual account, click "Sync."
+Self-hosted web app that pulls your bank transactions from
+[Plaid](https://plaid.com/) into [Actual Budget](https://actualbudget.org/).
 
-## Setup
+- **Multi-user** — each person has their own private logins and connections.
+- **Multi-budget** — a "profile" points at one Actual budget; one bank account
+  can feed several profiles at once.
+- **Scheduled** — sync on a recurring interval, or on demand.
 
-Requires Node 22+.
+> **You bring your own Plaid credentials.** This app needs a Plaid `client_id` /
+> `secret` with **production access** (Plaid's free tier is sandbox-only).
+> Getting production access is between you and Plaid.
 
-```sh
-cp .env.example .env
-# fill in PLAID_*, ACTUAL_*, APP_*, SESSION_SECRET, TOKEN_ENCRYPTION_KEY
-npm install
-npm run dev
-```
+## Screenshots
 
-Generate the required secrets:
+<!-- TODO: drop gifs / screenshots here -->
 
-```sh
-openssl rand -hex 32     # SESSION_SECRET
-openssl rand -base64 32  # TOKEN_ENCRYPTION_KEY
-```
+## Set up
 
-Visit `http://localhost:8080` and log in with the credentials from `.env`.
+You need a Docker host, an Actual Budget server, and Plaid production credentials.
 
-### Users & registration
+1. Copy `.env.example` to `.env` and fill it in (Plaid keys, your Actual server
+   URL + password, and two generated secrets — commands are in the file).
+2. Run the container (see [DEPLOY.md](DEPLOY.md)) behind an HTTPS reverse proxy.
+3. Open the app and **register** — the first account becomes the admin.
+4. **Link a bank** (Plaid), create a **profile** for your Actual budget, **map**
+   each account to an Actual account, and click **Sync** — or set a schedule.
 
-`APP_USER` / `APP_PASSWORD` are **seed-only**: on first boot, if no users
-exist, an admin account is created from them so existing single-user
-deployments keep working with the same login. After that, accounts live in the
-database:
+That's it. Migrations and first-run setup happen automatically on boot.
 
-- Additional people self-register at `/register`.
-- Registration is gated by a secret the admin sets under **Settings** (`/settings`).
-- **First-user bootstrap:** if you start with an empty database and no env seed,
-  the first person to register becomes the admin (no secret required); the gate
-  engages for everyone after.
-- Each user's Plaid connections, mappings, and sync history are private to them.
+## How it works
 
-### Profiles (multi-budget)
+One Plaid pull per connection fans out to every budget that maps it, through a
+local encrypted journal — so adding more budgets never costs more Plaid calls.
 
-Each **profile** targets one Actual budget: its own server URL, budget (Sync ID),
-and encrypted server/encryption passwords. Manage profiles from the home page
-("New profile" / "Edit"). A single Plaid account can be mapped into several
-profiles at once, each with its own target Actual account and "show pending"
-setting; one sync then fans the transactions out to every connected budget.
+Full architecture, data model, and security notes:
+**[How it works →](https://plop.jankbyrick.com/plaid-importer-mental-model.html)**
 
-`ACTUAL_SERVER_URL`/`ACTUAL_SERVER_PASSWORD`/`ACTUAL_SYNC_ID`/`ACTUAL_ENCRYPTION_PASSWORD`
-are **seed-only**: on first boot they create a "Default" profile and fold your
-existing mappings into it, then they're ignored. Profile server URLs must be
-`https`. Private/LAN hosts are allowed by default (your Actual server is usually
-self-hosted); set `BLOCK_PRIVATE_ACTUAL_HOSTS=true` to forbid them if you expose
-registration to less-trusted users.
+## License
 
-Syncing pulls each connection from Plaid **once** into a local, encrypted
-transaction journal, then delivers to each connected profile's budget; a budget
-that's unreachable simply retries on the next sync without re-pulling from Plaid.
-
-### Scheduled syncs
-
-Create schedules under **Schedules**: pick a profile, choose which of its mapped
-accounts to sync, and an interval (every N hours). An in-process runner fires due
-schedules and records them as **scheduled** runs (shown with a badge in History,
-distinct from manual). Schedules reuse each account's stored "show pending"
-setting. A schedule won't start if another sync is already running (it retries on
-the next tick), and `next_run_at` is persisted so schedules survive restarts.
-Intervals are evaluated in server time.
-
-### Per-connection sync limit
-
-To cap Plaid usage, an admin can set a ceiling under **Settings**: each bank
-connection may be synced at most N times per X hours. It's **per connection**, so
-syncing banks one at a time isn't penalized. Over-limit connections are skipped
-(the rest still sync) and the result shows when they can be retried. Disabled by
-default (leave the fields blank or 0).
-
-### First-run walkthrough
-
-1. Click **Link an account** → Plaid Link opens. For sandbox, pick any bank and
-   use the test credentials `user_good` / `pass_good`.
-2. After Link closes, the page reloads and the account shows up. Use the
-   **Mapped to** dropdown to map it to an Actual account. (The dropdown
-   takes a couple of seconds to populate the first time — that's the
-   Actual client downloading your budget.)
-3. Once mapped, a **show pending** checkbox appears next to the dropdown.
-   Off by default (recommended): wait for transactions to post before
-   importing, so amount changes (tips, gas pre-auths) don't produce
-   duplicates. Toggle on if you want pending transactions visible in
-   Actual as uncleared — they'll be deleted and replaced when posted.
-4. Click **Sync all** to pull transactions and push them to Actual.
-5. Click **History** in the top nav to see the run and per-account results.
-
-### Troubleshooting
-
-| Symptom | What it means |
-| --- | --- |
-| `Invalid environment configuration` at boot | An env var is missing — the message names which one |
-| `TOKEN_ENCRYPTION_KEY must decode to 32 bytes` | Regenerate with `openssl rand -base64 32` |
-| Login page works, click goes nowhere | Check the terminal — the dev server logs every request |
-| "Could not reach Actual" warning on home page | Wrong `ACTUAL_SERVER_URL` / password / sync ID, or the Actual server is down |
-| Plaid Link won't open | Check `PLAID_CLIENT_ID` / `PLAID_SECRET` and that `PLAID_ENV` matches the secret tier |
-| Mapping dropdown is empty | Actual returned zero accounts, or it's not reachable |
-| OAuth bank link redirects but the page errors | `PLAID_REDIRECT_URI` must exactly match what's registered in your Plaid dashboard |
-| Yellow "failed to delete" banner on history page | A delete to Actual failed mid-sync; the banner lists each transaction. Remove the listed rows in Actual manually, then click **I deleted it** to dismiss. |
-
-## How it talks to Actual
-
-The Actual Budget API is a JavaScript library (`@actual-app/api`), not a REST
-API. This app talks to your Actual server through that library, which means
-each sync:
-
-1. Initializes the Actual client and downloads (or incrementally syncs) the
-   budget to a local cache under `ACTUAL_CACHE_DIR`.
-2. Calls `importTransactions` per mapped account.
-3. Syncs back to the Actual server and shuts the client down.
-
-The local cache directory should be persisted between runs (it lives under
-`./data/` by default, which is volume-mounted in production).
-
-## How Plaid linking works
-
-This app uses the Plaid Link flow:
-
-1. The browser opens Plaid Link via a server-issued `link_token`.
-2. You pick a bank and authenticate.
-3. For OAuth banks (Chase, BoA, etc), Plaid redirects you to the bank, you
-   log in there, then the bank redirects you back to
-   `${APP_URL}/link/oauth-return`. **This URL must be registered exactly as
-   `PLAID_REDIRECT_URI` in the Plaid dashboard.**
-4. On success, the public token is exchanged for a long-lived access token,
-   which is encrypted at rest with `TOKEN_ENCRYPTION_KEY`.
-
-## Deploy
-
-Designed to run in a container behind a reverse proxy that terminates TLS.
-
-Switch these in `.env` for production:
-
-```bash
-NODE_ENV=production
-APP_URL=https://plaid-importer.your-public-domain.com
-PLAID_ENV=production
-PLAID_SECRET=<production secret from Plaid dashboard>
-PLAID_REDIRECT_URI=https://plaid-importer.your-public-domain.com/link/oauth-return
-```
-
-Register that exact `PLAID_REDIRECT_URI` in the Plaid dashboard *before*
-linking an OAuth bank (Chase, BoA, etc).
-
-```sh
-docker compose up -d --build
-```
-
-`./data/` is volume-mounted into the container at `/app/data` — it holds the
-SQLite database and the Actual local cache. The container binds to
-`127.0.0.1:8080` by default; expose it to your network via your reverse
-proxy of choice (Caddy / Traefik / nginx).
-
-### Unraid notes
-
-Create an Unraid container with:
-
-- **Repository**: `plaid-importer:latest` (build locally and tag, or push to a
-  registry)
-- **Network**: bridge
-- **Port mapping**: container `8080` → host `8080` (or whatever your reverse
-  proxy expects)
-- **Volume**: host path of choice → `/app/data` (this is the only thing that
-  needs to persist; everything else is in the image)
-- **Environment variables**: every variable from `.env.example`
-
-Point your reverse proxy at the host port. Make sure the public URL you serve
-matches `APP_URL` and `PLAID_REDIRECT_URI` exactly, and that the redirect URI
-is registered in the Plaid dashboard.
-
-### Tests
-
-```sh
-npm test       # unit tests (crypto)
-npm run smoke  # placeholder for end-to-end smoke (Plaid sandbox)
-```
-
-## Project layout
-
-```
-src/
-├── server.ts         Fastify bootstrap
-├── config.ts         env loading + validation
-├── auth/             session middleware, login
-├── crypto/           AES-256-GCM for Plaid tokens at rest
-├── db/               better-sqlite3 + migrations
-├── plaid/            Plaid client, link, cursor sync
-├── actual/           @actual-app/api lifecycle + import
-├── sync/             orchestrator: plaid → mapping → actual → log
-├── routes/           HTTP handlers (thin)
-└── views/            Eta templates
-public/               static assets (css)
-data/                 sqlite + actual cache (gitignored, volume-mounted)
-```
+[AGPL-3.0](LICENSE) — if you run a modified version as a network service, you
+must offer its source to users.
