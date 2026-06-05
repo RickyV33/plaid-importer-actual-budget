@@ -15,6 +15,29 @@ Self-hosted web app that pulls your bank transactions from
 > **Serve it over HTTPS.** Plaid's OAuth banks require an HTTPS callback URL;
 > without HTTPS only non-OAuth institutions can be linked. See [DEPLOY.md](DEPLOY.md).
 
+## Features
+
+- **Pending transactions**: set notes and categories on a pending transaction;
+  they persist when it officially posts.
+- **Multi-user**: built for a household. Family or roommates each get their own
+  account, and per-profile Actual encryption keeps others out of your budget.
+- **Scheduled or on-demand**: pick which Plaid connections a schedule pulls and
+  how often; run as many schedules as you need, or sync on demand.
+- **Per-connection sync limits**: cap how often a connection can be pulled in a
+  window. Plaid bills per pull, so you get a lever for family/friends. (A
+  connection is one institution, e.g. Wells Fargo, which may hold several accounts.)
+- **Connection lifecycle**: when a connection errors because you changed your
+  bank credentials, re-link it without losing your setup.
+- **Sync history**: see when you synced, how many items came through, and any
+  failures.
+- **Registration secret**: only people with the secret can register an account.
+- **Admin controls**: the first account is admin and manages the registration
+  secret, sync limits, and every profile.
+- **Encryption**: Plaid tokens and profile secrets are encrypted at rest;
+  transaction data is encrypted and short-lived.
+- **Bilingual**: English and Spanish.
+- **Unraid**: setup instructions in [DEPLOY.md](DEPLOY.md).
+
 ## Screenshots
 
 <img src="docs/screenshots/1.png" alt="Screenshot 1" width="720" />
