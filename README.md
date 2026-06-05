@@ -3,10 +3,10 @@
 Self-hosted web app that pulls your bank transactions from
 [Plaid](https://plaid.com/) into [Actual Budget](https://actualbudget.org/).
 
-- **Multi-user**: each person has their own private logins and connections.
-- **Multi-budget**: a "profile" points at one Actual budget; one bank account
-  can feed several profiles at once.
-- **Scheduled**: sync on a recurring interval, or on demand.
+One Plaid pull per connection fans out to every budget that maps it, through a
+local encrypted journal, so adding more budgets never costs more Plaid calls.
+Full architecture, data model, and security notes:
+**[How it works →](https://plop.jankbyrick.com/plaid-importer-mental-model.html)**
 
 > **You bring your own Plaid credentials.** This app needs a Plaid `client_id` /
 > `secret` with **production access** (Plaid's free tier is sandbox-only).
@@ -21,6 +21,8 @@ Self-hosted web app that pulls your bank transactions from
   they persist when it officially posts.
 - **Multi-user**: built for a household. Family or roommates each get their own
   account, and per-profile Actual encryption keeps others out of your budget.
+- **Multi-budget**: a "profile" points at one Actual budget; one bank account
+  can feed several profiles at once.
 - **Scheduled or on-demand**: pick which Plaid connections a schedule pulls and
   how often; run as many schedules as you need, or sync on demand.
 - **Per-connection sync limits**: cap how often a connection can be pulled in a
@@ -74,14 +76,6 @@ That's it. Migrations and first-run setup happen automatically on boot.
 account, then they're ignored. The `ACTUAL_*` values are optional defaults for
 the New-profile form. Manage logins and budgets (profiles) in the app. Full list
 with defaults is in [`.env.example`](.env.example).
-
-## How it works
-
-One Plaid pull per connection fans out to every budget that maps it, through a
-local encrypted journal, so adding more budgets never costs more Plaid calls.
-
-Full architecture, data model, and security notes:
-**[How it works →](https://plop.jankbyrick.com/plaid-importer-mental-model.html)**
 
 ## License
 
