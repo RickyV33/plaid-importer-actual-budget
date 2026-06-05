@@ -19,7 +19,7 @@ than redirecting to the bank. Many smaller banks and credit unions fall here.
 ## Image
 
 ```bash
-docker pull code.jankbyrick.com/rick/plaid-importer:latest
+docker pull rickyv33/plaid-importer:latest
 ```
 
 ## Configure
@@ -36,7 +36,7 @@ docker run -d --name plaid-importer \
   -v "$PWD/data:/app/data" \
   --env-file .env \
   --restart unless-stopped \
-  code.jankbyrick.com/rick/plaid-importer:latest
+  rickyv33/plaid-importer:latest
 ```
 
 - `/app/data` holds the SQLite DB and the Actual cache; keep it on a persistent
@@ -53,7 +53,7 @@ docker run -d --name plaid-importer \
 | Field                         | Value                                                                       |
 |-------------------------------|-----------------------------------------------------------------------------|
 | Name                          | `plaid-importer`                                                            |
-| Repository                    | `code.jankbyrick.com/rick/plaid-importer:latest`                            |
+| Repository                    | `rickyv33/plaid-importer:latest`                                            |
 | Network Type                  | `bridge` (or `br0` with a dedicated IP)                                     |
 | Port                          | host `8080` → container `8080`                                              |
 | Path                          | host `/mnt/user/appdata/plaid-importer` → container `/app/data`             |
