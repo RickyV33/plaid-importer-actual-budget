@@ -9,3 +9,7 @@ dist/
 .vscode/*
 !.vscode/launch.json
 !.vscode/tasks.json
+
+# Local agent/assistant config
+.claude/
+AGENTS.md
