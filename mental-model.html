@@ -133,6 +133,7 @@ PRUNE  delete events delivered to every active connected profile</pre>
           <li>A schedule targets a set of <em>connections</em> (Plaid items) and a day-of-week cadence — <code>days_of_week</code>, <code>time_of_day</code>, <code>repeat_weeks</code> (1=weekly, 2=bi-weekly), and a per-schedule <code>timezone</code>. An in-process runner fires due schedules and records them as <code>triggered_by="scheduled"</code> (badged in History).</li>
           <li><code>next_run_at</code> is computed (DST-safe) as the next matching weekday/time and persisted so schedules survive restarts. Legacy rows predating this model keep a non-null <code>interval_hours</code> (<code>days_of_week IS NULL</code>) and advance by that interval until edited; editing one migrates it to the new cadence.</li>
           <li>Because execution is the normal fan-out, syncing a connection's account updates it in <em>every</em> profile that maps it, from a single pull.</li>
+          <li>UI mirrors the Profiles pattern: <code>/schedules</code> is a calm list with a header <strong>New schedule</strong> button leading to a dedicated form page (<code>/schedules/new</code>, reusing the same cadence form partial as edit). Each row carries an <em>Active</em>/<em>Paused</em> status badge, disabled rows are dimmed, and enable/disable is a <code>fa-toggle-on</code>/<code>fa-toggle-off</code> icon button alongside edit/delete. Legacy rows keep their warning + edit affordance.</li>
         </ul>
       </section>
 
