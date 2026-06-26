@@ -117,6 +117,14 @@ th { font-size: 0.875rem; color: var(--muted); font-weight: 500; }
 .badge-manual { background: #e2e8f0; color: #1f2937; }
 .badge-scheduled { background: #dbeafe; color: #1e40af; }
 
+/* schedules-page-ux: enabled/disabled status badges */
+.badge-active { background: #d6f0e0; color: #1b6e3d; }
+.badge-paused { background: #e2e8f0; color: #4b5563; }
+
+/* schedules-page-ux: de-emphasize disabled schedule rows */
+.list-row.is-disabled { opacity: 0.6; border-left: 4px solid var(--border); }
+.list-row.is-disabled:hover, .list-row.is-disabled:focus-within { opacity: 1; }
+
 /* ui-polish: tabs */
 .tabs {
   display: flex; gap: 0.25rem; margin-bottom: 1.25rem;

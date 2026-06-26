@@ -1,11 +1,20 @@
-<h1><%= it.t("schedules.title") %></h1>
-<p class="muted"><%= it.t("schedules.desc") %></p>
+<div class="profiles-header">
+  <div>
+    <h1><%= it.t("schedules.title") %></h1>
+    <p class="muted"><%= it.t("schedules.desc") %></p>
+  </div>
+  <% if (it.connections.length === 0) { %>
+    <p class="muted"><%= it.t("schedules.needConnections") %></p>
+  <% } else { %>
+    <a href="/schedules/new"><button type="button"><i class="fa-solid fa-plus" aria-hidden="true"></i><%= it.t("schedules.new") %></button></a>
+  <% } %>
+</div>
 
 <% if (it.schedules.length === 0) { %>
   <div class="card"><p class="muted"><%= it.t("schedules.none") %></p></div>
 <% } else { %>
   <% it.schedules.forEach(function(s) { %>
-    <div class="card list-row">
+    <div class="card list-row<%= (!s.isLegacy && !s.enabled) ? ' is-disabled' : '' %>">
       <div class="item-header">
         <div>
           <h2 class="item-title"><%= s.connectionNames.join(", ") %></h2>
@@ -17,7 +26,7 @@
             </div>
           <% } else { %>
             <p class="muted">
-              <%= s.enabled ? it.t("schedules.enabled") : it.t("schedules.disabled") %> ·
+              <span class="badge <%= s.enabled ? 'badge-active' : 'badge-paused' %>"><%= s.enabled ? it.t("schedules.statusActive") : it.t("schedules.statusPaused") %></span>
               <% var dayKeys = ["sun","mon","tue","wed","thu","fri","sat"]; %>
               <%= s.daysOfWeek.map(function(d) { return it.t("schedules.day." + dayKeys[d]); }).join(", ") %>
               at <%= s.timeOfDay %>
@@ -33,7 +42,9 @@
             </a>
           <% } else { %>
             <form method="post" action="/schedules/<%= s.id %>/toggle" class="inline">
-              <button type="submit" class="secondary"><%= s.enabled ? it.t("schedules.disable") : it.t("schedules.enable") %></button>
+              <button type="submit" class="icon-btn" aria-label="<%= s.enabled ? it.t('schedules.disable') : it.t('schedules.enable') %>" title="<%= s.enabled ? it.t('schedules.disable') : it.t('schedules.enable') %>">
+                <i class="fa-solid <%= s.enabled ? 'fa-toggle-on' : 'fa-toggle-off' %>" aria-hidden="true"></i>
+              </button>
             </form>
             <a href="/schedules/<%= s.id %>/edit" class="icon-btn" aria-label="<%= it.t('common.edit') %>" title="<%= it.t('common.edit') %>">
               <i class="fa-solid fa-pen" aria-hidden="true"></i>
@@ -47,20 +58,6 @@
     </div>
   <% }) %>
 <% } %>
-
-<div class="card">
-  <h2><%= it.t("schedules.new") %></h2>
-  <p class="muted"><%= it.t("schedules.newDesc") %></p>
-  <% if (it.connections.length === 0) { %>
-    <p class="muted"><%= it.t("schedules.needConnections") %></p>
-  <% } else { %>
-    <form id="create-schedule-form" class="schedule-form" method="post" action="/schedules">
-      <%~ include("partials/schedules_form", { t: it.t, connections: it.connections, prefill: null }) %>
-      <button type="submit"><i class="fa-solid fa-plus" aria-hidden="true"></i> <%= it.t("schedules.create") %></button>
-    </form>
-    <p class="muted"><%= it.t("schedules.tip") %></p>
-  <% } %>
-</div>
 
 <script>
   (function () {

@@ -11,15 +11,15 @@
 
 ## 3. List page header + create button
 
-- [ ] 3.1 Replace the inline "New schedule" form card in `src/views/schedules.eta` with a header (reusing `.profiles-header`) containing title, description, and a "New schedule" button linking to `/schedules/new`
-- [ ] 3.2 When the owner has zero connections, show the `schedules.needConnections` guidance in the header instead of the button
+- [x] 3.1 Replace the inline "New schedule" form card in `src/views/schedules.eta` with a header (reusing `.profiles-header`) containing title, description, and a "New schedule" button linking to `/schedules/new`
+- [x] 3.2 When the owner has zero connections, show the `schedules.needConnections` guidance in the header instead of the button
 
 ## 4. Visual status + icon toggle
 
-- [ ] 4.1 In `src/views/schedules.eta`, replace inline `enabled ·/disabled ·` text with a status badge (`schedules.statusActive` / `schedules.statusPaused`) per non-legacy row
-- [ ] 4.2 Apply an `is-disabled` modifier on disabled rows' `.list-row`
-- [ ] 4.3 Convert the Enable/Disable submit button to an `.icon-btn` using `fa-toggle-on`/`fa-toggle-off` with `aria-label`/`title` from `schedules.disable`/`schedules.enable`
-- [ ] 4.4 Add `.badge-active`, `.badge-paused`, and `.list-row.is-disabled` styles to `public/style.css` (solid colors; reuse `.badge` base)
+- [x] 4.1 In `src/views/schedules.eta`, replace inline `enabled ·/disabled ·` text with a status badge (`schedules.statusActive` / `schedules.statusPaused`) per non-legacy row
+- [x] 4.2 Apply an `is-disabled` modifier on disabled rows' `.list-row`
+- [x] 4.3 Convert the Enable/Disable submit button to an `.icon-btn` using `fa-toggle-on`/`fa-toggle-off` with `aria-label`/`title` from `schedules.disable`/`schedules.enable`
+- [x] 4.4 Add `.badge-active`, `.badge-paused`, and `.list-row.is-disabled` styles to `public/style.css` (solid colors; reuse `.badge` base)
 
 ## 5. Verify
 
