@@ -10,9 +10,11 @@
         <div>
           <h2 class="item-title"><%= s.connectionNames.join(", ") %></h2>
           <% if (s.isLegacy) { %>
-            <p class="muted">
-              <%= it.t("schedules.legacy.interval", { hours: s.intervalHours }) %>
-            </p>
+            <p class="muted"><%= it.t("schedules.legacy.interval", { hours: s.intervalHours }) %></p>
+            <div class="legacy-warning">
+              <span class="warn"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> <%= it.t("schedules.legacy.warning") %></span>
+              <span class="muted"><%= it.t("schedules.legacy.hint") %></span>
+            </div>
           <% } else { %>
             <p class="muted">
               <%= s.enabled ? it.t("schedules.enabled") : it.t("schedules.disabled") %> ·
@@ -26,11 +28,9 @@
         </div>
         <div class="item-actions row-actions">
           <% if (s.isLegacy) { %>
-            <div class="legacy-warning">
-              <span class="warn"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> <%= it.t("schedules.legacy.warning") %></span>
-              <span class="muted"><%= it.t("schedules.legacy.hint") %></span>
-            </div>
-            <a href="/schedules/<%= s.id %>/edit" class="secondary button"><i class="fa-solid fa-pen" aria-hidden="true"></i> <%= it.t("common.edit") %></a>
+            <a href="/schedules/<%= s.id %>/edit" class="icon-btn" aria-label="<%= it.t('common.edit') %>" title="<%= it.t('common.edit') %>">
+              <i class="fa-solid fa-pen" aria-hidden="true"></i>
+            </a>
           <% } else { %>
             <form method="post" action="/schedules/<%= s.id %>/toggle" class="inline">
               <button type="submit" class="secondary"><%= s.enabled ? it.t("schedules.disable") : it.t("schedules.enable") %></button>

@@ -76,8 +76,12 @@ require_clean_tree() {
 
 ensure_tag_absent() {
   if git rev-parse "$1" >/dev/null 2>&1; then
-    echo "✗ tag $1 already exists — bump to a new version" >&2
-    exit 1
+    printf "⚠ tag %s already exists. Redeploy it? [y/N] " "$1" >&2
+    read -r reply </dev/tty
+    case "$reply" in
+      [yY]*) return 0 ;;
+      *) echo "Aborted." >&2; exit 1 ;;
+    esac
   fi
 }
 
@@ -171,14 +175,19 @@ main() {
 
   if [ -n "$arg" ]; then
     next="$(next_version "$cur" "$arg")"
-    require_clean_tree
-    ensure_tag_absent "v$next"
-    printf '%s\n' "$next" > VERSION
-    git add VERSION
-    git commit -q -m "release: v$next"
-    git tag -a "v$next" -m "v$next"
-    echo "✓ released v$next"
-    push_tag "v$next"
+    if git rev-parse "v$next" >/dev/null 2>&1; then
+      # Tag exists — prompt handled inside ensure_tag_absent; skip commit/tag.
+      ensure_tag_absent "v$next"
+      echo "► redeploying existing tag v$next"
+    else
+      require_clean_tree
+      printf '%s\n' "$next" > VERSION
+      git add VERSION
+      git commit -q -m "release: v$next"
+      git tag -a "v$next" -m "v$next"
+      echo "✓ released v$next"
+      push_tag "v$next"
+    fi
     ver="$next"
   else
     ver="$cur"

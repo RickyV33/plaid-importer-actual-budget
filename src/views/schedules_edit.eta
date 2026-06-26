@@ -1,6 +1,8 @@
-<h1><%= it.t("schedules.edit") %></h1>
+<h1><%= it.t("schedules.title") %></h1>
 
 <div class="card">
+  <h2><%= it.t("schedules.edit") %></h2>
+  <p class="muted"><%= it.t("schedules.newDesc") %></p>
   <form class="schedule-form" method="post" action="/schedules/<%= it.scheduleId %>/edit">
     <%~ include("partials/schedules_form", { t: it.t, connections: it.connections, prefill: it.prefill }) %>
     <div class="form-actions">
