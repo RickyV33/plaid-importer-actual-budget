@@ -40,6 +40,8 @@
           <div class="item-actions row-actions">
             <% if (item.status === "requires_relink") { %>
               <button type="button" class="relink-btn secondary" data-item-id="<%= item.id %>"><%= it.t("home.relink") %></button>
+            <% } else { %>
+              <button type="button" class="manage-accounts-btn secondary" data-item-id="<%= item.id %>"><%= it.t("home.manageAccounts") %></button>
             <% } %>
             <button type="button" class="icon-btn remove-btn" data-item-id="<%= item.id %>" data-institution="<%= item.institutionName ?? '' %>" aria-label="<%= it.t('home.remove') %>" title="<%= it.t('home.remove') %>">
               <i class="fa-solid fa-link-slash" aria-hidden="true"></i>
@@ -55,12 +57,22 @@
           </thead>
           <tbody>
             <% item.accounts.forEach(function(acct) { %>
-              <tr>
-                <td><input type="checkbox" class="bigcheck account-check" value="<%= acct.plaidAccountId %>" /></td>
+              <tr class="<%= acct.accessStatus === 'deselected' ? 'account-deselected' : '' %>">
+                <td><input type="checkbox" class="bigcheck account-check" value="<%= acct.plaidAccountId %>" <%= acct.accessStatus === 'deselected' ? 'disabled' : '' %> /></td>
                 <td>
-                  <%= acct.name %>
-                  <% if (acct.mask) { %><span class="muted">····<%= acct.mask %></span><% } %>
-                  <% if (acct.type) { %><span class="muted">· <%= acct.type %></span><% } %>
+                  <div class="account-cell">
+                    <span class="account-label">
+                      <%= acct.name %>
+                      <% if (acct.mask) { %><span class="muted">····<%= acct.mask %></span><% } %>
+                      <% if (acct.type) { %><span class="muted">· <%= acct.type %></span><% } %>
+                      <% if (acct.accessStatus === 'deselected') { %><span class="warn">· <%= it.t("home.notSyncing") %> <span class="info-icon" title="<%= it.t('home.notSyncingHelp') %>"><i class="fa-regular fa-circle-question" aria-hidden="true"></i></span></span><% } %>
+                    </span>
+                    <% if (acct.accessStatus === 'deselected') { %>
+                      <button type="button" class="icon-btn account-remove-btn" data-item-id="<%= item.id %>" data-plaid-account-id="<%= acct.plaidAccountId %>" data-name="<%= acct.name %>" aria-label="<%= it.t('home.remove') %>" title="<%= it.t('home.remove') %>">
+                        <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                      </button>
+                    <% } %>
+                  </div>
                 </td>
               </tr>
             <% }) %>
@@ -121,8 +133,8 @@
               <thead><tr><th><%= it.t("home.account") %></th><th class="col-mapped"><%= it.t("home.mappedTo") %></th><th class="col-pending"><%= it.t("home.showPending") %> <span class="info-icon" title="<%= it.t('home.pendingHelp') %>"><i class="fa-regular fa-circle-question" aria-hidden="true"></i></span></th></tr></thead>
               <tbody>
                 <% conn.accounts.forEach(function(acct) { %>
-                  <tr>
-                    <td><%= acct.name %><% if (acct.mask) { %> <span class="muted">····<%= acct.mask %></span><% } %></td>
+                  <tr class="<%= acct.accessStatus === 'deselected' ? 'account-deselected' : '' %>">
+                    <td><%= acct.name %><% if (acct.mask) { %> <span class="muted">····<%= acct.mask %></span><% } %><% if (acct.accessStatus === 'deselected') { %> <span class="warn">· <%= it.t("home.notSyncing") %> <span class="info-icon" title="<%= it.t('home.notSyncingHelp') %>"><i class="fa-regular fa-circle-question" aria-hidden="true"></i></span></span><% } %></td>
                     <td class="col-mapped">
                       <select class="mapping-select" data-profile-id="<%= profile.id %>" data-plaid-account-id="<%= acct.plaidAccountId %>">
                         <option value=""><%= it.t("home.unmapped") %></option>
@@ -275,6 +287,41 @@
           if (res.status === 204) { window.location.reload(); return; }
           alert(t('home.removeFailed')); btn.disabled = false;
         } catch (err) { alert(t('common.networkError', { msg: err.message })); btn.disabled = false; }
+      });
+    });
+
+    document.querySelectorAll('.account-remove-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const itemId = btn.dataset.itemId;
+        const plaidAccountId = btn.dataset.plaidAccountId;
+        if (!window.confirm(t('home.accountRemoveConfirm', { name: btn.dataset.name || '' }))) return;
+        btn.disabled = true;
+        try {
+          const res = await fetch('/link/items/' + encodeURIComponent(itemId) + '/accounts/' + encodeURIComponent(plaidAccountId), { method: 'DELETE' });
+          if (res.status === 204) { window.location.reload(); return; }
+          alert(t('home.accountRemoveFailed')); btn.disabled = false;
+        } catch (err) { alert(t('common.networkError', { msg: err.message })); btn.disabled = false; }
+      });
+    });
+
+    document.querySelectorAll('.manage-accounts-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const itemId = btn.dataset.itemId;
+        btn.disabled = true;
+        try {
+          const res = await fetch('/link/items/' + encodeURIComponent(itemId) + '/account-select-token', { method: 'POST' });
+          if (!res.ok) { alert(t('home.relinkTokenError')); return; }
+          const { link_token } = await res.json();
+          const handler = Plaid.create({
+            token: link_token,
+            onSuccess: async function () {
+              await fetch('/link/items/' + encodeURIComponent(itemId) + '/refresh-accounts', { method: 'POST' });
+              window.location.reload();
+            },
+            onExit: function () {},
+          });
+          handler.open();
+        } finally { btn.disabled = false; }
       });
     });
 

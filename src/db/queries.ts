@@ -31,6 +31,8 @@ export type PlaidAccountRow = {
   mask: string | null;
   type: string | null;
   subtype: string | null;
+  persistent_account_id: string | null;
+  access_status: "active" | "deselected";
   created_at: number;
   updated_at: number;
 };
@@ -174,12 +176,13 @@ export const plaidAccounts = {
     mask: string | null;
     type: string | null;
     subtype: string | null;
+    persistentAccountId?: string | null;
   }): void {
     db()
       .prepare(
         `INSERT INTO plaid_accounts
-           (item_id, plaid_account_id, name, official_name, mask, type, subtype, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+           (item_id, plaid_account_id, name, official_name, mask, type, subtype, persistent_account_id, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(plaid_account_id) DO UPDATE SET
            item_id = excluded.item_id,
            name = excluded.name,
@@ -187,6 +190,8 @@ export const plaidAccounts = {
            mask = excluded.mask,
            type = excluded.type,
            subtype = excluded.subtype,
+           persistent_account_id = COALESCE(excluded.persistent_account_id, plaid_accounts.persistent_account_id),
+           access_status = 'active',
            updated_at = excluded.updated_at`,
       )
       .run(
@@ -197,9 +202,93 @@ export const plaidAccounts = {
         row.mask,
         row.type,
         row.subtype,
+        row.persistentAccountId ?? null,
         now(),
         now(),
       );
+  },
+
+  /**
+   * Upsert an account, then reconcile against a stale duplicate left behind when
+   * Plaid issues a *new* `account_id` for an account that was previously linked
+   * (e.g. the user removed and re-added it via account selection). The stable
+   * `persistent_account_id` — or, when that is absent, a deselected row with the
+   * same name/mask/type — identifies the old record; its profile mappings are
+   * moved onto the new `account_id` and the old row is deleted.
+   */
+  upsertReconciled(row: {
+    itemId: string;
+    plaidAccountId: string;
+    name: string;
+    officialName: string | null;
+    mask: string | null;
+    type: string | null;
+    subtype: string | null;
+    persistentAccountId?: string | null;
+  }): void {
+    const conn = db();
+    const tx = conn.transaction(() => {
+      this.upsert(row);
+      const stale = this.findStaleDuplicate(row.itemId, {
+        plaidAccountId: row.plaidAccountId,
+        persistentAccountId: row.persistentAccountId ?? null,
+        name: row.name,
+        mask: row.mask,
+        type: row.type,
+      });
+      if (stale) {
+        this.reassignMappings(stale.plaid_account_id, row.plaidAccountId);
+        this.deleteByPlaidId(stale.plaid_account_id);
+      }
+    });
+    tx();
+  },
+
+  /**
+   * Find an existing account row that represents the same real-world account as
+   * `incoming` but under a different `plaid_account_id`. Prefers a match on the
+   * stable `persistent_account_id`; falls back to a deselected row with the same
+   * identity (name + mask + type) within the item.
+   */
+  findStaleDuplicate(
+    itemId: string,
+    incoming: {
+      plaidAccountId: string;
+      persistentAccountId: string | null;
+      name: string;
+      mask: string | null;
+      type: string | null;
+    },
+  ): PlaidAccountRow | undefined {
+    if (incoming.persistentAccountId) {
+      const byPersistent = db()
+        .prepare<[string, string, string], PlaidAccountRow>(
+          `SELECT * FROM plaid_accounts
+             WHERE item_id = ? AND persistent_account_id = ? AND plaid_account_id != ?
+             LIMIT 1`,
+        )
+        .get(itemId, incoming.persistentAccountId, incoming.plaidAccountId);
+      if (byPersistent) return byPersistent;
+    }
+    return db()
+      .prepare<[string, string, string | null, string | null, string], PlaidAccountRow>(
+        `SELECT * FROM plaid_accounts
+           WHERE item_id = ? AND access_status = 'deselected'
+             AND name = ? AND mask IS ? AND type IS ? AND plaid_account_id != ?
+           LIMIT 1`,
+      )
+      .get(itemId, incoming.name, incoming.mask, incoming.type, incoming.plaidAccountId);
+  },
+
+  /** Move profile + actual account mappings from one plaid_account_id to another. */
+  reassignMappings(fromPlaidAccountId: string, toPlaidAccountId: string): void {
+    const conn = db();
+    conn
+      .prepare("UPDATE account_mappings SET plaid_account_id = ?, updated_at = ? WHERE plaid_account_id = ?")
+      .run(toPlaidAccountId, now(), fromPlaidAccountId);
+    conn
+      .prepare("UPDATE profile_account_mappings SET plaid_account_id = ?, updated_at = ? WHERE plaid_account_id = ?")
+      .run(toPlaidAccountId, now(), fromPlaidAccountId);
   },
 
   listByItem(itemId: string): PlaidAccountRow[] {
@@ -221,10 +310,35 @@ export const plaidAccounts = {
       .prepare<[number], PlaidAccountRow>(
         `SELECT a.* FROM plaid_accounts a
            JOIN plaid_items i ON i.id = a.item_id
+         WHERE i.owner_user_id = ? AND a.access_status = 'active'
+         ORDER BY a.name`,
+      )
+      .all(ownerUserId);
+  },
+
+  listByOwnerAll(ownerUserId: number): PlaidAccountRow[] {
+    return db()
+      .prepare<[number], PlaidAccountRow>(
+        `SELECT a.* FROM plaid_accounts a
+           JOIN plaid_items i ON i.id = a.item_id
          WHERE i.owner_user_id = ?
          ORDER BY a.name`,
       )
       .all(ownerUserId);
+  },
+
+  deselectMissing(itemId: string, activeIds: string[]): void {
+    const existing = db()
+      .prepare<[string], PlaidAccountRow>("SELECT * FROM plaid_accounts WHERE item_id = ?")
+      .all(itemId);
+    const activeSet = new Set(activeIds);
+    for (const acct of existing) {
+      if (!activeSet.has(acct.plaid_account_id) && acct.access_status === "active") {
+        db()
+          .prepare("UPDATE plaid_accounts SET access_status = 'deselected', updated_at = ? WHERE plaid_account_id = ?")
+          .run(now(), acct.plaid_account_id);
+      }
+    }
   },
 
   getByPlaidId(plaidAccountId: string): PlaidAccountRow | undefined {
@@ -246,6 +360,11 @@ export const plaidAccounts = {
          WHERE a.plaid_account_id = ? AND i.owner_user_id = ?`,
       )
       .get(plaidAccountId, ownerUserId);
+  },
+
+  /** Hard-delete an account row; its mappings cascade away (FK ON DELETE CASCADE). */
+  deleteByPlaidId(plaidAccountId: string): void {
+    db().prepare("DELETE FROM plaid_accounts WHERE plaid_account_id = ?").run(plaidAccountId);
   },
 };
 

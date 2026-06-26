@@ -32,6 +32,21 @@ export async function createLinkToken(): Promise<{ link_token: string }> {
   return { link_token: res.data.link_token };
 }
 
+export async function createAccountSelectLinkToken(accessToken: string): Promise<{ link_token: string }> {
+  const req: LinkTokenCreateRequest = {
+    user: { client_user_id: stableClientUserId() },
+    client_name: "plaid-importer",
+    country_codes: config.countryCodes.map((c) => c as CountryCode),
+    language: config.PLAID_LANGUAGE,
+    access_token: accessToken,
+    update: { account_selection_enabled: true },
+    ...(config.redirectUri !== undefined ? { redirect_uri: config.redirectUri } : {}),
+  };
+
+  const res = await plaid.linkTokenCreate(req);
+  return { link_token: res.data.link_token };
+}
+
 export async function createUpdateLinkToken(accessToken: string): Promise<{ link_token: string }> {
   // Update mode: omit `products`, include `access_token`. Plaid Link will only
   // surface the re-authentication flow for this item — no institution picker.

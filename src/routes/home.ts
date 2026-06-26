@@ -18,6 +18,7 @@ type HomeAccount = {
   name: string;
   mask: string | null;
   type: string | null;
+  accessStatus: "active" | "deselected";
 };
 
 type HomeItemView = {
@@ -55,7 +56,7 @@ export function registerHomeRoute(app: FastifyInstance): void {
     if (userId === undefined) return;
 
     const items = plaidItems.listByOwner(userId);
-    const accounts = plaidAccounts.listByOwner(userId);
+    const accounts = plaidAccounts.listByOwnerAll(userId);
 
     const itemViews: HomeItemView[] = items.map((item) => ({
       id: item.id,
@@ -115,7 +116,7 @@ export function registerHomeRoute(app: FastifyInstance): void {
 }
 
 function toHomeAccount(a: PlaidAccountRow): HomeAccount {
-  return { plaidAccountId: a.plaid_account_id, name: a.name, mask: a.mask, type: a.type };
+  return { plaidAccountId: a.plaid_account_id, name: a.name, mask: a.mask, type: a.type, accessStatus: a.access_status };
 }
 
 function accountsForItem(all: PlaidAccountRow[], item: PlaidItemRow): PlaidAccountRow[] {

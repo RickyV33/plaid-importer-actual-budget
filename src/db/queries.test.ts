@@ -138,6 +138,227 @@ test("accountMappings.setPendingVisible: toggles 1 ↔ 0", () => {
   assert.equal(accountMappings.getByPlaidId("plaid-B")?.pending_visible, 0);
 });
 
+test("plaidAccounts: deselectMissing flips absent accounts, listByOwner hides them, re-select restores", () => {
+  const itemId = "item-select";
+  plaidItems.upsert({
+    id: itemId,
+    institutionId: "ins_1",
+    institutionName: "Test Bank",
+    accessTokenEnc: "fake-enc",
+    ownerUserId,
+  });
+  const mkAccount = (id: string) =>
+    plaidAccounts.upsert({
+      itemId,
+      plaidAccountId: id,
+      name: `Account ${id}`,
+      officialName: null,
+      mask: "0001",
+      type: "depository",
+      subtype: "checking",
+    });
+  mkAccount("sel-1");
+  mkAccount("sel-2");
+  mkAccount("sel-3");
+
+  const idsFor = (rows: { plaid_account_id: string }[]) =>
+    new Set(rows.map((r) => r.plaid_account_id));
+
+  // Plaid now only returns sel-1 and sel-3 → sel-2 becomes deselected.
+  plaidAccounts.deselectMissing(itemId, ["sel-1", "sel-3"]);
+
+  const ownedActive = idsFor(plaidAccounts.listByOwner(ownerUserId));
+  assert.equal(ownedActive.has("sel-1"), true);
+  assert.equal(ownedActive.has("sel-3"), true);
+  assert.equal(ownedActive.has("sel-2"), false, "deselected account excluded from listByOwner");
+
+  const ownedAll = idsFor(plaidAccounts.listByOwnerAll(ownerUserId));
+  assert.equal(ownedAll.has("sel-2"), true, "deselected account still visible in listByOwnerAll");
+
+  // Re-selecting sel-2 (it appears in Plaid's response again) reactivates it via upsert.
+  mkAccount("sel-2");
+  assert.equal(
+    plaidAccounts.getByPlaidId("sel-2")?.access_status,
+    "active",
+    "re-upsert restores access_status to active",
+  );
+  assert.equal(idsFor(plaidAccounts.listByOwner(ownerUserId)).has("sel-2"), true);
+});
+
+test("plaidAccounts.upsertReconciled: re-added account with new id reuses old row via persistent_account_id", () => {
+  const itemId = "item-recon-pid";
+  plaidItems.upsert({
+    id: itemId,
+    institutionId: "ins_1",
+    institutionName: "Test Bank",
+    accessTokenEnc: "fake-enc",
+    ownerUserId,
+  });
+  // Old account: active, has a persistent id and a mapping.
+  plaidAccounts.upsert({
+    itemId,
+    plaidAccountId: "old-id",
+    name: "Plaid Checking",
+    officialName: null,
+    mask: "0000",
+    type: "depository",
+    subtype: "checking",
+    persistentAccountId: "PERSIST-1",
+  });
+  accountMappings.upsert({
+    plaidAccountId: "old-id",
+    actualAccountId: "actual-recon",
+    actualAccountName: "Actual Recon",
+  });
+  // User deselects it, then re-adds — Plaid returns a NEW account_id, same persistent id.
+  plaidAccounts.deselectMissing(itemId, []);
+  plaidAccounts.upsertReconciled({
+    itemId,
+    plaidAccountId: "new-id",
+    name: "Plaid Checking",
+    officialName: null,
+    mask: "0000",
+    type: "depository",
+    subtype: "checking",
+    persistentAccountId: "PERSIST-1",
+  });
+
+  // Old row is gone, exactly one active row under the new id.
+  assert.equal(plaidAccounts.getByPlaidId("old-id"), undefined, "stale row removed");
+  const newRow = plaidAccounts.getByPlaidId("new-id");
+  assert.equal(newRow?.access_status, "active");
+  // Mapping migrated to the new id.
+  assert.equal(accountMappings.getByPlaidId("old-id"), undefined);
+  assert.equal(accountMappings.getByPlaidId("new-id")?.actual_account_id, "actual-recon");
+});
+
+test("plaidAccounts.upsertReconciled: falls back to deselected name/mask/type match when no persistent id", () => {
+  const itemId = "item-recon-heuristic";
+  plaidItems.upsert({
+    id: itemId,
+    institutionId: "ins_1",
+    institutionName: "Test Bank",
+    accessTokenEnc: "fake-enc",
+    ownerUserId,
+  });
+  // Pre-existing duplicate with no persistent id (created before the column existed).
+  plaidAccounts.upsert({
+    itemId,
+    plaidAccountId: "legacy-id",
+    name: "Plaid Saving",
+    officialName: null,
+    mask: "1111",
+    type: "depository",
+    subtype: "savings",
+  });
+  accountMappings.upsert({
+    plaidAccountId: "legacy-id",
+    actualAccountId: "actual-legacy",
+    actualAccountName: "Actual Legacy",
+  });
+  plaidAccounts.deselectMissing(itemId, []);
+
+  plaidAccounts.upsertReconciled({
+    itemId,
+    plaidAccountId: "fresh-id",
+    name: "Plaid Saving",
+    officialName: null,
+    mask: "1111",
+    type: "depository",
+    subtype: "savings",
+    persistentAccountId: "PERSIST-NEW",
+  });
+
+  assert.equal(plaidAccounts.getByPlaidId("legacy-id"), undefined, "legacy duplicate merged away");
+  assert.equal(accountMappings.getByPlaidId("fresh-id")?.actual_account_id, "actual-legacy");
+});
+
+test("plaidAccounts.upsertReconciled: does not merge a genuinely different account", () => {
+  const itemId = "item-recon-distinct";
+  plaidItems.upsert({
+    id: itemId,
+    institutionId: "ins_1",
+    institutionName: "Test Bank",
+    accessTokenEnc: "fake-enc",
+    ownerUserId,
+  });
+  plaidAccounts.upsert({
+    itemId,
+    plaidAccountId: "checking-id",
+    name: "Plaid Checking",
+    officialName: null,
+    mask: "0000",
+    type: "depository",
+    subtype: "checking",
+    persistentAccountId: "PERSIST-CHK",
+  });
+  // A different, newly added account — distinct identity and persistent id.
+  plaidAccounts.upsertReconciled({
+    itemId,
+    plaidAccountId: "credit-id",
+    name: "Plaid Credit Card",
+    officialName: null,
+    mask: "3333",
+    type: "credit",
+    subtype: "credit card",
+    persistentAccountId: "PERSIST-CC",
+  });
+
+  assert.notEqual(plaidAccounts.getByPlaidId("checking-id"), undefined, "existing account untouched");
+  assert.notEqual(plaidAccounts.getByPlaidId("credit-id"), undefined, "new account inserted");
+});
+
+test("plaidAccounts.deleteByPlaidId: removes the account and cascades its mappings", () => {
+  const itemId = "item-del";
+  plaidItems.upsert({
+    id: itemId,
+    institutionId: "ins_1",
+    institutionName: "Test Bank",
+    accessTokenEnc: "fake-enc",
+    ownerUserId,
+  });
+  plaidAccounts.upsert({
+    itemId,
+    plaidAccountId: "del-1",
+    name: "Plaid Checking",
+    officialName: null,
+    mask: "0000",
+    type: "depository",
+    subtype: "checking",
+  });
+  accountMappings.upsert({
+    plaidAccountId: "del-1",
+    actualAccountId: "actual-del",
+    actualAccountName: "Actual Del",
+  });
+
+  plaidAccounts.deleteByPlaidId("del-1");
+
+  assert.equal(plaidAccounts.getByPlaidId("del-1"), undefined, "account row removed");
+  assert.equal(accountMappings.getByPlaidId("del-1"), undefined, "mapping cascaded away");
+});
+
+test("plaidAccounts: newly upserted accounts default to active", () => {
+  const itemId = "item-default";
+  plaidItems.upsert({
+    id: itemId,
+    institutionId: "ins_1",
+    institutionName: "Test Bank",
+    accessTokenEnc: "fake-enc",
+    ownerUserId,
+  });
+  plaidAccounts.upsert({
+    itemId,
+    plaidAccountId: "default-1",
+    name: "Default",
+    officialName: null,
+    mask: "0001",
+    type: "depository",
+    subtype: "checking",
+  });
+  assert.equal(plaidAccounts.getByPlaidId("default-1")?.access_status, "active");
+});
+
 test("syncOrphanDeletes: insert + listUnacknowledged + ack + count", () => {
   const runId = syncRuns.start({ triggeredBy: "manual", scope: "all", ownerUserId });
 

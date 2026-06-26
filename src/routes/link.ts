@@ -4,9 +4,11 @@ import { requireUserId } from "../auth/middleware.js";
 import { decrypt, encrypt } from "../crypto/tokens.js";
 import { plaidItems, plaidAccounts } from "../db/queries.js";
 import {
+  createAccountSelectLinkToken,
   createLinkToken,
   createUpdateLinkToken,
   exchangePublicToken,
+  fetchAccounts,
   removeItem,
 } from "../plaid/link.js";
 import { classifyPlaidError } from "../plaid/sync.js";
@@ -52,6 +54,7 @@ export function registerLinkRoutes(app: FastifyInstance): void {
           mask: acct.mask ?? null,
           type: acct.type ?? null,
           subtype: acct.subtype ?? null,
+          persistentAccountId: acct.persistent_account_id ?? null,
         });
       }
 
@@ -103,6 +106,76 @@ export function registerLinkRoutes(app: FastifyInstance): void {
       }
       plaidItems.setStatus(item.id, "active");
       return reply.send({ ok: true });
+    },
+  );
+
+  app.post<{ Params: { itemId: string } }>(
+    "/link/items/:itemId/account-select-token",
+    async (req, reply) => {
+      const userId = requireUserId(req, reply);
+      if (userId === undefined) return;
+      const item = plaidItems.getOwned(req.params.itemId, userId);
+      if (!item) return reply.code(404).send({ error: "item_not_found" });
+      try {
+        const accessToken = decrypt(item.access_token_enc);
+        const { link_token } = await createAccountSelectLinkToken(accessToken);
+        return reply.send({ link_token });
+      } catch (err) {
+        app.log.error({ err, itemId: item.id }, "account_select_token_failed");
+        return reply.code(502).send({ error: "plaid_link_token_failed" });
+      }
+    },
+  );
+
+  app.post<{ Params: { itemId: string } }>(
+    "/link/items/:itemId/refresh-accounts",
+    async (req, reply) => {
+      const userId = requireUserId(req, reply);
+      if (userId === undefined) return;
+      const item = plaidItems.getOwned(req.params.itemId, userId);
+      if (!item) return reply.code(404).send({ error: "item_not_found" });
+      try {
+        const accessToken = decrypt(item.access_token_enc);
+        const accounts = await fetchAccounts(accessToken);
+        for (const acct of accounts) {
+          plaidAccounts.upsertReconciled({
+            itemId: item.id,
+            plaidAccountId: acct.account_id,
+            name: acct.name,
+            officialName: acct.official_name ?? null,
+            mask: acct.mask ?? null,
+            type: acct.type ?? null,
+            subtype: acct.subtype ?? null,
+            persistentAccountId: acct.persistent_account_id ?? null,
+          });
+        }
+        plaidAccounts.deselectMissing(item.id, accounts.map((a) => a.account_id));
+        return reply.send({ ok: true });
+      } catch (err) {
+        app.log.error({ err, itemId: item.id }, "refresh_accounts_failed");
+        return reply.code(502).send({ error: "plaid_refresh_accounts_failed" });
+      }
+    },
+  );
+
+  app.delete<{ Params: { itemId: string; plaidAccountId: string } }>(
+    "/link/items/:itemId/accounts/:plaidAccountId",
+    async (req, reply) => {
+      const userId = requireUserId(req, reply);
+      if (userId === undefined) return;
+      const item = plaidItems.getOwned(req.params.itemId, userId);
+      if (!item) return reply.code(404).send({ error: "item_not_found" });
+      const account = plaidAccounts.getByPlaidIdOwned(req.params.plaidAccountId, userId);
+      if (!account || account.item_id !== item.id) {
+        return reply.code(404).send({ error: "account_not_found" });
+      }
+      // Only deselected (not-syncing) accounts may be removed; an active account
+      // would simply reappear on the next account refresh.
+      if (account.access_status !== "deselected") {
+        return reply.code(409).send({ error: "account_not_deselected" });
+      }
+      plaidAccounts.deleteByPlaidId(account.plaid_account_id);
+      return reply.code(204).send();
     },
   );
 

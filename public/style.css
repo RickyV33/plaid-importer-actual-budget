@@ -91,6 +91,7 @@ th { font-size: 0.875rem; color: var(--muted); font-weight: 500; }
 .item-actions { display: flex; gap: 0.5rem; }
 .account-table { margin-top: 0.5rem; }
 .account-table th, .account-table td { padding: 0.4rem 0.5rem; }
+.account-cell { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
 
 .sync-actions { padding: 1rem 1.25rem; }
 
