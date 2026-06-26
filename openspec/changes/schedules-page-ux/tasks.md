@@ -23,6 +23,6 @@
 
 ## 5. Verify
 
-- [ ] 5.1 Run `npm test` in the dev container and confirm green
-- [ ] 5.2 Manually verify: list shows badges/dimmed rows, header button opens `/schedules/new`, create + toggle still work, zero-connection state shows guidance
-- [ ] 5.3 Per-change `mental-model.html` delta created/updated for this change
+- [x] 5.1 Run `npm test` in the dev container and confirm green
+- [x] 5.2 Manually verify: list shows badges/dimmed rows, header button opens `/schedules/new`, create + toggle still work, zero-connection state shows guidance
+- [x] 5.3 Per-change `mental-model.html` delta created/updated for this change
