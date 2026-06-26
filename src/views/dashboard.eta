@@ -1,0 +1,55 @@
+<div class="section-header">
+  <h1><%= it.t("dashboard.title") %></h1>
+</div>
+
+<div class="dash-grid">
+  <a class="card dash-card" href="/connections">
+    <span class="dash-label"><%= it.t("dashboard.connections") %></span>
+    <% if (it.connectionCount > 0) { %>
+      <span class="dash-value"><%= it.connectionCount %></span>
+      <% if (it.relinkCount > 0) { %>
+        <span class="dash-alert error"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> <%= it.t("dashboard.relinkAlert", { count: it.relinkCount }) %></span>
+      <% } %>
+    <% } else { %>
+      <span class="dash-empty muted"><%= it.t("dashboard.noConnections") %></span>
+    <% } %>
+  </a>
+
+  <a class="card dash-card" href="/profiles">
+    <span class="dash-label"><%= it.t("dashboard.profiles") %></span>
+    <% if (it.profileCount > 0) { %>
+      <span class="dash-value"><%= it.profileCount %></span>
+    <% } else { %>
+      <span class="dash-empty muted"><%= it.t("dashboard.noProfiles") %></span>
+    <% } %>
+  </a>
+
+  <a class="card dash-card" href="/history">
+    <span class="dash-label"><%= it.t("dashboard.lastSync") %></span>
+    <% if (it.lastSyncedAt) { %>
+      <span class="dash-value-sm"><%= new Date(it.lastSyncedAt).toLocaleString() %></span>
+    <% } else { %>
+      <span class="dash-empty muted"><%= it.t("dashboard.neverSynced") %></span>
+    <% } %>
+  </a>
+
+  <a class="card dash-card" href="/schedules">
+    <span class="dash-label"><%= it.t("dashboard.nextSync") %></span>
+    <% if (it.nextRunAt) { %>
+      <span class="dash-value-sm"><%= new Date(it.nextRunAt).toLocaleString() %></span>
+    <% } else { %>
+      <span class="dash-empty muted"><%= it.t("dashboard.noSchedules") %></span>
+    <% } %>
+  </a>
+
+  <% if (it.isAdmin) { %>
+    <div class="card dash-card">
+      <span class="dash-label"><%= it.t("dashboard.otherUsers") %></span>
+      <% if (it.otherUsers > 0) { %>
+        <span class="dash-value"><%= it.otherUsers %></span>
+      <% } else { %>
+        <span class="dash-empty muted"><%= it.t("dashboard.noOtherUsers") %></span>
+      <% } %>
+    </div>
+  <% } %>
+</div>

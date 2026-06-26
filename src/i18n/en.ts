@@ -1,6 +1,7 @@
 export const en: Record<string, string> = {
   // common / nav
-  "nav.home": "Home",
+  "nav.connections": "Connections",
+  "nav.profiles": "Profiles",
   "nav.schedules": "Schedules",
   "nav.history": "History",
   "nav.settings": "Settings",
@@ -51,6 +52,20 @@ export const en: Record<string, string> = {
   "settings.noProfiles": "No profiles yet.",
   "settings.deleteProfileConfirm": "Delete this profile? Its mappings are removed; budget data is kept.",
   "settings.deleteProfileFailed": "Could not delete profile.",
+
+  // dashboard (landing at /)
+  "dashboard.title": "Dashboard",
+  "dashboard.connections": "Connections",
+  "dashboard.profiles": "Profiles",
+  "dashboard.lastSync": "Last sync",
+  "dashboard.nextSync": "Next scheduled sync",
+  "dashboard.otherUsers": "Other users",
+  "dashboard.relinkAlert": "{count} connection(s) need re-linking",
+  "dashboard.noConnections": "No connections yet",
+  "dashboard.noProfiles": "No profiles yet",
+  "dashboard.neverSynced": "Never synced",
+  "dashboard.noSchedules": "No schedules",
+  "dashboard.noOtherUsers": "No other users",
 
   // home: connections
   "home.connections": "Connections",

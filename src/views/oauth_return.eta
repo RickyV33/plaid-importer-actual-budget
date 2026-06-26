@@ -9,7 +9,7 @@
     if (!lt) {
       document.querySelector("main").innerHTML =
         '<div class="card"><h1>Link session expired</h1>' +
-        '<p>Restart linking from the <a href="/">home page</a>.</p></div>';
+        '<p>Restart linking from the <a href="/connections">connections page</a>.</p></div>';
       return;
     }
     const handler = Plaid.create({

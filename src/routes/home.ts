@@ -8,6 +8,8 @@ import {
   plaidItems,
   profileAccountMappings,
   profiles,
+  schedules,
+  users,
   type PlaidAccountRow,
   type PlaidItemRow,
 } from "../db/queries.js";
@@ -51,7 +53,43 @@ type ProfileView = {
 };
 
 export function registerHomeRoute(app: FastifyInstance): void {
+  // Landing dashboard: a read-only, local-only summary. No Plaid or Actual calls.
   app.get("/", async (req, reply) => {
+    const userId = requireUserId(req, reply);
+    if (userId === undefined) return;
+
+    const items = plaidItems.listByOwner(userId);
+    const lastSyncedAt = items.reduce<number | null>((max, item) => {
+      if (item.last_synced_at === null) return max;
+      return max === null || item.last_synced_at > max ? item.last_synced_at : max;
+    }, null);
+
+    const nextRunAt = schedules
+      .listByOwner(userId)
+      .filter((s) => s.enabled === 1 && s.next_run_at !== null)
+      .reduce<number | null>((min, s) => {
+        const n = s.next_run_at as number;
+        return min === null || n < min ? n : min;
+      }, null);
+
+    const isAdmin = currentUser(req)?.role === "admin";
+
+    return render(reply, "dashboard", {
+      title: "plaid-importer",
+      authed: true,
+      isAdmin,
+      connectionCount: items.length,
+      relinkCount: items.filter((i) => i.status === "requires_relink").length,
+      lastSyncedAt,
+      profileCount: profiles.listByOwner(userId).length,
+      nextRunAt,
+      // Other registered users (excluding the viewing admin); null for non-admins.
+      otherUsers: isAdmin ? Math.max(0, users.count() - 1) : null,
+    });
+  });
+
+  // Connections page: builds only item views — no per-profile Actual lookups.
+  app.get("/connections", async (req, reply) => {
     const userId = requireUserId(req, reply);
     if (userId === undefined) return;
 
@@ -66,6 +104,23 @@ export function registerHomeRoute(app: FastifyInstance): void {
       accounts: accountsForItem(accounts, item).map(toHomeAccount),
     }));
 
+    return render(reply, "connections", {
+      title: "plaid-importer",
+      authed: true,
+      isAdmin: currentUser(req)?.role === "admin",
+      items: itemViews,
+    });
+  });
+
+  // Profiles page: builds profile views, including the per-profile Actual fetch
+  // needed to populate the account-mapping selects.
+  app.get("/profiles", async (req, reply) => {
+    const userId = requireUserId(req, reply);
+    if (userId === undefined) return;
+
+    const items = plaidItems.listByOwner(userId);
+    const accounts = plaidAccounts.listByOwnerAll(userId);
+
     const profileViews: ProfileView[] = [];
     for (const p of profiles.listByOwner(userId)) {
       const mappings = new Map(
@@ -77,7 +132,7 @@ export function registerHomeRoute(app: FastifyInstance): void {
         try {
           actualAccounts = await listAccountsForProfile(p.id, connectionForProfile(p));
         } catch (err) {
-          app.log.warn({ err, profileId: p.id }, "actual_accounts_fetch_failed_home");
+          app.log.warn({ err, profileId: p.id }, "actual_accounts_fetch_failed_profiles");
           actualError = true;
         }
       }
@@ -105,11 +160,10 @@ export function registerHomeRoute(app: FastifyInstance): void {
       });
     }
 
-    return render(reply, "home", {
+    return render(reply, "profiles", {
       title: "plaid-importer",
       authed: true,
       isAdmin: currentUser(req)?.role === "admin",
-      items: itemViews,
       profiles: profileViews,
     });
   });

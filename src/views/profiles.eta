@@ -1,0 +1,110 @@
+<section data-panel="profiles">
+  <div class="profiles-header">
+    <div>
+      <h1><%= it.t("home.profiles") %></h1>
+      <p class="muted"><%= it.t("home.profilesDesc") %></p>
+    </div>
+    <a href="/profiles/new"><button type="button"><i class="fa-solid fa-plus" aria-hidden="true"></i><%= it.t("home.newProfile") %></button></a>
+  </div>
+
+  <% if (it.profiles.length === 0) { %>
+    <div class="card"><p class="muted"><%= it.t("home.noProfiles") %></p></div>
+  <% } %>
+
+  <% it.profiles.forEach(function(profile) { %>
+    <div class="card profile-card list-row" data-profile-id="<%= profile.id %>">
+      <div class="item-header">
+        <div>
+          <h2 class="item-title"><%= profile.name %></h2>
+          <p class="muted"><%= profile.serverUrl %> · <%= it.t("home.budget", { id: profile.budgetId }) %></p>
+        </div>
+        <div class="item-actions row-actions">
+          <a href="/profiles/<%= profile.id %>/edit" class="icon-btn" aria-label="<%= it.t('common.edit') %>" title="<%= it.t('common.edit') %>">
+            <i class="fa-solid fa-pen" aria-hidden="true"></i>
+          </a>
+          <button type="button" class="icon-btn profile-delete-btn" data-profile-id="<%= profile.id %>" data-name="<%= profile.name %>" aria-label="<%= it.t('common.delete') %>" title="<%= it.t('common.delete') %>">
+            <i class="fa-solid fa-trash" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+      <% if (profile.actualError) { %>
+        <p class="warn"><%= it.t("home.actualUnreachable") %></p>
+      <% } %>
+      <% if (profile.connections.length > 0) { %>
+        <% profile.connections.forEach(function(conn) { %>
+          <div class="conn-group">
+            <h3 class="conn-name"><%= conn.institutionName ?? "(unknown institution)" %></h3>
+            <table class="account-table mapping-table">
+              <thead><tr><th><%= it.t("home.account") %></th><th class="col-mapped"><%= it.t("home.mappedTo") %></th><th class="col-pending"><%= it.t("home.showPending") %> <span class="info-icon" title="<%= it.t('home.pendingHelp') %>"><i class="fa-regular fa-circle-question" aria-hidden="true"></i></span></th></tr></thead>
+              <tbody>
+                <% conn.accounts.forEach(function(acct) { %>
+                  <tr class="<%= acct.accessStatus === 'deselected' ? 'account-deselected' : '' %>">
+                    <td><%= acct.name %><% if (acct.mask) { %> <span class="muted">····<%= acct.mask %></span><% } %><% if (acct.accessStatus === 'deselected') { %> <span class="warn">· <%= it.t("home.notSyncing") %> <span class="info-icon" title="<%= it.t('home.notSyncingHelp') %>"><i class="fa-regular fa-circle-question" aria-hidden="true"></i></span></span><% } %></td>
+                    <td class="col-mapped">
+                      <select class="mapping-select" data-profile-id="<%= profile.id %>" data-plaid-account-id="<%= acct.plaidAccountId %>">
+                        <option value=""><%= it.t("home.unmapped") %></option>
+                        <% profile.actualAccounts.forEach(function(a) { %>
+                          <option value="<%= a.id %>" <%= a.id === acct.mappedActualId ? "selected" : "" %>><%= a.name %></option>
+                        <% }) %>
+                      </select>
+                    </td>
+                    <td class="col-pending">
+                      <% if (acct.mappedActualId) { %>
+                        <input type="checkbox" class="bigcheck pending-visible-check" data-profile-id="<%= profile.id %>" data-plaid-account-id="<%= acct.plaidAccountId %>" <%= acct.pendingVisible ? "checked" : "" %> />
+                      <% } else { %>
+                        <span class="muted pending-na">-</span>
+                      <% } %>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+  <% }) %>
+</section>
+
+<script>
+  (function () {
+    var MSG = JSON.parse(document.getElementById('i18n-data').textContent);
+    function t(key, params) {
+      var s = MSG[key] || key;
+      if (params) for (var k in params) s = s.replace(new RegExp('\\{' + k + '\\}', 'g'), params[k]);
+      return s;
+    }
+
+    document.querySelectorAll('.mapping-select').forEach((sel) => {
+      sel.addEventListener('change', async (e) => {
+        const t2 = e.target;
+        const base = '/profiles/' + encodeURIComponent(t2.dataset.profileId) + '/mappings/' + encodeURIComponent(t2.dataset.plaidAccountId);
+        if (!t2.value) {
+          await fetch(base, { method: 'DELETE' });
+        } else {
+          const res = await fetch(base, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ actualAccountId: t2.value }) });
+          if (!res.ok) { alert(t('home.mappingSaveError')); return; }
+        }
+        window.location.reload();
+      });
+    });
+
+    document.querySelectorAll('.pending-visible-check').forEach((box) => {
+      box.addEventListener('change', async (e) => {
+        const t2 = e.target;
+        const url = '/profiles/' + encodeURIComponent(t2.dataset.profileId) + '/mappings/' + encodeURIComponent(t2.dataset.plaidAccountId) + '/pending-visible';
+        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: t2.checked }) });
+        if (!res.ok) { alert(t('home.pendingUpdateError')); t2.checked = !t2.checked; return; }
+      });
+    });
+
+    document.querySelectorAll('.profile-delete-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!window.confirm(t('home.deleteProfileConfirm', { name: btn.dataset.name || '' }))) return;
+        const res = await fetch('/profiles/' + encodeURIComponent(btn.dataset.profileId) + '/delete', { method: 'POST' });
+        if (res.status === 204) { window.location.reload(); return; }
+        alert(t('home.deleteProfileFailed'));
+      });
+    });
+  })();
+</script>

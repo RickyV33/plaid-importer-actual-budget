@@ -2,6 +2,17 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 import { resolveLocale, translator } from "./index.js";
+import { en } from "./en.js";
+import { es } from "./es.js";
+
+test("catalogs: en and es have identical key sets", () => {
+  const enKeys = Object.keys(en).sort();
+  const esKeys = Object.keys(es).sort();
+  const missingInEs = enKeys.filter((k) => !(k in es));
+  const missingInEn = esKeys.filter((k) => !(k in en));
+  assert.deepEqual(missingInEs, [], `keys missing in es: ${missingInEs.join(", ")}`);
+  assert.deepEqual(missingInEn, [], `keys missing in en: ${missingInEn.join(", ")}`);
+});
 
 test("resolveLocale: picks the best supported language", () => {
   assert.equal(resolveLocale("es-ES,es;q=0.9,en;q=0.8"), "es");

@@ -14,7 +14,8 @@
       <a href="/" class="brand">Plaid Importer <span class="brand-sub">for Actual Budget</span></a>
       <nav>
         <% if (it.authed) { %>
-          <a href="/"><%= it.t("nav.home") %></a>
+          <a href="/connections"><%= it.t("nav.connections") %></a>
+          <a href="/profiles"><%= it.t("nav.profiles") %></a>
           <a href="/schedules"><%= it.t("nav.schedules") %></a>
           <a href="/history"><%= it.t("nav.history") %></a>
           <% if (it.isAdmin) { %>

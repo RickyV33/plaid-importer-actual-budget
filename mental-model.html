@@ -58,12 +58,26 @@
           Plaid pull fans out to all of them.</p>
       </section>
 
+      <h2>UI shell &amp; navigation</h2>
+      <section>
+        <p>One flat top nav of sibling pages — <strong>Connections</strong>, <strong>Profiles</strong>,
+          <strong>Schedules</strong>, <strong>History</strong>, and (admins) <strong>Settings</strong> — each its
+          own route and URL; there are no nested in-page tabs. The brand logo and <code>/</code> land on a
+          read-only <strong>dashboard</strong>.</p>
+        <p>The dashboard makes no Plaid/Actual calls — it reads local state only: linked-connection count
+          (with a re-link alert), profile count, last sync, and next scheduled sync, each linking to its page,
+          plus an admin-only count of other registered users. Each page loads just its own data:
+          <code>/connections</code> builds connection views; <code>/profiles</code> additionally fetches each
+          profile's Actual accounts for the mapping selects.</p>
+      </section>
+
       <h2>Request &amp; layering</h2>
       <section>
 <pre>browser ──HTTP──> Fastify
                    ├─ session cookie auth (per-user)            src/auth/*
-                   ├─ routes (home, link, profiles, sync,       src/routes/*
-                   │   schedules, history, settings, auth)
+                   ├─ routes (dashboard, connections,          src/routes/*
+                   │   profiles, link, sync, schedules,
+                   │   history, settings, auth)
                    ├─ eta server-rendered views + i18n          src/views, src/i18n
                    ├─ SQLite (state)                            src/db/*
                    ├─ Plaid client (pull transactions)          src/plaid/*

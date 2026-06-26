@@ -1,6 +1,7 @@
 export const es: Record<string, string> = {
   // common / nav
-  "nav.home": "Inicio",
+  "nav.connections": "Conexiones",
+  "nav.profiles": "Perfiles",
   "nav.schedules": "Programaciones",
   "nav.history": "Historial",
   "nav.settings": "Ajustes",
@@ -51,6 +52,20 @@ export const es: Record<string, string> = {
   "settings.noProfiles": "Aún no hay perfiles.",
   "settings.deleteProfileConfirm": "¿Eliminar este perfil? Se eliminan sus asignaciones; los datos del presupuesto se conservan.",
   "settings.deleteProfileFailed": "No se pudo eliminar el perfil.",
+
+  // dashboard (landing at /)
+  "dashboard.title": "Panel",
+  "dashboard.connections": "Conexiones",
+  "dashboard.profiles": "Perfiles",
+  "dashboard.lastSync": "Última sincronización",
+  "dashboard.nextSync": "Próxima sincronización programada",
+  "dashboard.otherUsers": "Otros usuarios",
+  "dashboard.relinkAlert": "{count} conexión(es) requieren revinculación",
+  "dashboard.noConnections": "Aún no hay conexiones",
+  "dashboard.noProfiles": "Aún no hay perfiles",
+  "dashboard.neverSynced": "Nunca sincronizado",
+  "dashboard.noSchedules": "Sin programaciones",
+  "dashboard.noOtherUsers": "No hay otros usuarios",
 
   // home: connections
   "home.connections": "Conexiones",

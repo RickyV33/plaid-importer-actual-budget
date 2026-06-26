@@ -17,6 +17,8 @@ Full architecture, data model, and security notes:
 
 ## Features
 
+- **At-a-glance dashboard**: the home page summarizes your connections, profiles,
+  last sync, and next scheduled run, and flags any bank that needs re-linking.
 - **Pending transactions**: set notes and categories on a pending transaction;
   they persist when it officially posts.
 - **Multi-user**: built for a household. Family or roommates each get their own

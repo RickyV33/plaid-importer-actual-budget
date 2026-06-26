@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>flatten-nav-dashboard — change delta</title>
+    <style>
+      :root {
+        --bg: #faf9f6; --fg: #1a1a1a; --muted: #6b6b6b; --accent: #2d5fb8;
+        --border: #d8d4cd; --card: #ffffff; --code: #f1efe9;
+        --ok: #1b6e3d; --warn: #b76e00;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--fg);
+        font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+      .wrap { max-width: 60rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+      header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; }
+      header p { margin: 0; color: var(--muted); }
+      h2 { margin: 2.25rem 0 0.5rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+      section { background: var(--card); border: 1px solid var(--border); border-radius: 0.6rem; padding: 1rem 1.25rem; margin-top: 1rem; }
+      code { background: var(--code); padding: 0.1rem 0.35rem; border-radius: 0.3rem; font-size: 0.9em; }
+      ul { margin: 0.4rem 0 0.4rem 1.1rem; padding: 0; }
+      li { margin: 0.2rem 0; }
+      .tag { display: inline-block; background: var(--code); border: 1px solid var(--border);
+        border-radius: 0.4rem; padding: 0.1rem 0.45rem; font-size: 0.8rem; margin: 0 0.25rem 0.25rem 0; }
+      .muted { color: var(--muted); }
+      pre { background: var(--code); border: 1px solid var(--border); border-radius: 0.5rem;
+        padding: 0.75rem 1rem; overflow-x: auto; font-size: 0.85rem; line-height: 1.4; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>flatten-nav-dashboard</h1>
+        <p>Change delta — Connections &amp; Profiles lifted into the top nav; <code>/</code> becomes a thin read-only dashboard.</p>
+      </header>
+
+      <section>
+        <span class="tag">navigation</span><span class="tag">eta views</span><span class="tag">routes</span>
+        <span class="tag">i18n</span><span class="tag">no DB change</span><span class="tag">no external I/O added</span>
+        <p class="muted" style="margin:0.5rem 0 0">New capability <code>app-navigation</code>. No sync, scheduler, Plaid, or Actual behavior changes.</p>
+      </section>
+
+      <h2>Before → after</h2>
+      <section>
+        <pre>BEFORE                              AFTER
+top nav:                            top nav:
+  Home  Schedules  History  …         Connections  Profiles  Schedules  History  …
+   └─ "/" = home.eta                   └─ "/" = dashboard.eta (read-only summary)
+        ├─ tab: Connections          /connections = connections.eta
+        └─ tab: Profiles             /profiles    = profiles.eta
+   (JS .tab-btn + sessionStorage)    (URL is the state; tab JS removed)</pre>
+      </section>
+
+      <h2>What changed</h2>
+      <section>
+        <ul>
+          <li><strong>Flat nav.</strong> Connections and Profiles are now top-level pages
+            (<code>GET /connections</code>, <code>GET /profiles</code>) beside Schedules, History, and Settings.
+            The in-page tab buttons, <code>.tab-panel</code> switching, and the <code>home-tab</code>
+            <code>sessionStorage</code> script are gone — the URL carries the state.</li>
+          <li><strong>View split.</strong> <code>home.eta</code> → <code>connections.eta</code> (link / sync /
+            relink / manage-accounts JS) + <code>profiles.eta</code> (mapping / pending / delete JS). The panel
+            markup and handlers move verbatim.</li>
+          <li><strong>Leaner loads.</strong> The Connections page no longer makes the per-profile
+            <code>listAccountsForProfile</code> Actual Budget calls that <code>home.ts:76</code> ran on every
+            visit; only the Profiles page pays for them.</li>
+          <li><strong>Dashboard at <code>/</code>.</strong> A new read-only landing page with four linked status
+            cards — connections (+ relink alert), profiles, last sync, next scheduled sync. Derived entirely from
+            local DB (<code>plaidItems</code>, <code>profiles</code>, <code>schedules.next_run_at</code>); it makes
+            no Plaid/Actual calls and exposes no create/edit/delete controls. Each card has a calm empty state.</li>
+          <li><strong>Admin-only card.</strong> For admins, one extra card shows the number of other registered
+            users (<code>users.count() − 1</code>), hidden from members. The user store has no activity/last-login
+            tracking, so "active" is read as total registered — no new query, no migration; a sole admin sees an
+            empty state, not "0".</li>
+        </ul>
+      </section>
+
+      <h2>i18n</h2>
+      <section>
+        <ul>
+          <li><code>nav.home</code> removed; <code>nav.connections</code> + <code>nav.profiles</code> added.</li>
+          <li>New <code>dashboard.*</code> namespace (en + es): card labels, relink alert, empty states.</li>
+          <li>Existing <code>home.*</code> content keys move <em>verbatim</em> with the panel markup — not renamed
+            (kept to avoid mass churn; a possible future tidy-up).</li>
+        </ul>
+      </section>
+
+      <h2>Out of scope</h2>
+      <section>
+        <ul>
+          <li>No change to connection/profile/mapping/sync/schedule behavior — only where those surfaces live.</li>
+          <li>No DB migration, no endpoint-contract change, no new dependency.</li>
+          <li>The dashboard adds zero external I/O; any action belongs on the page a card links to.</li>
+        </ul>
+      </section>
+    </div>
+  </body>
+</html>
