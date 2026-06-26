@@ -52,7 +52,7 @@ button, .button {
   display: inline-block;
 }
 button:hover, .button:hover { filter: brightness(1.05); }
-button.secondary { background: white; color: var(--fg); border: 1px solid var(--border); }
+button.secondary, .button.secondary { background: white; color: var(--fg); border: 1px solid var(--border); }
 
 input[type="text"], input[type="password"], input[type="url"], input[type="number"], select {
   font: inherit; padding: 0.5rem; border: 1px solid var(--border);
