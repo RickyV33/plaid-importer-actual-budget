@@ -1,5 +1,6 @@
 import { plaidAccounts, schedules } from "../db/queries.js";
 import type { RunLogger } from "../sync/lifecycle.js";
+import { nextOccurrence } from "./recurrence.js";
 import { isSyncRunning, runSync } from "../sync/run.js";
 
 let timer: NodeJS.Timeout | undefined;
@@ -45,7 +46,16 @@ export async function tick(now: number = Date.now(), log: TickLogger = NOOP): Pr
     }
 
     // Advance regardless of outcome so a failing schedule doesn't hammer every tick.
-    schedules.markRan(s.id, now, now + s.interval_hours * 3600_000);
+    const nextRunAt = s.days_of_week
+      ? nextOccurrence(
+          JSON.parse(s.days_of_week) as number[],
+          s.time_of_day!,
+          s.repeat_weeks!,
+          s.timezone!,
+          now,
+        )
+      : now + s.interval_hours! * 3_600_000;
+    schedules.markRan(s.id, now, nextRunAt);
   }
 }
 

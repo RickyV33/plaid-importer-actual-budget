@@ -1,0 +1,11 @@
+<h1><%= it.t("schedules.edit") %></h1>
+
+<div class="card">
+  <form class="schedule-form" method="post" action="/schedules/<%= it.scheduleId %>/edit">
+    <%~ include("partials/schedules_form", { t: it.t, connections: it.connections, prefill: it.prefill }) %>
+    <div class="form-actions">
+      <button type="submit"><i class="fa-solid fa-check" aria-hidden="true"></i> <%= it.t("schedules.save") %></button>
+      <a href="/schedules" class="secondary button"><%= it.t("common.cancel") %></a>
+    </div>
+  </form>
+</div>

@@ -854,7 +854,12 @@ export type ScheduleRow = {
   id: number;
   owner_user_id: number;
   plaid_item_ids: string; // JSON array of plaid_item id (connection)
-  interval_hours: number;
+  // TODO: remove interval_hours in a future migration once all legacy rows are migrated
+  interval_hours: number | null; // null for new-format schedules
+  days_of_week: string | null;   // JSON number[] e.g. "[1,3,5]", null = legacy
+  time_of_day: string | null;    // "HH:MM" 24h
+  repeat_weeks: number | null;   // 1 = weekly, 2 = bi-weekly
+  timezone: string | null;       // IANA timezone string
   enabled: number;
   last_run_at: number | null;
   next_run_at: number | null;
@@ -866,24 +871,61 @@ export const schedules = {
   create(row: {
     ownerUserId: number;
     plaidItemIds: string[];
-    intervalHours: number;
     nextRunAt: number;
+    daysOfWeek: number[];
+    timeOfDay: string;
+    repeatWeeks: number;
+    timezone: string;
   }): number {
     const info = db()
       .prepare(
         `INSERT INTO schedules
-           (owner_user_id, plaid_item_ids, interval_hours, enabled, next_run_at, created_at, updated_at)
-         VALUES (?, ?, ?, 1, ?, ?, ?)`,
+           (owner_user_id, plaid_item_ids, interval_hours, days_of_week, time_of_day, repeat_weeks, timezone, enabled, next_run_at, created_at, updated_at)
+         VALUES (?, ?, NULL, ?, ?, ?, ?, 1, ?, ?, ?)`,
       )
       .run(
         row.ownerUserId,
         JSON.stringify(row.plaidItemIds),
-        row.intervalHours,
+        JSON.stringify(row.daysOfWeek),
+        row.timeOfDay,
+        row.repeatWeeks,
+        row.timezone,
         row.nextRunAt,
         now(),
         now(),
       );
     return Number(info.lastInsertRowid);
+  },
+
+  update(
+    id: number,
+    row: {
+      plaidItemIds: string[];
+      nextRunAt: number;
+      daysOfWeek: number[];
+      timeOfDay: string;
+      repeatWeeks: number;
+      timezone: string;
+    },
+  ): void {
+    db()
+      .prepare(
+        `UPDATE schedules
+         SET plaid_item_ids = ?, interval_hours = NULL,
+             days_of_week = ?, time_of_day = ?, repeat_weeks = ?, timezone = ?,
+             next_run_at = ?, updated_at = ?
+         WHERE id = ?`,
+      )
+      .run(
+        JSON.stringify(row.plaidItemIds),
+        JSON.stringify(row.daysOfWeek),
+        row.timeOfDay,
+        row.repeatWeeks,
+        row.timezone,
+        row.nextRunAt,
+        now(),
+        id,
+      );
   },
 
   setEnabled(id: number, enabled: boolean): void {
@@ -924,6 +966,30 @@ export const schedules = {
         "SELECT * FROM schedules WHERE enabled = 1 AND (next_run_at IS NULL OR next_run_at <= ?) ORDER BY next_run_at ASC",
       )
       .all(nowTs);
+  },
+};
+
+export type DismissedBannerRow = {
+  user_id: number;
+  banner_key: string;
+  dismissed_at: number;
+};
+
+export const dismissedBanners = {
+  insert(userId: number, key: string): void {
+    db()
+      .prepare(
+        "INSERT OR IGNORE INTO dismissed_banners (user_id, banner_key, dismissed_at) VALUES (?, ?, ?)",
+      )
+      .run(userId, key, now());
+  },
+
+  listByUser(userId: number): DismissedBannerRow[] {
+    return db()
+      .prepare<[number], DismissedBannerRow>(
+        "SELECT * FROM dismissed_banners WHERE user_id = ?",
+      )
+      .all(userId);
   },
 };
 

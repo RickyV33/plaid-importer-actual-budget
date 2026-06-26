@@ -228,3 +228,78 @@ button:not(.icon-btn) > i, .button:not(.icon-btn) > i { margin-right: 0.4rem; }
 /* profiles: per-connection group: muted heading with its own table below */
 .conn-group { margin-top: 0.75rem; }
 .conn-name { font-size: 1rem; font-weight: 600; margin: 0 0 0.35rem; }
+
+/* schedule: day-of-week picker */
+.day-picker { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.25rem; }
+.day-btn { display: inline-flex; cursor: pointer; }
+.day-btn input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+.day-btn span {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 2.5rem; height: 2.5rem; border-radius: 50%;
+  border: 1px solid var(--border); background: white;
+  font-size: 0.8rem; font-weight: 500; color: var(--muted);
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+  user-select: none;
+}
+.day-btn input[type="checkbox"]:checked + span {
+  background: var(--accent); color: white; border-color: var(--accent);
+}
+.day-btn:hover span { border-color: var(--accent); color: var(--fg); }
+
+/* schedule: repeat row (every N weeks) */
+.repeat-row { display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem; }
+.repeat-input { width: 4rem; text-align: center; }
+
+/* schedule: form actions row */
+.form-actions { display: flex; gap: 0.75rem; align-items: center; margin-top: 0.5rem; }
+
+/* schedule: legacy warning inline */
+.legacy-warning { display: flex; flex-direction: column; gap: 0.15rem; margin-bottom: 0.5rem; }
+
+/* app-wide banners */
+.app-banners { display: flex; flex-direction: column; gap: 0; }
+.app-banner {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+  padding: 0.65rem 1.25rem; font-size: 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+.app-banner-warn { background: #fff8ed; color: var(--warn); border-left: 3px solid var(--warn); }
+.app-banner-info { background: #f0f5ff; color: #1a4ea6; border-left: 3px solid #1a4ea6; }
+.app-banner-error { background: #fff0f0; color: var(--error); border-left: 3px solid var(--error); }
+.banner-dismiss {
+  background: none; border: none; cursor: pointer; font-size: 1.2rem; line-height: 1;
+  color: inherit; opacity: 0.6; padding: 0; flex-shrink: 0;
+}
+.banner-dismiss:hover { opacity: 1; }
+
+/* time input: constrain to content width */
+input[type="time"] { width: auto; min-width: 9rem; }
+
+/* schedule form: stronger field labels */
+.schedule-form .field > label:first-child,
+.schedule-form .field > label:first-of-type {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+.schedule-form .field > label:first-child .muted,
+.schedule-form .field > label:first-of-type .muted {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  font-size: 0.8rem;
+}
+.schedule-form .field { margin-bottom: 1.25rem; }
+
+/* schedule form: combined time + repeat sentence row */
+.time-repeat-row { display: inline-flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.time-repeat-row input[type="time"] { width: auto; min-width: 8rem; }
+
+/* prevent the global ".field input { width:100% }" from stretching inline inputs */
+.time-repeat-row input { width: auto; }
+
+/* no top margin when h2 is the first element in a card */
+.card > h2:first-child { margin-top: 0; }

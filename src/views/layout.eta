@@ -13,21 +13,44 @@
     <header class="topbar">
       <a href="/" class="brand">Plaid Importer <span class="brand-sub">for Actual Budget</span></a>
       <nav>
-        <a href="/"><%= it.t("nav.home") %></a>
-        <a href="/schedules"><%= it.t("nav.schedules") %></a>
-        <a href="/history"><%= it.t("nav.history") %></a>
-        <% if (it.isAdmin) { %>
-          <a href="/settings"><%= it.t("nav.settings") %></a>
-        <% } %>
         <% if (it.authed) { %>
+          <a href="/"><%= it.t("nav.home") %></a>
+          <a href="/schedules"><%= it.t("nav.schedules") %></a>
+          <a href="/history"><%= it.t("nav.history") %></a>
+          <% if (it.isAdmin) { %>
+            <a href="/settings"><%= it.t("nav.settings") %></a>
+          <% } %>
           <form method="post" action="/logout" class="inline">
             <button type="submit" class="linklike"><%= it.t("nav.logout") %></button>
           </form>
         <% } %>
       </nav>
     </header>
+    <% if (it.banners && it.banners.length > 0) { %>
+      <div class="app-banners">
+        <% it.banners.forEach(function(b) { %>
+          <div class="app-banner app-banner-<%= b.type %>" data-banner-key="<%= b.key %>">
+            <span><%~ it.t("banners." + b.key) %></span>
+            <button type="button" class="banner-dismiss" aria-label="Dismiss">×</button>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
     <main>
       <%~ it.body %>
     </main>
+    <script>
+      (function () {
+        document.querySelectorAll('.banner-dismiss').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var banner = btn.closest('.app-banner');
+            var key = banner && banner.dataset.bannerKey;
+            if (!key) return;
+            fetch('/banners/' + encodeURIComponent(key) + '/dismiss', { method: 'POST' });
+            banner.remove();
+          });
+        });
+      })();
+    </script>
   </body>
 </html>

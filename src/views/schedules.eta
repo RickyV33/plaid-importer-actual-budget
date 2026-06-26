@@ -9,16 +9,36 @@
       <div class="item-header">
         <div>
           <h2 class="item-title"><%= s.connectionNames.join(", ") %></h2>
-          <p class="muted">
-            <%= s.enabled ? it.t("schedules.enabled") : it.t("schedules.disabled") %> ·
-            <%= it.t("schedules.everyHours", { hours: s.intervalHours }) %>
-            <% if (s.nextRunAt) { %> · <%= it.t("schedules.next", { when: new Date(s.nextRunAt).toLocaleString() }) %><% } %>
-          </p>
+          <% if (s.isLegacy) { %>
+            <p class="muted">
+              <%= it.t("schedules.legacy.interval", { hours: s.intervalHours }) %>
+            </p>
+          <% } else { %>
+            <p class="muted">
+              <%= s.enabled ? it.t("schedules.enabled") : it.t("schedules.disabled") %> ·
+              <% var dayKeys = ["sun","mon","tue","wed","thu","fri","sat"]; %>
+              <%= s.daysOfWeek.map(function(d) { return it.t("schedules.day." + dayKeys[d]); }).join(", ") %>
+              at <%= s.timeOfDay %>
+              <% if (s.repeatWeeks > 1) { %> · every <%= s.repeatWeeks %> weeks<% } %>
+              <% if (s.nextRunAt) { %> · <%= it.t("schedules.next", { when: new Date(s.nextRunAt).toLocaleString() }) %><% } %>
+            </p>
+          <% } %>
         </div>
         <div class="item-actions row-actions">
-          <form method="post" action="/schedules/<%= s.id %>/toggle" class="inline">
-            <button type="submit" class="secondary"><%= s.enabled ? it.t("schedules.disable") : it.t("schedules.enable") %></button>
-          </form>
+          <% if (s.isLegacy) { %>
+            <div class="legacy-warning">
+              <span class="warn"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> <%= it.t("schedules.legacy.warning") %></span>
+              <span class="muted"><%= it.t("schedules.legacy.hint") %></span>
+            </div>
+            <a href="/schedules/<%= s.id %>/edit" class="secondary button"><i class="fa-solid fa-pen" aria-hidden="true"></i> <%= it.t("common.edit") %></a>
+          <% } else { %>
+            <form method="post" action="/schedules/<%= s.id %>/toggle" class="inline">
+              <button type="submit" class="secondary"><%= s.enabled ? it.t("schedules.disable") : it.t("schedules.enable") %></button>
+            </form>
+            <a href="/schedules/<%= s.id %>/edit" class="icon-btn" aria-label="<%= it.t('common.edit') %>" title="<%= it.t('common.edit') %>">
+              <i class="fa-solid fa-pen" aria-hidden="true"></i>
+            </a>
+          <% } %>
           <button type="button" class="icon-btn schedule-delete-btn" data-id="<%= s.id %>" aria-label="<%= it.t('common.delete') %>" title="<%= it.t('common.delete') %>">
             <i class="fa-solid fa-trash" aria-hidden="true"></i>
           </button>
@@ -34,23 +54,9 @@
   <% if (it.connections.length === 0) { %>
     <p class="muted"><%= it.t("schedules.needConnections") %></p>
   <% } else { %>
-    <form id="create-schedule-form" method="post" action="/schedules">
-      <div class="field">
-        <label for="intervalHours"><%= it.t("schedules.runEvery") %></label>
-        <input id="intervalHours" name="intervalHours" type="number" min="1" step="1" value="24" required />
-      </div>
-      <div class="field">
-        <label for="startAt"><%= it.t("schedules.startAt") %> <span class="muted"><%= it.t("schedules.startAtHelp") %></span></label>
-        <input id="startAt" type="datetime-local" />
-        <input type="hidden" name="startAtMs" id="startAtMs" />
-      </div>
-      <div class="field">
-        <label><%= it.t("schedules.connections") %></label>
-        <% it.connections.forEach(function(c) { %>
-          <div><label class="check-label"><input type="checkbox" class="bigcheck" name="plaidItemIds" value="<%= c.id %>" /> <%= c.name %></label></div>
-        <% }) %>
-      </div>
-      <button type="submit"><i class="fa-solid fa-plus" aria-hidden="true"></i><%= it.t("schedules.create") %></button>
+    <form id="create-schedule-form" class="schedule-form" method="post" action="/schedules">
+      <%~ include("partials/schedules_form", { t: it.t, connections: it.connections, prefill: null }) %>
+      <button type="submit"><i class="fa-solid fa-plus" aria-hidden="true"></i> <%= it.t("schedules.create") %></button>
     </form>
     <p class="muted"><%= it.t("schedules.tip") %></p>
   <% } %>
@@ -59,14 +65,6 @@
 <script>
   (function () {
     var MSG = JSON.parse(document.getElementById('i18n-data').textContent);
-
-    // Convert the local "first run" datetime to epoch ms in the browser so the
-    // server doesn't have to guess the user's timezone.
-    document.getElementById('create-schedule-form')?.addEventListener('submit', function () {
-      var sa = document.getElementById('startAt');
-      var hidden = document.getElementById('startAtMs');
-      if (sa && hidden) hidden.value = sa.value ? String(new Date(sa.value).getTime()) : '';
-    });
 
     document.querySelectorAll('.schedule-delete-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {
