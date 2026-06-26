@@ -134,6 +134,8 @@ export const en: Record<string, string> = {
   "schedules.newDesc": "Choose which bank connections to sync and when.",
   "schedules.enabled": "enabled",
   "schedules.disabled": "disabled",
+  "schedules.statusActive": "Active",
+  "schedules.statusPaused": "Paused",
   "schedules.connectionsCount": "{count} connection(s): {names}",
   "schedules.next": "next {when}",
   "schedules.enable": "Enable",
