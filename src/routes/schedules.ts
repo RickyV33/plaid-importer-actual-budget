@@ -66,6 +66,22 @@ export function registerScheduleRoutes(app: FastifyInstance): void {
     });
   });
 
+  app.get("/schedules/new", async (req, reply) => {
+    const userId = requireUserId(req, reply);
+    if (userId === undefined) return;
+
+    const ownerItems = plaidItems.listByOwner(userId);
+    const connections = ownerItems.map((i) => ({ id: i.id, name: i.institution_name ?? i.id }));
+
+    return render(reply, "schedules_new", {
+      title: "New Schedule",
+      authed: true,
+      isAdmin: currentUser(req)?.role === "admin",
+      connections,
+      error: null,
+    });
+  });
+
   app.post("/schedules", async (req, reply) => {
     const userId = requireUserId(req, reply);
     if (userId === undefined) return;

@@ -5,9 +5,9 @@
 
 ## 2. Dedicated creation page
 
-- [ ] 2.1 Add `GET /schedules/new` in `src/routes/schedules.ts` rendering a new `schedules_new` view with the owner's connections
-- [ ] 2.2 Create `src/views/schedules_new.eta` reusing `partials/schedules_form` and posting to `POST /schedules` (mirror `schedules_edit.eta`)
-- [ ] 2.3 Confirm `POST /schedules` is unchanged and still redirects to `/schedules`
+- [x] 2.1 Add `GET /schedules/new` in `src/routes/schedules.ts` rendering a new `schedules_new` view with the owner's connections
+- [x] 2.2 Create `src/views/schedules_new.eta` reusing `partials/schedules_form` and posting to `POST /schedules` (mirror `schedules_edit.eta`)
+- [x] 2.3 Confirm `POST /schedules` is unchanged and still redirects to `/schedules`
 
 ## 3. List page header + create button
 

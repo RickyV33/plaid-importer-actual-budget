@@ -1,0 +1,18 @@
+<h1><%= it.t("schedules.title") %></h1>
+
+<div class="card">
+  <h2><%= it.t("schedules.new") %></h2>
+  <p class="muted"><%= it.t("schedules.newDesc") %></p>
+  <% if (it.connections.length === 0) { %>
+    <p class="muted"><%= it.t("schedules.needConnections") %></p>
+  <% } else { %>
+    <form id="create-schedule-form" class="schedule-form" method="post" action="/schedules">
+      <%~ include("partials/schedules_form", { t: it.t, connections: it.connections, prefill: null }) %>
+      <div class="form-actions">
+        <button type="submit"><i class="fa-solid fa-plus" aria-hidden="true"></i> <%= it.t("schedules.create") %></button>
+        <a href="/schedules" class="secondary button"><%= it.t("common.cancel") %></a>
+      </div>
+    </form>
+    <p class="muted"><%= it.t("schedules.tip") %></p>
+  <% } %>
+</div>
