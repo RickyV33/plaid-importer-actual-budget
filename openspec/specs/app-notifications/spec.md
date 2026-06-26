@@ -31,7 +31,7 @@ The system SHALL store banner dismissals in a `dismissed_banners` table keyed by
 
 #### Scenario: Unauthenticated dismiss is rejected
 - **WHEN** an unauthenticated request POSTs to `/banners/:key/dismiss`
-- **THEN** the server returns 401 and no row is inserted
+- **THEN** the request is redirected to `/login` (per the app-wide auth guard) and no row is inserted
 
 ### Requirement: Schedule migration banner notifies users of legacy schedules
 
