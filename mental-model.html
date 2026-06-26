@@ -96,6 +96,11 @@ in-process scheduler ticks and triggers syncs                  src/scheduler/*</
                                                           → pending_visible</pre>
         <p>The mapping key is <code>(profile_id, plaid_account_id)</code>, so the same account can feed
           many budgets, each with its own target account and "show pending" setting.</p>
+        <p>You can re-open Plaid Link on an existing connection to add or drop which accounts it shares.
+          Dropped accounts are marked <em>Not syncing</em> — they stop syncing but stay visible and keep
+          their mappings. Because Plaid may hand back a new <code>account_id</code> for a re-added account,
+          accounts are reconciled by their stable <code>persistent_account_id</code> (or, failing that, a
+          name/mask/type match) so mappings survive the swap instead of duplicating.</p>
       </section>
 
       <h2>The sync engine: PULL once, DRAIN to many</h2>

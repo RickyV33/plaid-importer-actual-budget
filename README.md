@@ -30,6 +30,9 @@ Full architecture, data model, and security notes:
   connection is one institution, e.g. Wells Fargo, which may hold several accounts.)
 - **Connection lifecycle**: when a connection errors because you changed your
   bank credentials, re-link it without losing your setup.
+- **Manage accounts**: add or drop which accounts a connection shares without
+  re-linking. Dropped accounts stop syncing but keep their mappings; re-added
+  ones are reconciled so you don't get duplicates.
 - **Sync history**: see when you synced, how many items came through, and any
   failures.
 - **Registration secret**: only people with the secret can register an account.
