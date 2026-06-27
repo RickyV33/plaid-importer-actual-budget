@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>history-row-expand — change delta</title>
+    <style>
+      :root {
+        --bg: #faf9f6; --fg: #1a1a1a; --muted: #6b6b6b; --accent: #2d5fb8;
+        --border: #d8d4cd; --card: #ffffff; --code: #f1efe9;
+        --ok: #1b6e3d; --warn: #b76e00;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--fg);
+        font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+      .wrap { max-width: 60rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+      header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; }
+      header p { margin: 0; color: var(--muted); }
+      h2 { margin: 2.25rem 0 0.5rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+      section { background: var(--card); border: 1px solid var(--border); border-radius: 0.6rem; padding: 1rem 1.25rem; margin-top: 1rem; }
+      code { background: var(--code); padding: 0.1rem 0.35rem; border-radius: 0.3rem; font-size: 0.9em; }
+      ul { margin: 0.4rem 0 0.4rem 1.1rem; padding: 0; }
+      li { margin: 0.2rem 0; }
+      .tag { display: inline-block; background: var(--code); border: 1px solid var(--border);
+        border-radius: 0.4rem; padding: 0.1rem 0.45rem; font-size: 0.8rem; margin: 0 0.25rem 0.25rem 0; }
+      .muted { color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>history-row-expand</h1>
+        <p>Change delta — the History run row is the drill-down toggle, only when it imported something.</p>
+      </header>
+
+      <section>
+        <span class="tag">UI</span><span class="tag">eta view</span><span class="tag">no backend change</span>
+        <p class="muted" style="margin:0.5rem 0 0">Presentation only; same recorded data and columns.</p>
+      </section>
+
+      <h2>What changed</h2>
+      <section>
+        <ul>
+          <li><strong>Toggle moved onto the row.</strong> The separate "per-account results"
+            <code>&lt;details&gt;</code> summary row is gone. The run's own summary row is now the disclosure
+            control (caret, <code>role="button"</code>, <code>tabindex</code>, <code>aria-expanded</code>;
+            click or Enter/Space), revealing a hidden <code>.history-detail</code> row with the same
+            account/status/imported/reason table.</li>
+          <li><strong>Only when imported &gt; 0.</strong> The drill-down is offered only for runs with
+            <code>totalImported &gt; 0</code>. Runs that imported nothing — including the 0-import marker-only
+            no-op pulls from <em>rate-limit-count-all-pulls</em> — render as plain, non-expandable rows, keeping
+            the list calm and hiding marker noise.</li>
+          <li><strong>Trade-off.</strong> A failed run (0 imported) is no longer expandable; its
+            <code>failure</code> status still shows in the status column.</li>
+        </ul>
+      </section>
+
+      <h2>Touched files</h2>
+      <section>
+        <ul>
+          <li><code>src/views/history.eta</code> — row-as-toggle, <code>totalImported &gt; 0</code> gate, hidden detail row, toggle script.</li>
+          <li><code>public/style.css</code> — <code>.history-row.is-expandable</code> + caret rotation.</li>
+        </ul>
+      </section>
+    </div>
+  </body>
+</html>

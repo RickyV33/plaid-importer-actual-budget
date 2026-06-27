@@ -20,8 +20,12 @@
       </thead>
       <tbody>
         <% it.runs.forEach(function(run) { %>
-          <tr>
-            <td><span class="local-ts" data-ts="<%= run.startedAt %>"><%= new Date(run.startedAt).toLocaleString() %></span></td>
+          <% var expandable = run.totalImported > 0 && run.results.length > 0; %>
+          <tr class="history-row<%= expandable ? ' is-expandable' : '' %>"<%= expandable ? ' tabindex="0" role="button" aria-expanded="false"' : '' %>>
+            <td>
+              <% if (expandable) { %><i class="fa-solid fa-chevron-right history-caret" aria-hidden="true"></i> <% } %>
+              <span class="local-ts" data-ts="<%= run.startedAt %>"><%= new Date(run.startedAt).toLocaleString() %></span>
+            </td>
             <td><span class="badge badge-<%= run.triggeredBy === 'scheduled' ? 'scheduled' : 'manual' %>"><%= run.triggeredBy %></span></td>
             <td><%= run.scope %></td>
             <td>
@@ -31,32 +35,29 @@
             </td>
             <td><%= run.totalImported %></td>
           </tr>
-          <% if (run.results.length > 0) { %>
-            <tr>
+          <% if (expandable) { %>
+            <tr class="history-detail" hidden>
               <td colspan="5">
-                <details>
-                  <summary class="muted"><%= it.t("history.perAccount") %></summary>
-                  <table>
-                    <thead>
+                <table>
+                  <thead>
+                    <tr>
+                      <th><%= it.t("home.account") %></th>
+                      <th><%= it.t("history.status") %></th>
+                      <th><%= it.t("history.imported") %></th>
+                      <th><%= it.t("history.reason") %></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% run.results.forEach(function(r) { %>
                       <tr>
-                        <th><%= it.t("home.account") %></th>
-                        <th><%= it.t("history.status") %></th>
-                        <th><%= it.t("history.imported") %></th>
-                        <th><%= it.t("history.reason") %></th>
+                        <td><%= r.accountName ?? r.plaid_account_id %></td>
+                        <td><%= r.status %></td>
+                        <td><%= r.txns_imported %></td>
+                        <td><%= r.reason ?? "" %></td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      <% run.results.forEach(function(r) { %>
-                        <tr>
-                          <td><%= r.accountName ?? r.plaid_account_id %></td>
-                          <td><%= r.status %></td>
-                          <td><%= r.txns_imported %></td>
-                          <td><%= r.reason ?? "" %></td>
-                        </tr>
-                      <% }) %>
-                    </tbody>
-                  </table>
-                </details>
+                    <% }) %>
+                  </tbody>
+                </table>
               </td>
             </tr>
           <% } %>
@@ -76,6 +77,23 @@
 </div>
 
 <script>
+  (function () {
+    function toggleRow(row) {
+      var detail = row.nextElementSibling;
+      if (!detail || !detail.classList.contains('history-detail')) return;
+      var open = detail.hasAttribute('hidden');
+      if (open) detail.removeAttribute('hidden');
+      else detail.setAttribute('hidden', '');
+      row.setAttribute('aria-expanded', String(open));
+    }
+    document.querySelectorAll('.history-row.is-expandable').forEach(function (row) {
+      row.addEventListener('click', function () { toggleRow(row); });
+      row.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleRow(row); }
+      });
+    });
+  })();
+
   (function () {
     const host = document.getElementById('orphan-banner-host');
     if (!host) return;

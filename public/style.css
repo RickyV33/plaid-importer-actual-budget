@@ -161,6 +161,12 @@ a.dash-card:hover { border-color: var(--accent); filter: none; }
 .dash-sync-table th, .dash-sync-table td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); }
 .dash-sync-table th { color: var(--muted); font-weight: 600; }
 
+/* history-row-expand: run row is the disclosure toggle */
+.history-row.is-expandable { cursor: pointer; }
+.history-row.is-expandable:hover { background: var(--code); }
+.history-caret { font-size: 0.75rem; color: var(--muted); transition: transform 0.15s ease; }
+.history-row[aria-expanded="true"] .history-caret { transform: rotate(90deg); }
+
 /* ui-polish: larger, higher-contrast checkboxes */
 input[type="checkbox"].bigcheck {
   width: 1.2rem; height: 1.2rem; accent-color: var(--accent);
