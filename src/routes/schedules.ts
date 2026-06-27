@@ -7,6 +7,7 @@ import { nextOccurrence } from "../scheduler/recurrence.js";
 import { render } from "../views/render.js";
 
 const cadenceSchema = z.object({
+  name: z.string().optional(),
   daysOfWeek: z
     .union([z.string(), z.array(z.string())])
     .transform((v): string[] => (Array.isArray(v) ? v : [v]))
@@ -36,6 +37,7 @@ export function registerScheduleRoutes(app: FastifyInstance): void {
 
     const rows = schedules.listByOwner(userId).map((s) => ({
       id: s.id,
+      name: s.name,
       isLegacy: s.days_of_week === null,
       intervalHours: s.interval_hours,
       daysOfWeek: s.days_of_week ? (JSON.parse(s.days_of_week) as number[]) : null,
@@ -99,6 +101,7 @@ export function registerScheduleRoutes(app: FastifyInstance): void {
 
     schedules.create({
       ownerUserId: userId,
+      name: parsed.data.name ?? null,
       plaidItemIds: itemIds,
       daysOfWeek,
       timeOfDay,
@@ -128,6 +131,7 @@ export function registerScheduleRoutes(app: FastifyInstance): void {
     }
 
     const prefill = {
+      name: s.name ?? "",
       daysOfWeek: s.days_of_week ? (JSON.parse(s.days_of_week) as number[]) : [1, 2, 3, 4, 5],
       timeOfDay: s.time_of_day ?? inferTimeOfDay(s.next_run_at),
       repeatWeeks: s.repeat_weeks ?? 1,
@@ -164,7 +168,7 @@ export function registerScheduleRoutes(app: FastifyInstance): void {
     const nowTs = Date.now();
     const nextRunAt = nextOccurrence(daysOfWeek, timeOfDay, repeatWeeks, timezone, nowTs);
 
-    schedules.update(s.id, { plaidItemIds: itemIds, daysOfWeek, timeOfDay, repeatWeeks, timezone, nextRunAt });
+    schedules.update(s.id, { name: parsed.data.name ?? null, plaidItemIds: itemIds, daysOfWeek, timeOfDay, repeatWeeks, timezone, nextRunAt });
     return reply.redirect("/schedules");
   });
 

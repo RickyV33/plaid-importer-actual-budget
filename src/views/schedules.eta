@@ -10,6 +10,20 @@
   <% } %>
 </div>
 
+<%
+  // Format a stored 24h "HH:MM" as 12-hour "h:mm AM/PM" for display only.
+  function fmt12(hhmm) {
+    if (!hhmm) return "";
+    var parts = String(hhmm).split(":");
+    var h = parseInt(parts[0], 10);
+    var m = parts.length > 1 ? parts[1] : "00";
+    var ap = h < 12 ? "AM" : "PM";
+    var h12 = h % 12;
+    if (h12 === 0) h12 = 12;
+    return h12 + ":" + m + " " + ap;
+  }
+  var dayKeys = ["sun","mon","tue","wed","thu","fri","sat"];
+%>
 <% if (it.schedules.length === 0) { %>
   <div class="card"><p class="muted"><%= it.t("schedules.none") %></p></div>
 <% } else { %>
@@ -17,20 +31,25 @@
     <div class="card list-row<%= (!s.isLegacy && !s.enabled) ? ' is-disabled' : '' %>">
       <div class="item-header">
         <div>
-          <h2 class="item-title"><%= s.connectionNames.join(", ") %></h2>
           <% if (s.isLegacy) { %>
+            <h2 class="item-title"><%= s.name || s.connectionNames.join(", ") %></h2>
             <p class="muted"><%= it.t("schedules.legacy.interval", { hours: s.intervalHours }) %></p>
             <div class="legacy-warning">
               <span class="warn"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> <%= it.t("schedules.legacy.warning") %></span>
               <span class="muted"><%= it.t("schedules.legacy.hint") %></span>
             </div>
           <% } else { %>
-            <p class="muted">
+            <div class="schedule-title-row">
+              <h2 class="item-title"><%= s.name || s.connectionNames.join(", ") %></h2>
               <span class="badge <%= s.enabled ? 'badge-active' : 'badge-paused' %>"><%= s.enabled ? it.t("schedules.statusActive") : it.t("schedules.statusPaused") %></span>
-              <% var dayKeys = ["sun","mon","tue","wed","thu","fri","sat"]; %>
+            </div>
+            <p class="muted schedule-recurrence">
               <%= s.daysOfWeek.map(function(d) { return it.t("schedules.day." + dayKeys[d]); }).join(", ") %>
-              at <%= s.timeOfDay %>
-              <% if (s.repeatWeeks > 1) { %> · every <%= s.repeatWeeks %> weeks<% } %>
+              <%= it.t("schedules.at") %> <%= fmt12(s.timeOfDay) %>
+              <% if (s.repeatWeeks > 1) { %> · <%= it.t("schedules.repeatEvery") %> <%= s.repeatWeeks %> <%= it.t("schedules.repeatWeeksUnit") %><% } %>
+            </p>
+            <p class="muted schedule-meta">
+              <%= s.connectionNames.join(", ") %>
               <% if (s.nextRunAt) { %> · <%= it.t("schedules.next", { when: new Date(s.nextRunAt).toLocaleString() }) %><% } %>
             </p>
           <% } %>

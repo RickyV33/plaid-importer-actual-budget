@@ -125,6 +125,13 @@ th { font-size: 0.875rem; color: var(--muted); font-weight: 500; }
 .list-row.is-disabled { opacity: 0.6; border-left: 4px solid var(--border); }
 .list-row.is-disabled:hover, .list-row.is-disabled:focus-within { opacity: 1; }
 
+/* schedule-naming-and-layout: name + status on one line, recurrence/meta below */
+.schedule-title-row {
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+}
+.schedule-recurrence { margin: 0.25rem 0 0; font-size: 0.875rem; }
+.schedule-meta { margin: 0.15rem 0 0; font-size: 0.875rem; }
+
 /* flatten-nav-dashboard: landing dashboard status cards */
 .dash-grid {
   display: flex; flex-wrap: wrap; gap: 1rem;

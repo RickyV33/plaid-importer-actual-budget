@@ -165,6 +165,8 @@ export const es: Record<string, string> = {
   "schedules.deleteConfirm": "¿Eliminar esta programación?",
   "schedules.deleteFailed": "No se pudo eliminar la programación.",
   // schedule recurrence form
+  "schedules.name": "Nombre",
+  "schedules.namePlaceholder": "Opcional — usa los nombres de las conexiones por defecto",
   "schedules.days": "Días",
   "schedules.timeRepeat": "Hora y repetición",
   "schedules.at": "a las",

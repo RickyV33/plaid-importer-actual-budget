@@ -5,6 +5,13 @@
 ]; %>
 
 <div class="field">
+  <label for="scheduleName"><%= it.t("schedules.name") %></label>
+  <input id="scheduleName" name="name" type="text" maxlength="80"
+    placeholder="<%= it.t('schedules.namePlaceholder') %>"
+    value="<%= (it.prefill && it.prefill.name) ? it.prefill.name : '' %>" />
+</div>
+
+<div class="field">
   <label><%= it.t("schedules.days") %></label>
   <div class="day-picker">
     <% days.forEach(function(d) { %>
