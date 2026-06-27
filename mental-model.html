@@ -165,7 +165,9 @@ PRUNE  delete events delivered to every active connected profile</pre>
         <p>An admin can cap Plaid usage: each connection may be synced at most N times per X hours
           (set under <code>/settings</code>, disabled by default). Over-limit connections are
           <strong>skipped</strong> and the rest still sync; counting is per connection, so batching one-by-one
-          is not penalized.</p>
+          is not penalized. Every successful Plaid pull counts toward the ceiling — including a pull that imports
+          nothing or a connection with no mapped profile — recorded via a per-run <code>sync_account_results</code>
+          marker so no-op pulls still accrue.</p>
         <p>On the Connections page, sync results are shown <strong>per connection</strong> — an imported-count for
           each synced connection and a persistent "limit reached, retry in ~N min" message for skipped ones — each
           dismissible (with a 60-second auto-clear). The page updates each connection's last-sync time in place

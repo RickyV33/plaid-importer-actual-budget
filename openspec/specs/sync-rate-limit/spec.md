@@ -21,7 +21,21 @@ The system SHALL let an `admin`, on the `/settings` page, configure a per-connec
 
 ### Requirement: Connection pulls are counted per connection in a rolling window
 
-The system SHALL count, per connection (Plaid item), the number of sync runs whose `started_at` falls within the last `X` hours and that touched that connection (i.e. included at least one of its accounts in `sync_account_results`). The count SHALL be independent per connection, so syncing connections individually or together yields the same per-connection count. Every qualifying run counts regardless of its terminal status or trigger (manual or scheduled).
+The system SHALL count, per connection (Plaid item), the number of sync runs
+whose `started_at` falls within the last `X` hours and that pulled that
+connection from Plaid. Every successful pull of a connection SHALL record at
+least one `sync_account_results` row for that connection in the run, so the
+count includes pulls that imported no transactions and pulls of connections that
+map to no profile. The count SHALL be independent per connection, so syncing
+connections individually or together yields the same per-connection count. Every
+qualifying run counts regardless of its terminal status or trigger (manual or
+scheduled).
+
+#### Scenario: No-op pull still counts
+
+- **WHEN** a connection is synced and the pull imports zero transactions (empty
+  delta, or the connection maps to no profile)
+- **THEN** that run still counts as one pull toward the connection's ceiling
 
 #### Scenario: Per-connection counting is batching-independent
 - **WHEN** a user syncs connection A and connection B in one run, versus two separate runs
