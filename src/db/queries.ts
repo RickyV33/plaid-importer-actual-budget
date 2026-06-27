@@ -630,6 +630,21 @@ export const syncAccountResults = {
       )
       .all(syncRunId);
   },
+
+  // Per-connection (item) imported sums for a run, summed across the fan-out to
+  // every profile. Connections with no recorded result do not appear; callers
+  // that need a row per attempted connection should default missing items to 0.
+  importedByItemForRun(syncRunId: number): { item_id: string; imported: number }[] {
+    return db()
+      .prepare<[number], { item_id: string; imported: number }>(
+        `SELECT pa.item_id AS item_id, SUM(sar.txns_imported) AS imported
+           FROM sync_account_results sar
+           JOIN plaid_accounts pa ON pa.plaid_account_id = sar.plaid_account_id
+         WHERE sar.sync_run_id = ?
+         GROUP BY pa.item_id`,
+      )
+      .all(syncRunId);
+  },
 };
 
 export const users = {

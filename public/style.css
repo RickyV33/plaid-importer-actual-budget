@@ -198,7 +198,20 @@ input[type="checkbox"].bigcheck {
 
 /* ui-polish: sync action layout */
 .sync-actions-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
-.sync-result { margin-top: 1rem; }
+.sync-result { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+
+/* connections-sync-feedback: per-connection + total sync messages */
+.conn-messages { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.5rem; }
+.conn-messages:empty { margin-top: 0; }
+.sync-msg {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  padding: 0.4rem 0.6rem; border-radius: 0.4rem; font-size: 0.875rem;
+  border: 1px solid var(--border); background: var(--card);
+}
+.sync-msg.success { border-left: 4px solid var(--success); }
+.sync-msg.warn { border-left: 4px solid var(--warn); }
+.sync-msg.error { border-left: 4px solid var(--error); }
+.sync-msg-close { flex: 0 0 auto; }
 
 /* ui-polish: calm-at-rest list rows — actions revealed on hover/focus,
    but always visible on touch devices (no hover) for accessibility. */

@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 
 import { requireUserId } from "../auth/middleware.js";
-import { plaidAccounts, plaidItems, syncRuns } from "../db/queries.js";
+import { plaidAccounts, plaidItems, syncAccountResults, syncRuns } from "../db/queries.js";
 import { effectiveSyncLimit, retryAfterMinutes } from "../sync/ratelimit.js";
 import { runSync } from "../sync/run.js";
 
@@ -14,7 +14,8 @@ const bodySchema = z.discriminatedUnion("scope", [
   }),
 ]);
 
-type Skipped = { name: string; retryAfterMinutes: number };
+type Skipped = { itemId: string; name: string; retryAfterMinutes: number };
+type SyncedConnection = { itemId: string; imported: number; lastSyncedAt: number | null };
 
 export function registerSyncRoutes(app: FastifyInstance): void {
   app.post("/sync", async (req, reply) => {
@@ -50,6 +51,7 @@ export function registerSyncRoutes(app: FastifyInstance): void {
           skippedItemIds.add(itemId);
           const oldest = syncRuns.oldestPullForItemSince(itemId, since) ?? now;
           skipped.push({
+            itemId,
             name: items.get(itemId)?.institution_name ?? itemId,
             retryAfterMinutes: retryAfterMinutes(oldest, limit.windowHours, now),
           });
@@ -60,7 +62,7 @@ export function registerSyncRoutes(app: FastifyInstance): void {
 
     if (allowed.length === 0) {
       // Everything was throttled — nothing to run.
-      return reply.send({ status: "success", totalImported: 0, runId: null, skipped });
+      return reply.send({ status: "success", totalImported: 0, runId: null, synced: [], skipped });
     }
 
     try {
@@ -71,7 +73,24 @@ export function registerSyncRoutes(app: FastifyInstance): void {
         plaidAccountIds: allowed.map((a) => a.plaid_account_id),
         logger: req.log,
       });
-      return reply.send({ ...result, skipped });
+
+      // Per-connection breakdown: every attempted connection gets a line
+      // (default 0), with its refreshed last-synced timestamp.
+      const importedByItem = new Map(
+        result.runId === null
+          ? []
+          : syncAccountResults.importedByItemForRun(result.runId).map((r) => [r.item_id, r.imported]),
+      );
+      const lastSyncedByItem = new Map(
+        plaidItems.listByOwner(ownerUserId).map((i) => [i.id, i.last_synced_at]),
+      );
+      const synced: SyncedConnection[] = [...new Set(allowed.map((a) => a.item_id))].map((itemId) => ({
+        itemId,
+        imported: importedByItem.get(itemId) ?? 0,
+        lastSyncedAt: lastSyncedByItem.get(itemId) ?? null,
+      }));
+
+      return reply.send({ ...result, synced, skipped });
     } catch (err) {
       app.log.error({ err }, "sync_run_failed");
       return reply.code(500).send({ error: "sync_failed" });

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>connections-sync-feedback — change delta</title>
+    <style>
+      :root {
+        --bg: #faf9f6; --fg: #1a1a1a; --muted: #6b6b6b; --accent: #2d5fb8;
+        --border: #d8d4cd; --card: #ffffff; --code: #f1efe9;
+        --ok: #1b6e3d; --warn: #b76e00;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--fg);
+        font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+      .wrap { max-width: 60rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+      header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; }
+      header p { margin: 0; color: var(--muted); }
+      h2 { margin: 2.25rem 0 0.5rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+      section { background: var(--card); border: 1px solid var(--border); border-radius: 0.6rem; padding: 1rem 1.25rem; margin-top: 1rem; }
+      code { background: var(--code); padding: 0.1rem 0.35rem; border-radius: 0.3rem; font-size: 0.9em; }
+      ul { margin: 0.4rem 0 0.4rem 1.1rem; padding: 0; }
+      li { margin: 0.2rem 0; }
+      .tag { display: inline-block; background: var(--code); border: 1px solid var(--border);
+        border-radius: 0.4rem; padding: 0.1rem 0.45rem; font-size: 0.8rem; margin: 0 0.25rem 0.25rem 0; }
+      .muted { color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>connections-sync-feedback</h1>
+        <p>Change delta — per-connection sync results that persist until dismissed, no auto-reload.</p>
+      </header>
+
+      <section>
+        <span class="tag">UI</span><span class="tag">eta + client JS</span><span class="tag">/sync response</span>
+        <span class="tag">i18n</span><span class="tag">no migration</span>
+        <p class="muted" style="margin:0.5rem 0 0">Additive response fields; no change to rate-limit math or how transactions are fetched/pushed.</p>
+      </section>
+
+      <h2>What changed</h2>
+      <section>
+        <ul>
+          <li><strong>Per-connection breakdown in <code>/sync</code>.</strong> The response now returns
+            <code>synced: [{ itemId, imported, lastSyncedAt }]</code> (built in <code>routes/sync.ts</code> from
+            <code>syncAccountResults.importedByItemForRun(runId)</code> defaulting each attempted connection to 0)
+            and adds <code>itemId</code> to every <code>skipped</code> entry. <code>status</code>,
+            <code>totalImported</code>, and <code>runId</code> are unchanged.</li>
+          <li><strong>Sticky, dismissible messages.</strong> Each connection card has a
+            <code>.conn-messages</code> slot; a synced connection shows "Imported N transaction(s)", a throttled
+            one shows "Skipped (sync limit reached): retry in ~M min". The overall total renders below the sync
+            buttons. Every message has an × close control (<code>buildMsg</code>) and the whole set auto-clears
+            after 60s as a fallback.</li>
+          <li><strong>No auto-reload.</strong> The old <code>setTimeout(reload, 1800)</code> is gone. Instead each
+            card's <code>.conn-last-sync</code> line is updated in place from <code>synced[].lastSyncedAt</code>,
+            so timing stays current without discarding the messages.</li>
+          <li><strong>Client state only.</strong> Dismissals are transient DOM state — a rate-limit skip goes
+            stale as its window clears, so nothing is persisted server-side (unlike the durable banners).</li>
+        </ul>
+      </section>
+
+      <h2>Touched files</h2>
+      <section>
+        <ul>
+          <li><code>src/db/queries.ts</code> — <code>syncAccountResults.importedByItemForRun(runId)</code>.</li>
+          <li><code>src/routes/sync.ts</code> — build <code>synced[]</code>, add <code>itemId</code> to skips.</li>
+          <li><code>src/views/connections.eta</code> — per-card message slot, targetable last-sync span, rewritten sync JS (sticky messages, in-place update, 60s clear).</li>
+          <li><code>public/style.css</code> — <code>.conn-messages</code>, <code>.sync-msg</code> + close.</li>
+          <li><code>src/i18n/en.ts</code>, <code>src/i18n/es.ts</code>, <code>index.ts</code> — <code>home.connImported</code>, <code>connSkipped</code>, <code>dismiss</code> (+ <code>lastSync</code>/<code>neverSynced</code> promoted to client keys).</li>
+        </ul>
+      </section>
+    </div>
+  </body>
+</html>

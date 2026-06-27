@@ -403,6 +403,24 @@ test("syncOrphanDeletes: insert + listUnacknowledged + ack + count", () => {
   assert.notEqual(remaining.find((o) => o.id === id2), undefined);
 });
 
+test("syncAccountResults.importedByItemForRun: sums per connection across fan-out", () => {
+  seedMapping("plaid-IB1", "actual-IB1"); // item-plaid-IB1
+  seedMapping("plaid-IB2", "actual-IB2"); // item-plaid-IB2 (different connection)
+  const runId = syncRuns.start({ triggeredBy: "manual", scope: "selected", ownerUserId });
+
+  // Connection 1: two fan-out rows for the same account (two profiles) → sum.
+  syncAccountResults.record({ syncRunId: runId, plaidAccountId: "plaid-IB1", status: "success", txnsImported: 3, reason: null, profileId: null });
+  syncAccountResults.record({ syncRunId: runId, plaidAccountId: "plaid-IB1", status: "success", txnsImported: 2, reason: null, profileId: null });
+  // Connection 2: attempted but imported nothing.
+  syncAccountResults.record({ syncRunId: runId, plaidAccountId: "plaid-IB2", status: "success", txnsImported: 0, reason: null, profileId: null });
+  syncRuns.finish({ id: runId, status: "success", totalImported: 5 });
+
+  const rows = syncAccountResults.importedByItemForRun(runId);
+  const byItem = new Map(rows.map((r) => [r.item_id, r.imported]));
+  assert.equal(byItem.get("item-plaid-IB1"), 5);
+  assert.equal(byItem.get("item-plaid-IB2"), 0);
+});
+
 test("syncRuns.totalImportedSince: sums total_imported in window, owner-scoped, 0 when none", () => {
   // Dedicated owners so other tests' runs don't leak into the sums.
   const owner = users.create({ username: "totals-owner", passwordHash: "x", role: "member" });

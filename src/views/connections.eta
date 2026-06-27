@@ -25,11 +25,13 @@
               <% } else { %>
                 <span class="warn"><%= item.status %></span> ·
               <% } %>
-              <% if (item.lastSyncedAt) { %>
-                <%= it.t("home.lastSync", { when: new Date(item.lastSyncedAt).toLocaleString() }) %>
-              <% } else { %>
-                <%= it.t("home.neverSynced") %>
-              <% } %>
+              <span class="conn-last-sync" data-item-id="<%= item.id %>">
+                <% if (item.lastSyncedAt) { %>
+                  <%= it.t("home.lastSync", { when: new Date(item.lastSyncedAt).toLocaleString() }) %>
+                <% } else { %>
+                  <%= it.t("home.neverSynced") %>
+                <% } %>
+              </span>
             </p>
           </div>
           <div class="item-actions row-actions">
@@ -73,6 +75,7 @@
             <% }) %>
           </tbody>
         </table>
+        <div class="conn-messages" data-item-id="<%= item.id %>"></div>
       </div>
     <% }) %>
 
@@ -109,28 +112,70 @@
       });
     });
 
+    var autoClearTimer = null;
+
+    function buildMsg(cls, text) {
+      var wrap = document.createElement('div');
+      wrap.className = 'sync-msg ' + cls;
+      var span = document.createElement('span');
+      span.textContent = text;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'icon-btn sync-msg-close';
+      btn.setAttribute('aria-label', t('home.dismiss'));
+      btn.title = t('home.dismiss');
+      btn.innerHTML = '<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
+      btn.addEventListener('click', function () { wrap.remove(); });
+      wrap.appendChild(span);
+      wrap.appendChild(btn);
+      return wrap;
+    }
+
+    function clearMessages() {
+      document.getElementById('sync-result').innerHTML = '';
+      document.querySelectorAll('.conn-messages').forEach(function (m) { m.innerHTML = ''; });
+    }
+
+    function findByItem(selector, itemId) {
+      var els = document.querySelectorAll(selector);
+      for (var i = 0; i < els.length; i++) if (els[i].dataset.itemId === itemId) return els[i];
+      return null;
+    }
+
     async function runSync(payload) {
       const status = document.getElementById('sync-status');
       const result = document.getElementById('sync-result');
       status.textContent = t('home.syncing');
-      result.innerHTML = '';
+      if (autoClearTimer) { clearTimeout(autoClearTimer); autoClearTimer = null; }
+      clearMessages();
       try {
         const res = await fetch('/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         const body = await res.json();
         if (!res.ok) {
-          result.innerHTML = '<p class="error">' + t('home.syncFailed', { error: body.error ?? 'unknown' }) + '</p>';
-        } else {
-          const cls = body.status === 'success' ? 'success' : 'error';
-          let html = '<p class="' + cls + '">' + t('home.syncResult', { status: body.status, count: body.totalImported }) + '</p>';
-          if (body.skipped && body.skipped.length) {
-            const parts = body.skipped.map((s) => t('home.skippedItem', { name: s.name, minutes: s.retryAfterMinutes }));
-            html += '<p class="warn">' + t('home.skipped', { list: parts.join(', ') }) + '</p>';
-          }
-          result.innerHTML = html;
-          setTimeout(() => window.location.reload(), 1800);
+          result.appendChild(buildMsg('error', t('home.syncFailed', { error: body.error ?? 'unknown' })));
+          return;
         }
+        // Per-connection imported counts + in-place last-sync update.
+        (body.synced || []).forEach(function (s) {
+          var box = findByItem('.conn-messages', s.itemId);
+          if (box) box.appendChild(buildMsg('success', t('home.connImported', { count: s.imported })));
+          var ls = findByItem('.conn-last-sync', s.itemId);
+          if (ls) ls.textContent = s.lastSyncedAt
+            ? t('home.lastSync', { when: new Date(s.lastSyncedAt).toLocaleString() })
+            : t('home.neverSynced');
+        });
+        // Per-connection skip messages, attached to the affected connection.
+        (body.skipped || []).forEach(function (s) {
+          var box = findByItem('.conn-messages', s.itemId);
+          if (box) box.appendChild(buildMsg('warn', t('home.connSkipped', { minutes: s.retryAfterMinutes })));
+        });
+        // Overall total below the sync buttons.
+        var cls = body.status === 'success' ? 'success' : 'error';
+        result.appendChild(buildMsg(cls, t('home.syncResult', { status: body.status, count: body.totalImported })));
+        // Fallback: clear everything after 60s if the user hasn't dismissed it.
+        autoClearTimer = setTimeout(clearMessages, 60000);
       } catch (err) {
-        result.innerHTML = '<p class="error">' + t('common.networkError', { msg: err.message }) + '</p>';
+        result.appendChild(buildMsg('error', t('common.networkError', { msg: err.message })));
       } finally {
         status.textContent = '';
       }
