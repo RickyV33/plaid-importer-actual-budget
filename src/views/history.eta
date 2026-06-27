@@ -20,7 +20,7 @@
       </thead>
       <tbody>
         <% it.runs.forEach(function(run) { %>
-          <% var expandable = run.totalImported > 0 && run.results.length > 0; %>
+          <% var expandable = run.results.length > 0 && (run.totalImported > 0 || run.status === "failure"); %>
           <tr class="history-row<%= expandable ? ' is-expandable' : '' %>"<%= expandable ? ' tabindex="0" role="button" aria-expanded="false"' : '' %>>
             <td>
               <% if (expandable) { %><i class="fa-solid fa-chevron-right history-caret" aria-hidden="true"></i> <% } %>

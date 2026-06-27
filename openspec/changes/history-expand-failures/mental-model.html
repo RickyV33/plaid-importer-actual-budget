@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>history-expand-failures — change delta</title>
+    <style>
+      :root {
+        --bg: #faf9f6; --fg: #1a1a1a; --muted: #6b6b6b; --accent: #2d5fb8;
+        --border: #d8d4cd; --card: #ffffff; --code: #f1efe9;
+        --ok: #1b6e3d; --warn: #b76e00;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--fg);
+        font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+      .wrap { max-width: 60rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+      header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; }
+      header p { margin: 0; color: var(--muted); }
+      h2 { margin: 2.25rem 0 0.5rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+      section { background: var(--card); border: 1px solid var(--border); border-radius: 0.6rem; padding: 1rem 1.25rem; margin-top: 1rem; }
+      code { background: var(--code); padding: 0.1rem 0.35rem; border-radius: 0.3rem; font-size: 0.9em; }
+      ul { margin: 0.4rem 0 0.4rem 1.1rem; padding: 0; }
+      li { margin: 0.2rem 0; }
+      .tag { display: inline-block; background: var(--code); border: 1px solid var(--border);
+        border-radius: 0.4rem; padding: 0.1rem 0.45rem; font-size: 0.8rem; margin: 0 0.25rem 0.25rem 0; }
+      .muted { color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>history-expand-failures</h1>
+        <p>Change delta — failed runs are expandable again so their per-account reasons are visible.</p>
+      </header>
+
+      <section>
+        <span class="tag">UI</span><span class="tag">eta view</span><span class="tag">one-line gate</span>
+        <p class="muted" style="margin:0.5rem 0 0">Refines history-row-expand; presentation only.</p>
+      </section>
+
+      <h2>What changed</h2>
+      <section>
+        <ul>
+          <li><strong>Failures expand.</strong> The History drill-down gate widened from
+            <code>totalImported &gt; 0</code> to <code>results.length &gt; 0 &amp;&amp; (totalImported &gt; 0 ||
+            status === "failure")</code>. A failed run imports nothing but its per-account rows carry the
+            <code>reason</code>, which is what you need to diagnose it.</li>
+          <li><strong>No-op pulls stay plain.</strong> A successful run that imported nothing (marker-only) is
+            still non-expandable, preserving the calm list from <em>history-row-expand</em>.</li>
+        </ul>
+      </section>
+
+      <h2>Touched files</h2>
+      <section>
+        <ul>
+          <li><code>src/views/history.eta</code> — widened the <code>expandable</code> condition.</li>
+        </ul>
+      </section>
+    </div>
+  </body>
+</html>
