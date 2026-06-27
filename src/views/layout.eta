@@ -51,6 +51,12 @@
             banner.remove();
           });
         });
+        // Render epoch timestamps in the browser's local timezone (server-side
+        // toLocaleString uses the server TZ, which is typically UTC).
+        document.querySelectorAll('.local-ts[data-ts]').forEach(function (el) {
+          var ts = Number(el.dataset.ts);
+          if (!isNaN(ts) && ts > 0) el.textContent = new Date(ts).toLocaleString();
+        });
       })();
     </script>
   </body>

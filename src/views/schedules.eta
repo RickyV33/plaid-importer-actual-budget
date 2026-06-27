@@ -50,7 +50,7 @@
             </p>
             <p class="muted schedule-meta">
               <%= s.connectionNames.join(", ") %>
-              <% if (s.nextRunAt) { %> · <%= it.t("schedules.next", { when: new Date(s.nextRunAt).toLocaleString() }) %><% } %>
+              <% if (s.nextRunAt) { %> · <%~ it.t("schedules.next", { when: '<span class="local-ts" data-ts="' + s.nextRunAt + '">' + new Date(s.nextRunAt).toLocaleString() + '</span>' }) %><% } %>
             </p>
           <% } %>
         </div>

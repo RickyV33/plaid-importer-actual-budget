@@ -59,6 +59,9 @@
             edit form's <code>&lt;input type="time"&gt;</code> stay 24-hour. Recurrence text also now uses the
             existing <code>schedules.at</code>/<code>repeatEvery</code>/<code>repeatWeeksUnit</code> keys
             (previously hardcoded English).</li>
+          <li><strong>Local next-run time.</strong> The next-run timestamp is tagged
+            <code>.local-ts[data-ts]</code> and reformatted to the browser's timezone by the shared localizer in
+            <code>layout.eta</code> (server-side <code>toLocaleString</code> renders in the server TZ / UTC).</li>
           <li><strong>Legacy rows unchanged.</strong> Legacy schedules (<code>days_of_week IS NULL</code>)
             keep their single-line interval rendering and warning.</li>
         </ul>

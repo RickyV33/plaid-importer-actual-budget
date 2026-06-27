@@ -53,8 +53,12 @@
             (<code>syncRuns.totalImportedSince(owner, cutoff)</code>, returns 0 when none). Windows are
             independent cumulative sums (30d includes 7d). Card links to <code>/history</code>.</li>
           <li><strong>Still read-only.</strong> Only new read queries; no create/edit/delete controls and no
-            external network calls enter the dashboard path. Connection-count and profile-count cards are
-            unchanged; the History and Schedules links are preserved as footer links under the sync table.</li>
+            external network calls enter the dashboard path. The card summaries (connections, profiles, imported
+            totals) link to their pages; the per-connection sync table is informational (History/Schedules are in
+            the top nav). Cards are centered.</li>
+          <li><strong>Local timestamps.</strong> Last/next sync times are tagged <code>.local-ts[data-ts]</code>
+            and reformatted to the browser's timezone by a shared localizer in <code>layout.eta</code>
+            (server-side <code>toLocaleString</code> renders in the server TZ / UTC).</li>
         </ul>
       </section>
 
@@ -63,7 +67,8 @@
         <ul>
           <li><code>src/db/queries.ts</code> — <code>syncRuns.totalImportedSince(ownerUserId, sinceTs)</code>.</li>
           <li><code>src/routes/home.ts</code> — per-connection last/next view + four windowed totals; dropped the collapsed reductions.</li>
-          <li><code>src/views/dashboard.eta</code> — imported-totals card + per-connection sync table.</li>
+          <li><code>src/views/dashboard.eta</code> — imported-totals card + per-connection sync table (local-ts cells).</li>
+          <li><code>src/views/layout.eta</code> — shared <code>.local-ts</code> browser-timezone localizer.</li>
           <li><code>public/style.css</code> — <code>.dash-windows</code>, <code>.dash-sync</code>, <code>.dash-sync-table</code>.</li>
           <li><code>src/i18n/en.ts</code>, <code>src/i18n/es.ts</code> — <code>dashboard.syncStatus</code>, <code>nextSyncCol</code>, <code>noSchedule</code>, <code>imported</code>, <code>window7/30/60/90</code>.</li>
         </ul>

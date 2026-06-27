@@ -140,6 +140,7 @@ th { font-size: 0.875rem; color: var(--muted); font-weight: 500; }
   display: flex; flex-direction: column; gap: 0.35rem;
   flex: 1 1 14rem; min-width: 0;
   text-decoration: none; color: inherit;
+  align-items: center; text-align: center;
 }
 a.dash-card:hover { border-color: var(--accent); filter: none; }
 .dash-label { color: var(--muted); font-size: 0.875rem; }
@@ -159,7 +160,6 @@ a.dash-card:hover { border-color: var(--accent); filter: none; }
 .dash-sync-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .dash-sync-table th, .dash-sync-table td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); }
 .dash-sync-table th { color: var(--muted); font-weight: 600; }
-.dash-sync-links { display: flex; gap: 1rem; font-size: 0.875rem; }
 
 /* ui-polish: larger, higher-contrast checkboxes */
 input[type="checkbox"].bigcheck {

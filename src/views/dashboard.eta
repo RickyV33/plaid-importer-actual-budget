@@ -63,15 +63,11 @@
         <% it.connectionSyncs.forEach(function(c) { %>
           <tr>
             <td><%= c.institutionName ?? "(unknown institution)" %></td>
-            <td><% if (c.lastSyncedAt) { %><%= new Date(c.lastSyncedAt).toLocaleString() %><% } else { %><span class="muted"><%= it.t("dashboard.neverSynced") %></span><% } %></td>
-            <td><% if (c.nextRunAt) { %><%= new Date(c.nextRunAt).toLocaleString() %><% } else { %><span class="muted"><%= it.t("dashboard.noSchedule") %></span><% } %></td>
+            <td><% if (c.lastSyncedAt) { %><span class="local-ts" data-ts="<%= c.lastSyncedAt %>"><%= new Date(c.lastSyncedAt).toLocaleString() %></span><% } else { %><span class="muted"><%= it.t("dashboard.neverSynced") %></span><% } %></td>
+            <td><% if (c.nextRunAt) { %><span class="local-ts" data-ts="<%= c.nextRunAt %>"><%= new Date(c.nextRunAt).toLocaleString() %></span><% } else { %><span class="muted"><%= it.t("dashboard.noSchedule") %></span><% } %></td>
           </tr>
         <% }) %>
       </tbody>
     </table>
-    <div class="dash-sync-links">
-      <a href="/history"><%= it.t("dashboard.lastSync") %></a>
-      <a href="/schedules"><%= it.t("dashboard.nextSyncCol") %></a>
-    </div>
   <% } %>
 </section>

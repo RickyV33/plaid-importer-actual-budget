@@ -23,9 +23,11 @@ The imported-transactions summary SHALL show the total number of transactions
 imported by the user over the last 7, 30, 60, and 90 days, each window derived by
 summing recorded per-run import counts within that window (see sync-history).
 
-Each summary SHALL link to its corresponding page (Connections, Profiles,
-History, Schedules). Each summary SHALL degrade to a calm empty state when the
-underlying data is absent.
+The single-figure card summaries (connections, profiles, imported totals) SHALL
+link to their corresponding page (Connections, Profiles, History). The
+per-connection sync-timing summary is informational and need not itself be a
+link, since the primary navigation already links to History and Schedules. Each
+summary SHALL degrade to a calm empty state when the underlying data is absent.
 
 #### Scenario: Dashboard summarizes local state with links
 
@@ -33,8 +35,8 @@ underlying data is absent.
   enabled schedule opens `/`
 - **THEN** the dashboard shows the connection count, profile count, each
   connection's last and next sync time, and the windowed imported-transaction
-  totals, each linking to its corresponding page, without performing any Plaid or
-  Actual Budget calls
+  totals — with the card summaries linking to their corresponding page — without
+  performing any Plaid or Actual Budget calls
 
 #### Scenario: Per-connection last and next sync
 
