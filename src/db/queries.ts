@@ -972,6 +972,7 @@ export const plaidTxnEvents = {
 export type ScheduleRow = {
   id: number;
   owner_user_id: number;
+  name: string | null; // optional owner-supplied label; null falls back to connection names
   plaid_item_ids: string; // JSON array of plaid_item id (connection)
   // TODO: remove interval_hours in a future migration once all legacy rows are migrated
   interval_hours: number | null; // null for new-format schedules
@@ -986,9 +987,16 @@ export type ScheduleRow = {
   updated_at: number;
 };
 
+/** Trim a schedule name, collapsing blank/whitespace-only input to NULL. */
+function normalizeName(name: string | null | undefined): string | null {
+  const trimmed = name?.trim();
+  return trimmed ? trimmed : null;
+}
+
 export const schedules = {
   create(row: {
     ownerUserId: number;
+    name?: string | null;
     plaidItemIds: string[];
     nextRunAt: number;
     daysOfWeek: number[];
@@ -999,11 +1007,12 @@ export const schedules = {
     const info = db()
       .prepare(
         `INSERT INTO schedules
-           (owner_user_id, plaid_item_ids, interval_hours, days_of_week, time_of_day, repeat_weeks, timezone, enabled, next_run_at, created_at, updated_at)
-         VALUES (?, ?, NULL, ?, ?, ?, ?, 1, ?, ?, ?)`,
+           (owner_user_id, name, plaid_item_ids, interval_hours, days_of_week, time_of_day, repeat_weeks, timezone, enabled, next_run_at, created_at, updated_at)
+         VALUES (?, ?, ?, NULL, ?, ?, ?, ?, 1, ?, ?, ?)`,
       )
       .run(
         row.ownerUserId,
+        normalizeName(row.name),
         JSON.stringify(row.plaidItemIds),
         JSON.stringify(row.daysOfWeek),
         row.timeOfDay,
@@ -1019,6 +1028,7 @@ export const schedules = {
   update(
     id: number,
     row: {
+      name?: string | null;
       plaidItemIds: string[];
       nextRunAt: number;
       daysOfWeek: number[];
@@ -1030,12 +1040,13 @@ export const schedules = {
     db()
       .prepare(
         `UPDATE schedules
-         SET plaid_item_ids = ?, interval_hours = NULL,
+         SET name = ?, plaid_item_ids = ?, interval_hours = NULL,
              days_of_week = ?, time_of_day = ?, repeat_weeks = ?, timezone = ?,
              next_run_at = ?, updated_at = ?
          WHERE id = ?`,
       )
       .run(
+        normalizeName(row.name),
         JSON.stringify(row.plaidItemIds),
         JSON.stringify(row.daysOfWeek),
         row.timeOfDay,

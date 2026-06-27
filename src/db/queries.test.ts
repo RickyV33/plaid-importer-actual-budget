@@ -30,6 +30,7 @@ const {
   syncOrphanDeletes,
   syncRuns,
   syncAccountResults,
+  schedules,
   users,
 } = await import("./queries.js");
 
@@ -400,4 +401,34 @@ test("syncOrphanDeletes: insert + listUnacknowledged + ack + count", () => {
   const remaining = syncOrphanDeletes.listUnacknowledged();
   assert.equal(remaining.find((o) => o.id === id1), undefined);
   assert.notEqual(remaining.find((o) => o.id === id2), undefined);
+});
+
+test("schedules.create/update: persists name, trims it, and collapses blank to null", () => {
+  const base = {
+    ownerUserId,
+    plaidItemIds: ["item-X"],
+    nextRunAt: 1_000,
+    daysOfWeek: [1, 3, 5],
+    timeOfDay: "09:00",
+    repeatWeeks: 1,
+    timezone: "UTC",
+  };
+
+  // Named, with surrounding whitespace that should be trimmed.
+  const namedId = schedules.create({ ...base, name: "  My Chase nightly  " });
+  assert.equal(schedules.getOwned(namedId, ownerUserId)?.name, "My Chase nightly");
+
+  // No name → stored as null.
+  const unnamedId = schedules.create({ ...base });
+  assert.equal(schedules.getOwned(unnamedId, ownerUserId)?.name, null);
+
+  // Blank/whitespace name → stored as null.
+  const blankId = schedules.create({ ...base, name: "   " });
+  assert.equal(schedules.getOwned(blankId, ownerUserId)?.name, null);
+
+  // Update can set and later clear the name.
+  schedules.update(unnamedId, { ...base, name: "Renamed" });
+  assert.equal(schedules.getOwned(unnamedId, ownerUserId)?.name, "Renamed");
+  schedules.update(unnamedId, { ...base, name: "" });
+  assert.equal(schedules.getOwned(unnamedId, ownerUserId)?.name, null);
 });
