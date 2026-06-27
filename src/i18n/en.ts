@@ -59,7 +59,7 @@ export const en: Record<string, string> = {
   "dashboard.profiles": "Profiles",
   "dashboard.lastSync": "Last sync",
   "dashboard.nextSync": "Next scheduled sync",
-  "dashboard.otherUsers": "Other users",
+  "dashboard.otherUsers": "Users",
   "dashboard.relinkAlert": "{count} connection(s) need re-linking",
   "dashboard.noConnections": "No connections yet",
   "dashboard.noProfiles": "No profiles yet",

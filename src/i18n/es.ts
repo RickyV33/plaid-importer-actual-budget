@@ -59,7 +59,7 @@ export const es: Record<string, string> = {
   "dashboard.profiles": "Perfiles",
   "dashboard.lastSync": "Última sincronización",
   "dashboard.nextSync": "Próxima sincronización programada",
-  "dashboard.otherUsers": "Otros usuarios",
+  "dashboard.otherUsers": "Usuarios",
   "dashboard.relinkAlert": "{count} conexión(es) requieren revinculación",
   "dashboard.noConnections": "Aún no hay conexiones",
   "dashboard.noProfiles": "Aún no hay perfiles",
