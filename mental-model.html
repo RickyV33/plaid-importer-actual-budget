@@ -64,11 +64,16 @@
           <strong>Schedules</strong>, <strong>History</strong>, and (admins) <strong>Settings</strong> — each its
           own route and URL; there are no nested in-page tabs. The brand logo and <code>/</code> land on a
           read-only <strong>dashboard</strong>.</p>
-        <p>The dashboard makes no Plaid/Actual calls — it reads local state only: linked-connection count
-          (with a re-link alert), profile count, last sync, and next scheduled sync, each linking to its page,
-          plus an admin-only count of other registered users. Each page loads just its own data:
-          <code>/connections</code> builds connection views; <code>/profiles</code> additionally fetches each
-          profile's Actual accounts for the mapping selects.</p>
+        <p>The dashboard makes no Plaid/Actual calls — it reads local state only: connection and profile counts
+          (with a re-link alert), a <strong>per-connection</strong> last-sync / next-sync table, and
+          imported-transaction totals over rolling 7/30/60/90-day windows (summed from <code>sync_runs</code>),
+          plus an admin-only count of other registered users. The card summaries link to their pages; the
+          per-connection table is informational (Schedules/History sit in the top nav). Each page loads just its
+          own data: <code>/connections</code> builds connection views; <code>/profiles</code> additionally fetches
+          each profile's Actual accounts for the mapping selects.</p>
+        <p>Epoch timestamps are rendered in the <strong>viewer's</strong> timezone client-side (a shared
+          <code>.local-ts</code> localizer in the layout), since server-side formatting would otherwise use the
+          server's TZ.</p>
       </section>
 
       <h2>Request &amp; layering</h2>
@@ -115,6 +120,9 @@ in-process scheduler ticks and triggers syncs                  src/scheduler/*</
           their mappings. Because Plaid may hand back a new <code>account_id</code> for a re-added account,
           accounts are reconciled by their stable <code>persistent_account_id</code> (or, failing that, a
           name/mask/type match) so mappings survive the swap instead of duplicating.</p>
+        <p>Per-connection row actions are icon controls consistent with the rest of the app:
+          manage-accounts is a checklist icon (<code>fa-list-check</code>) and unlink is
+          <code>fa-link-slash</code>.</p>
       </section>
 
       <h2>The sync engine: PULL once, DRAIN to many</h2>
@@ -148,6 +156,7 @@ PRUNE  delete events delivered to every active connected profile</pre>
           <li><code>next_run_at</code> is computed (DST-safe) as the next matching weekday/time and persisted so schedules survive restarts. Legacy rows predating this model keep a non-null <code>interval_hours</code> (<code>days_of_week IS NULL</code>) and advance by that interval until edited; editing one migrates it to the new cadence.</li>
           <li>Because execution is the normal fan-out, syncing a connection's account updates it in <em>every</em> profile that maps it, from a single pull.</li>
           <li>UI mirrors the Profiles pattern: <code>/schedules</code> is a calm list with a header <strong>New schedule</strong> button leading to a dedicated form page (<code>/schedules/new</code>, reusing the same cadence form partial as edit). Each row carries an <em>Active</em>/<em>Paused</em> status badge, disabled rows are dimmed, and enable/disable is a <code>fa-toggle-on</code>/<code>fa-toggle-off</code> icon button alongside edit/delete. Legacy rows keep their warning + edit affordance.</li>
+          <li>A schedule can carry an optional custom <code>name</code> (it falls back to the joined connection names when blank). Each non-legacy row reads on three lines — name + status, then the recurrence (days · time · repeat), then connections + next run — with the time shown in 12-hour form.</li>
         </ul>
       </section>
 
@@ -157,6 +166,10 @@ PRUNE  delete events delivered to every active connected profile</pre>
           (set under <code>/settings</code>, disabled by default). Over-limit connections are
           <strong>skipped</strong> and the rest still sync; counting is per connection, so batching one-by-one
           is not penalized.</p>
+        <p>On the Connections page, sync results are shown <strong>per connection</strong> — an imported-count for
+          each synced connection and a persistent "limit reached, retry in ~N min" message for skipped ones — each
+          dismissible (with a 60-second auto-clear). The page updates each connection's last-sync time in place
+          instead of reloading, and a running total sits below the sync buttons.</p>
       </section>
 
       <h2>Security model</h2>
@@ -191,7 +204,7 @@ PRUNE  delete events delivered to every active connected profile</pre>
           <tr><td><code>profile_item_delivery</code></td><td>Per-(profile, connection) delivery watermark</td></tr>
           <tr><td><code>sync_runs</code>, <code>sync_account_results</code></td><td>Audit: runs (owner, trigger) and per-(profile, account) outcomes</td></tr>
           <tr><td><code>sync_orphan_deletes</code></td><td>Failed-deletion records surfaced for acknowledgement</td></tr>
-          <tr><td><code>schedules</code></td><td>Recurring sync definitions (day-of-week cadence; <code>interval_hours</code> kept nullable for legacy rows)</td></tr>
+          <tr><td><code>schedules</code></td><td>Recurring sync definitions (optional name, day-of-week cadence; <code>interval_hours</code> kept nullable for legacy rows)</td></tr>
           <tr><td><code>dismissed_banners</code></td><td>Per-(user, banner_key) record of dismissed app-wide notices</td></tr>
           <tr><td><code>account_mappings</code> <span class="muted">(legacy)</span></td><td>Pre-profiles 1:1 mappings; retained for rollback, folded into Default on upgrade</td></tr>
         </table>

@@ -17,8 +17,10 @@ Full architecture, data model, and security notes:
 
 ## Features
 
-- **At-a-glance dashboard**: the home page summarizes your connections, profiles,
-  last sync, and next scheduled run, and flags any bank that needs re-linking.
+- **At-a-glance dashboard**: the home page summarizes your connections and
+  profiles, shows each connection's own last sync and next scheduled run, totals
+  how many transactions you've imported over the last 7/30/60/90 days, and flags
+  any bank that needs re-linking.
 - **Pending transactions**: set notes and categories on a pending transaction;
   they persist when it officially posts.
 - **Multi-user**: built for a household. Family or roommates each get their own
@@ -26,7 +28,7 @@ Full architecture, data model, and security notes:
 - **Multi-budget**: a "profile" points at one Actual budget; one bank account
   can feed several profiles at once.
 - **Scheduled or on-demand**: pick which Plaid connections a schedule pulls and
-  how often; run as many schedules as you need, or sync on demand.
+  how often, give it a name, run as many schedules as you need, or sync on demand.
 - **Per-connection sync limits**: cap how often a connection can be pulled in a
   window. Plaid bills per pull, so you get a lever for family/friends. (A
   connection is one institution, e.g. Wells Fargo, which may hold several accounts.)
