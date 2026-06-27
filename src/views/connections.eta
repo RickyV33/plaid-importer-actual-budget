@@ -27,7 +27,7 @@
               <% } %>
               <span class="conn-last-sync" data-item-id="<%= item.id %>">
                 <% if (item.lastSyncedAt) { %>
-                  <%= it.t("home.lastSync", { when: new Date(item.lastSyncedAt).toLocaleString() }) %>
+                  <%~ it.t("home.lastSync", { when: '<span class="local-ts" data-ts="' + item.lastSyncedAt + '">' + new Date(item.lastSyncedAt).toLocaleString() + '</span>' }) %>
                 <% } else { %>
                   <%= it.t("home.neverSynced") %>
                 <% } %>

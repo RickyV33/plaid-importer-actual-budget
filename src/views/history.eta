@@ -21,7 +21,7 @@
       <tbody>
         <% it.runs.forEach(function(run) { %>
           <tr>
-            <td><%= new Date(run.startedAt).toLocaleString() %></td>
+            <td><span class="local-ts" data-ts="<%= run.startedAt %>"><%= new Date(run.startedAt).toLocaleString() %></span></td>
             <td><span class="badge badge-<%= run.triggeredBy === 'scheduled' ? 'scheduled' : 'manual' %>"><%= run.triggeredBy %></span></td>
             <td><%= run.scope %></td>
             <td>
