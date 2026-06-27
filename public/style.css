@@ -148,6 +148,19 @@ a.dash-card:hover { border-color: var(--accent); filter: none; }
 .dash-empty { font-size: 1rem; }
 .dash-alert { font-size: 0.875rem; }
 
+/* dashboard-sync-stats: windowed import totals */
+.dash-windows { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.15rem; }
+.dash-window { display: flex; flex-direction: column; }
+.dash-window-val { font-size: 1.4rem; font-weight: 600; line-height: 1.1; }
+.dash-window-label { font-size: 0.75rem; }
+
+/* dashboard-sync-stats: per-connection last/next sync */
+.dash-sync { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.dash-sync-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.dash-sync-table th, .dash-sync-table td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); }
+.dash-sync-table th { color: var(--muted); font-weight: 600; }
+.dash-sync-links { display: flex; gap: 1rem; font-size: 0.875rem; }
+
 /* ui-polish: larger, higher-contrast checkboxes */
 input[type="checkbox"].bigcheck {
   width: 1.2rem; height: 1.2rem; accent-color: var(--accent);

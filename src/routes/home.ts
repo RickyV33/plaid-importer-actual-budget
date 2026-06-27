@@ -9,6 +9,7 @@ import {
   profileAccountMappings,
   profiles,
   schedules,
+  syncRuns,
   users,
   type PlaidAccountRow,
   type PlaidItemRow,
@@ -59,18 +60,39 @@ export function registerHomeRoute(app: FastifyInstance): void {
     if (userId === undefined) return;
 
     const items = plaidItems.listByOwner(userId);
-    const lastSyncedAt = items.reduce<number | null>((max, item) => {
-      if (item.last_synced_at === null) return max;
-      return max === null || item.last_synced_at > max ? item.last_synced_at : max;
-    }, null);
 
-    const nextRunAt = schedules
-      .listByOwner(userId)
-      .filter((s) => s.enabled === 1 && s.next_run_at !== null)
-      .reduce<number | null>((min, s) => {
-        const n = s.next_run_at as number;
-        return min === null || n < min ? n : min;
-      }, null);
+    // Next scheduled sync per connection: the soonest next_run_at among the
+    // owner's enabled schedules that target that connection.
+    const nextByItem = new Map<string, number>();
+    for (const s of schedules.listByOwner(userId)) {
+      if (s.enabled !== 1 || s.next_run_at === null) continue;
+      let targeted: string[];
+      try {
+        targeted = JSON.parse(s.plaid_item_ids) as string[];
+      } catch {
+        continue;
+      }
+      for (const id of targeted) {
+        const prev = nextByItem.get(id);
+        if (prev === undefined || s.next_run_at < prev) nextByItem.set(id, s.next_run_at);
+      }
+    }
+
+    const connectionSyncs = items.map((item) => ({
+      institutionName: item.institution_name,
+      lastSyncedAt: item.last_synced_at,
+      nextRunAt: nextByItem.get(item.id) ?? null,
+    }));
+
+    // Imported-transaction totals over rolling windows (sum of total_imported).
+    const now = Date.now();
+    const day = 86_400_000;
+    const importedTotals = {
+      d7: syncRuns.totalImportedSince(userId, now - 7 * day),
+      d30: syncRuns.totalImportedSince(userId, now - 30 * day),
+      d60: syncRuns.totalImportedSince(userId, now - 60 * day),
+      d90: syncRuns.totalImportedSince(userId, now - 90 * day),
+    };
 
     const isAdmin = currentUser(req)?.role === "admin";
 
@@ -80,9 +102,9 @@ export function registerHomeRoute(app: FastifyInstance): void {
       isAdmin,
       connectionCount: items.length,
       relinkCount: items.filter((i) => i.status === "requires_relink").length,
-      lastSyncedAt,
+      connectionSyncs,
+      importedTotals,
       profileCount: profiles.listByOwner(userId).length,
-      nextRunAt,
       // Other registered users (excluding the viewing admin); null for non-admins.
       otherUsers: isAdmin ? Math.max(0, users.count() - 1) : null,
     });

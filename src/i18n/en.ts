@@ -66,6 +66,14 @@ export const en: Record<string, string> = {
   "dashboard.neverSynced": "Never synced",
   "dashboard.noSchedules": "No schedules",
   "dashboard.noOtherUsers": "No other users",
+  "dashboard.syncStatus": "Sync status",
+  "dashboard.nextSyncCol": "Next sync",
+  "dashboard.noSchedule": "No schedule",
+  "dashboard.imported": "Imported transactions",
+  "dashboard.window7": "7d",
+  "dashboard.window30": "30d",
+  "dashboard.window60": "60d",
+  "dashboard.window90": "90d",
 
   // home: connections
   "home.connections": "Connections",

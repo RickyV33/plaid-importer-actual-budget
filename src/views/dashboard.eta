@@ -25,21 +25,13 @@
   </a>
 
   <a class="card dash-card" href="/history">
-    <span class="dash-label"><%= it.t("dashboard.lastSync") %></span>
-    <% if (it.lastSyncedAt) { %>
-      <span class="dash-value-sm"><%= new Date(it.lastSyncedAt).toLocaleString() %></span>
-    <% } else { %>
-      <span class="dash-empty muted"><%= it.t("dashboard.neverSynced") %></span>
-    <% } %>
-  </a>
-
-  <a class="card dash-card" href="/schedules">
-    <span class="dash-label"><%= it.t("dashboard.nextSync") %></span>
-    <% if (it.nextRunAt) { %>
-      <span class="dash-value-sm"><%= new Date(it.nextRunAt).toLocaleString() %></span>
-    <% } else { %>
-      <span class="dash-empty muted"><%= it.t("dashboard.noSchedules") %></span>
-    <% } %>
+    <span class="dash-label"><%= it.t("dashboard.imported") %></span>
+    <div class="dash-windows">
+      <span class="dash-window"><span class="dash-window-val"><%= it.importedTotals.d7 %></span><span class="dash-window-label muted"><%= it.t("dashboard.window7") %></span></span>
+      <span class="dash-window"><span class="dash-window-val"><%= it.importedTotals.d30 %></span><span class="dash-window-label muted"><%= it.t("dashboard.window30") %></span></span>
+      <span class="dash-window"><span class="dash-window-val"><%= it.importedTotals.d60 %></span><span class="dash-window-label muted"><%= it.t("dashboard.window60") %></span></span>
+      <span class="dash-window"><span class="dash-window-val"><%= it.importedTotals.d90 %></span><span class="dash-window-label muted"><%= it.t("dashboard.window90") %></span></span>
+    </div>
   </a>
 
   <% if (it.isAdmin) { %>
@@ -53,3 +45,33 @@
     </div>
   <% } %>
 </div>
+
+<section class="card dash-sync">
+  <span class="dash-label"><%= it.t("dashboard.syncStatus") %></span>
+  <% if (it.connectionSyncs.length === 0) { %>
+    <p class="dash-empty muted"><%= it.t("dashboard.noConnections") %></p>
+  <% } else { %>
+    <table class="dash-sync-table">
+      <thead>
+        <tr>
+          <th><%= it.t("dashboard.connections") %></th>
+          <th><%= it.t("dashboard.lastSync") %></th>
+          <th><%= it.t("dashboard.nextSyncCol") %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% it.connectionSyncs.forEach(function(c) { %>
+          <tr>
+            <td><%= c.institutionName ?? "(unknown institution)" %></td>
+            <td><% if (c.lastSyncedAt) { %><%= new Date(c.lastSyncedAt).toLocaleString() %><% } else { %><span class="muted"><%= it.t("dashboard.neverSynced") %></span><% } %></td>
+            <td><% if (c.nextRunAt) { %><%= new Date(c.nextRunAt).toLocaleString() %><% } else { %><span class="muted"><%= it.t("dashboard.noSchedule") %></span><% } %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <div class="dash-sync-links">
+      <a href="/history"><%= it.t("dashboard.lastSync") %></a>
+      <a href="/schedules"><%= it.t("dashboard.nextSyncCol") %></a>
+    </div>
+  <% } %>
+</section>

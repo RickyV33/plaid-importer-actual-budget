@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>dashboard-sync-stats — change delta</title>
+    <style>
+      :root {
+        --bg: #faf9f6; --fg: #1a1a1a; --muted: #6b6b6b; --accent: #2d5fb8;
+        --border: #d8d4cd; --card: #ffffff; --code: #f1efe9;
+        --ok: #1b6e3d; --warn: #b76e00;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--fg);
+        font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+      .wrap { max-width: 60rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+      header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; }
+      header p { margin: 0; color: var(--muted); }
+      h2 { margin: 2.25rem 0 0.5rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+      section { background: var(--card); border: 1px solid var(--border); border-radius: 0.6rem; padding: 1rem 1.25rem; margin-top: 1rem; }
+      code { background: var(--code); padding: 0.1rem 0.35rem; border-radius: 0.3rem; font-size: 0.9em; }
+      ul { margin: 0.4rem 0 0.4rem 1.1rem; padding: 0; }
+      li { margin: 0.2rem 0; }
+      .tag { display: inline-block; background: var(--code); border: 1px solid var(--border);
+        border-radius: 0.4rem; padding: 0.1rem 0.45rem; font-size: 0.8rem; margin: 0 0.25rem 0.25rem 0; }
+      .muted { color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>dashboard-sync-stats</h1>
+        <p>Change delta — per-connection last/next sync and windowed import totals on the dashboard.</p>
+      </header>
+
+      <section>
+        <span class="tag">UI</span><span class="tag">eta views</span><span class="tag">i18n</span>
+        <span class="tag">1 read query</span><span class="tag">no migration</span>
+        <p class="muted" style="margin:0.5rem 0 0">Read-only; aggregates existing <code>sync_runs</code>. No new persistence, no Plaid/Actual calls.</p>
+      </section>
+
+      <h2>What changed</h2>
+      <section>
+        <ul>
+          <li><strong>Per-connection sync status.</strong> The dashboard previously collapsed timing into one
+            global "last sync" (max over connections) and one "next sync" (min over schedules). It now shows a
+            <code>.dash-sync</code> table with each connection's own <code>last_synced_at</code> and its next
+            scheduled sync — the soonest <code>next_run_at</code> among the owner's enabled schedules whose
+            <code>plaid_item_ids</code> include that connection (computed in <code>home.ts</code> via a
+            connection→soonest map). A connection with no enabling schedule shows "No schedule".</li>
+          <li><strong>Windowed import totals.</strong> A new card sums
+            <code>sync_runs.total_imported</code> over rolling 7/30/60/90-day windows
+            (<code>syncRuns.totalImportedSince(owner, cutoff)</code>, returns 0 when none). Windows are
+            independent cumulative sums (30d includes 7d). Card links to <code>/history</code>.</li>
+          <li><strong>Still read-only.</strong> Only new read queries; no create/edit/delete controls and no
+            external network calls enter the dashboard path. Connection-count and profile-count cards are
+            unchanged; the History and Schedules links are preserved as footer links under the sync table.</li>
+        </ul>
+      </section>
+
+      <h2>Touched files</h2>
+      <section>
+        <ul>
+          <li><code>src/db/queries.ts</code> — <code>syncRuns.totalImportedSince(ownerUserId, sinceTs)</code>.</li>
+          <li><code>src/routes/home.ts</code> — per-connection last/next view + four windowed totals; dropped the collapsed reductions.</li>
+          <li><code>src/views/dashboard.eta</code> — imported-totals card + per-connection sync table.</li>
+          <li><code>public/style.css</code> — <code>.dash-windows</code>, <code>.dash-sync</code>, <code>.dash-sync-table</code>.</li>
+          <li><code>src/i18n/en.ts</code>, <code>src/i18n/es.ts</code> — <code>dashboard.syncStatus</code>, <code>nextSyncCol</code>, <code>noSchedule</code>, <code>imported</code>, <code>window7/30/60/90</code>.</li>
+        </ul>
+      </section>
+    </div>
+  </body>
+</html>

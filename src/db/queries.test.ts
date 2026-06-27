@@ -403,6 +403,36 @@ test("syncOrphanDeletes: insert + listUnacknowledged + ack + count", () => {
   assert.notEqual(remaining.find((o) => o.id === id2), undefined);
 });
 
+test("syncRuns.totalImportedSince: sums total_imported in window, owner-scoped, 0 when none", () => {
+  // Dedicated owners so other tests' runs don't leak into the sums.
+  const owner = users.create({ username: "totals-owner", passwordHash: "x", role: "member" });
+  const otherOwner = users.create({ username: "totals-other", passwordHash: "x", role: "member" });
+  const base = Date.now();
+  const insert = (o: number, startedAt: number, imported: number) =>
+    db()
+      .prepare(
+        "INSERT INTO sync_runs (started_at, status, triggered_by, scope, total_imported, owner_user_id) VALUES (?, 'success', 'manual', 'all', ?, ?)",
+      )
+      .run(startedAt, imported, o);
+
+  // Within 7 days
+  insert(owner, base - 1 * 86_400_000, 5);
+  insert(owner, base - 3 * 86_400_000, 10);
+  // Within 30 but outside 7
+  insert(owner, base - 20 * 86_400_000, 100);
+  // Outside 90
+  insert(owner, base - 200 * 86_400_000, 999);
+  // Another owner's run inside the window must not count
+  insert(otherOwner, base - 1 * 86_400_000, 7);
+
+  assert.equal(syncRuns.totalImportedSince(owner, base - 7 * 86_400_000), 15);
+  assert.equal(syncRuns.totalImportedSince(owner, base - 30 * 86_400_000), 115);
+  assert.equal(syncRuns.totalImportedSince(otherOwner, base - 7 * 86_400_000), 7);
+
+  // No runs in a tiny future-only window → 0, not null
+  assert.equal(syncRuns.totalImportedSince(owner, base + 86_400_000), 0);
+});
+
 test("schedules.create/update: persists name, trims it, and collapses blank to null", () => {
   const base = {
     ownerUserId,

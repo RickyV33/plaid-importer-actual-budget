@@ -583,6 +583,19 @@ export const syncRuns = {
       .run(ownerUserId);
     return info.changes;
   },
+
+  // Sum of transactions imported by an owner's runs started at or after `sinceTs`.
+  // Returns 0 when the owner has no qualifying runs in the window.
+  totalImportedSince(ownerUserId: number, sinceTs: number): number {
+    const row = db()
+      .prepare<[number, number], { total: number | null }>(
+        `SELECT SUM(total_imported) AS total
+           FROM sync_runs
+         WHERE owner_user_id = ? AND started_at >= ?`,
+      )
+      .get(ownerUserId, sinceTs);
+    return row?.total ?? 0;
+  },
 };
 
 export const syncAccountResults = {
