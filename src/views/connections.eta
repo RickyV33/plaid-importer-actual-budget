@@ -38,7 +38,9 @@
             <% if (item.status === "requires_relink") { %>
               <button type="button" class="relink-btn secondary" data-item-id="<%= item.id %>"><%= it.t("home.relink") %></button>
             <% } else { %>
-              <button type="button" class="manage-accounts-btn secondary" data-item-id="<%= item.id %>"><%= it.t("home.manageAccounts") %></button>
+              <button type="button" class="icon-btn manage-accounts-btn" data-item-id="<%= item.id %>" aria-label="<%= it.t('home.manageAccounts') %>" title="<%= it.t('home.manageAccounts') %>">
+                <i class="fa-solid fa-list-check" aria-hidden="true"></i>
+              </button>
             <% } %>
             <button type="button" class="icon-btn remove-btn" data-item-id="<%= item.id %>" data-institution="<%= item.institutionName ?? '' %>" aria-label="<%= it.t('home.remove') %>" title="<%= it.t('home.remove') %>">
               <i class="fa-solid fa-link-slash" aria-hidden="true"></i>
