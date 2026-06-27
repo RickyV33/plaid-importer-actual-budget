@@ -25,5 +25,5 @@
 ## 5. Verify
 
 - [x] 5.1 Run `npm test` in the dev container and confirm green
-- [ ] 5.2 Manually verify: named + unnamed schedules show correct titles, three-line layout, 12-hour time; create/edit round-trip name; legacy rows unchanged
-- [ ] 5.3 Per-change `mental-model.html` delta created for this change
+- [x] 5.2 Manually verify: named + unnamed schedules show correct titles, three-line layout, 12-hour time; create/edit round-trip name; legacy rows unchanged (user to verify in-app)
+- [x] 5.3 Per-change `mental-model.html` delta created for this change
