@@ -419,6 +419,9 @@ test("syncAccountResults.importedByItemForRun: sums per connection across fan-ou
   const byItem = new Map(rows.map((r) => [r.item_id, r.imported]));
   assert.equal(byItem.get("item-plaid-IB1"), 5);
   assert.equal(byItem.get("item-plaid-IB2"), 0);
+
+  // A 0-import result row (the rate-limit "pulled" marker) still counts as a pull.
+  assert.equal(syncRuns.countPullsForItemSince("item-plaid-IB2", 0), 1);
 });
 
 test("syncRuns.totalImportedSince: sums total_imported in window, owner-scoped, 0 when none", () => {

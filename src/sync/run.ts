@@ -47,6 +47,26 @@ export type RunSyncResult = {
 
 const NOOP_LOGGER: RunLogger = { warn: () => {}, info: () => {} };
 
+/**
+ * Which pulled connections still need a 0-import marker result row so the rate
+ * limiter counts the pull: every targeted connection that was pulled
+ * successfully (not in `erroredItemIds`) but produced no `sync_account_results`
+ * row this run (not in `itemsWithResults`).
+ */
+export function pulledItemsNeedingMarker(
+  targetItemIds: Iterable<string>,
+  erroredItemIds: Set<string>,
+  itemsWithResults: Set<string>,
+): string[] {
+  const out: string[] = [];
+  for (const itemId of targetItemIds) {
+    if (erroredItemIds.has(itemId)) continue;
+    if (itemsWithResults.has(itemId)) continue;
+    out.push(itemId);
+  }
+  return out;
+}
+
 // Run-level lock so a scheduled run won't overlap a manual one (and vice versa).
 let running = false;
 export function isSyncRunning(): boolean {
@@ -159,6 +179,30 @@ async function runSyncInner(args: RunSyncArgs): Promise<RunSyncResult> {
         });
         anyFailure = true;
       }
+    }
+  }
+
+  // ---- Count every pull: a successful Plaid pull is the billable event, but
+  // drain only records results when a profile delivers transactions. Ensure each
+  // pulled connection has at least one result row so the rate limiter (which
+  // counts runs via sync_account_results) counts no-op and unmapped pulls too.
+  const itemsWithResults = new Set(
+    syncAccountResults.importedByItemForRun(runId).map((r) => r.item_id),
+  );
+  const erroredItemIds = new Set(itemErrors.keys());
+  for (const itemId of pulledItemsNeedingMarker(targetItemIds, erroredItemIds, itemsWithResults)) {
+    const rep = ownedAccounts.find(
+      (a) => a.item_id === itemId && targetAccountIds.has(a.plaid_account_id),
+    );
+    if (rep) {
+      syncAccountResults.record({
+        syncRunId: runId,
+        plaidAccountId: rep.plaid_account_id,
+        status: "success",
+        txnsImported: 0,
+        reason: "pulled",
+        profileId: null,
+      });
     }
   }
 
