@@ -713,6 +713,7 @@ export const settings = {
 export const REGISTRATION_SECRET_KEY = "registration_secret";
 export const SYNC_RATELIMIT_MAX_KEY = "sync_ratelimit_max";
 export const SYNC_RATELIMIT_WINDOW_HOURS_KEY = "sync_ratelimit_window_hours";
+export const INITIAL_HISTORY_DAYS_KEY = "initial_history_days";
 
 export type ProfileRow = {
   id: number;

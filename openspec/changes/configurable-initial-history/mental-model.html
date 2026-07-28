@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>configurable-initial-history — change delta</title>
+    <style>
+      :root {
+        --bg: #faf9f6; --fg: #1a1a1a; --muted: #6b6b6b; --accent: #2d5fb8;
+        --border: #d8d4cd; --card: #ffffff; --code: #f1efe9;
+        --ok: #1b6e3d; --warn: #b76e00;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--fg);
+        font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+      .wrap { max-width: 60rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+      header h1 { margin: 0 0 0.25rem; font-size: 1.6rem; }
+      header p { margin: 0; color: var(--muted); }
+      h2 { margin: 2.25rem 0 0.5rem; font-size: 1.2rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3rem; }
+      section { background: var(--card); border: 1px solid var(--border); border-radius: 0.6rem; padding: 1rem 1.25rem; margin-top: 1rem; }
+      code { background: var(--code); padding: 0.1rem 0.35rem; border-radius: 0.3rem; font-size: 0.9em; }
+      ul { margin: 0.4rem 0 0.4rem 1.1rem; padding: 0; }
+      li { margin: 0.2rem 0; }
+      .tag { display: inline-block; background: var(--code); border: 1px solid var(--border);
+        border-radius: 0.4rem; padding: 0.1rem 0.45rem; font-size: 0.8rem; margin: 0 0.25rem 0.25rem 0; }
+      .muted { color: var(--muted); }
+      .warn { color: var(--warn); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>configurable-initial-history</h1>
+        <p>Change delta — admins choose how much transaction history Plaid opens up for newly linked accounts.</p>
+      </header>
+
+      <section>
+        <span class="tag">settings</span><span class="tag">plaid link</span><span class="tag">admin-gated</span><span class="tag">i18n</span>
+        <p class="muted" style="margin:0.5rem 0 0">Additive; no schema migration. Follows the sync-rate-limit settings pattern.</p>
+      </section>
+
+      <h2>The mental model</h2>
+      <section>
+        <p style="margin:0 0 0.6rem">Transactions are pulled only through Plaid's cursor-based
+          <code>/transactions/sync</code> — there is no date window in this codebase at all. Two distinct
+          things decide "how far back":</p>
+        <ul>
+          <li><strong>Depth is set once, at link time.</strong> <code>transactions.days_requested</code> on
+            <code>/link/token/create</code> fixes how much history Plaid will ever make available for that item.
+            It was never set, so every item got Plaid's 90-day floor.</li>
+          <li><strong>Position is the cursor.</strong> A fresh item has <code>cursor = NULL</code>, so the first
+            sync streams everything available; afterwards the stored cursor yields only the incremental delta.
+            Ongoing sync has no window to configure and is untouched by this change.</li>
+        </ul>
+      </section>
+
+      <h2>What changed</h2>
+      <section>
+        <ul>
+          <li><strong>New admin setting.</strong> One row in the existing <code>settings</code> table under a new
+            <code>INITIAL_HISTORY_DAYS_KEY</code>, validated to <code>90–730</code> (Plaid's supported range),
+            defaulting to <code>90</code> when unset or invalid.</li>
+          <li><strong>New card on <code>/settings</code>.</strong> A number input modeled on the sync rate-limit
+            card, admin-gated (members 403), with <code>en</code>/<code>es</code> labels and help text.</li>
+          <li><strong>Wired into the Plaid layer.</strong> <code>createLinkToken()</code> reads the setting,
+            parses with a defensive fallback, and adds <code>transactions: { days_requested: N }</code> to the
+            request.</li>
+          <li class="warn"><strong>New links only.</strong> The value binds at link time. Raising it later does
+            not backfill already-linked items, does not touch cursors, and does not change ongoing syncs.</li>
+        </ul>
+      </section>
+
+      <h2>Cost note (researched, not assumed)</h2>
+      <section>
+        <ul>
+          <li><strong>No documented depth surcharge for Transactions.</strong> Plaid bills the Transactions
+            product as a per-Item subscription; neither the Transactions docs nor the Link API reference tie a
+            fee to <code>days_requested</code>. The only documented consequence of a larger window is that
+            "the historical update poll will take longer".</li>
+          <li class="warn"><strong>Don't confuse this with the Assets fee.</strong> Plaid's billing page
+            documents a flat per-Item "Additional History" fee above <strong>61</strong> days — that is under
+            <strong>Assets</strong>, a different product. This project sets
+            <code>PLAID_PRODUCTS=transactions</code>, so it does not apply.</li>
+          <li><strong>Still contract-specific.</strong> Plaid does not publish Transactions rates; a negotiated
+            or legacy plan could differ. Hence the help text points operators at their own Plaid Dashboard
+            instead of naming a number, and the default stays at 90 so no one opts into cost by accident.</li>
+        </ul>
+      </section>
+
+      <h2>Touched files</h2>
+      <section>
+        <ul>
+          <li><code>src/db/queries.ts</code> — new settings key constant.</li>
+          <li><code>src/plaid/link.ts</code> — <code>createLinkToken()</code> passes <code>days_requested</code>.</li>
+          <li><code>src/routes/settings.ts</code> — read into view data; POST handler with range validation.</li>
+          <li><code>src/views/settings.eta</code> — the new number-input card.</li>
+          <li><code>src/i18n/en.ts</code>, <code>src/i18n/es.ts</code> — labels, help text, validation error.</li>
+        </ul>
+      </section>
+    </div>
+  </body>
+</html>
