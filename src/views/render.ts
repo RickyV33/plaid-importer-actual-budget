@@ -7,6 +7,7 @@ import type { FastifyReply } from "fastify";
 import { config } from "../config.js";
 import { clientMessages, resolveLocale, translator } from "../i18n/index.js";
 import { dismissedBanners, schedules } from "../db/queries.js";
+import { formatVersion } from "../version.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -14,6 +15,10 @@ const eta = new Eta({
   views: __dirname,
   cache: config.NODE_ENV === "production",
 });
+
+// Formatted once — the version cannot change while the process runs. Formatting
+// happens here rather than in the template so the view stays free of logic.
+const displayVersion = formatVersion(config.appVersion);
 
 /** Keys of banners that are currently active in the app. */
 const ACTIVE_BANNER_KEYS = ["schedule_migration_v1"] as const;
@@ -56,6 +61,7 @@ export function render(
     locale,
     i18nClient: JSON.stringify(clientMessages(t)),
     banners,
+    version: displayVersion,
   };
   const body = eta.render(template, enriched);
   const html = eta.render("layout", { ...enriched, body });

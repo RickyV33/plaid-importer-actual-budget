@@ -355,3 +355,18 @@ input[type="time"] { width: auto; min-width: 9rem; }
 
 /* no top margin when h2 is the first element in a card */
 .card > h2:first-child { margin-top: 0; }
+
+/* version footer: normal document flow (never fixed/sticky, so it cannot
+   overlap content on short viewports), aligned to the same column as main */
+.app-footer {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 0 1rem 1.5rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+@media (min-width: 40rem) {
+  .app-footer { padding: 0 1.5rem 2rem; }
+}

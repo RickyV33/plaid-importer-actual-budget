@@ -31,13 +31,13 @@
 
 ## 4. Render the footer
 
-- [ ] 4.1 Add `version: formatVersion(config.appVersion)` to the enriched
+- [x] 4.1 Add `version: formatVersion(config.appVersion)` to the enriched
       template data in `render()` (`src/views/render.ts`), so every page and the
       layout receive it.
-- [ ] 4.2 Add `<footer class="app-footer">` below `<main>` in
+- [x] 4.2 Add `<footer class="app-footer">` below `<main>` in
       `src/views/layout.eta` rendering the version, with no message-catalog
       lookup.
-- [ ] 4.3 Style `.app-footer` in `public/style.css` — muted secondary text,
+- [x] 4.3 Style `.app-footer` in `public/style.css` — muted secondary text,
       normal document flow (not fixed or sticky), mobile-first with no
       breakpoint needed.
 

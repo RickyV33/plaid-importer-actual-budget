@@ -40,6 +40,9 @@
     <main>
       <%~ it.body %>
     </main>
+    <!-- Version only: a number (or the literal "dev"), so there is no prose to
+         translate and no message-catalog lookup is needed. -->
+    <footer class="app-footer"><%= it.version %></footer>
     <script>
       (function () {
         document.querySelectorAll('.banner-dismiss').forEach(function (btn) {
