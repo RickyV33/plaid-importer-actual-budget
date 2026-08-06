@@ -49,6 +49,8 @@ Full architecture, data model, and security notes:
 - **Encryption**: Plaid tokens and profile secrets are encrypted at rest;
   transaction data is encrypted and short-lived.
 - **Bilingual**: English and Spanish.
+- **Version on screen**: the running version shows next to the title in the top
+  bar, so you always know which build you're on.
 - **Unraid**: setup instructions in [DEPLOY.md](DEPLOY.md).
 
 ## Screenshots

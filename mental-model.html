@@ -74,6 +74,10 @@
         <p>Epoch timestamps are rendered in the <strong>viewer's</strong> timezone client-side (a shared
           <code>.local-ts</code> localizer in the layout), since server-side formatting would otherwise use the
           server's TZ.</p>
+        <p>The top bar also shows the <strong>running version</strong> beside the title (<code>v__VERSION__</code>),
+          baseline-aligned and muted so it reads as a subscript rather than a nav entry. It sits outside the brand
+          link, and carries no catalog string — a version number is not prose, so it renders identically in every
+          locale. See <em>Version reporting</em> under Deployment for where the value comes from.</p>
       </section>
 
       <h2>Request &amp; layering</h2>
@@ -259,6 +263,12 @@ PRUNE  delete events delivered to every active connected profile</pre>
           <li>Built as a container; pushed to a registry; run with <code>/app/data</code> mounted for the SQLite DB and Actual cache. Reverse-proxy terminates TLS so the public URL is HTTPS.</li>
           <li>SQL migrations run at boot (idempotent); a boot-time seed creates the admin and a "Default" profile from env on first upgrade.</li>
           <li>Config is environment-driven; see <code>.env.example</code>. Deploy specifics live in <code>DEPLOY.md</code>.</li>
+          <li><strong>Version reporting.</strong> <code>VERSION</code> (repo root, the single source of truth)
+            → <code>deploy.sh --build-arg VERSION</code> → <code>ARG VERSION</code> in the
+            <code>Dockerfile</code> → <code>APP_VERSION</code> env var → the top bar. <code>APP_VERSION</code> is
+            build-time and deliberately absent from <code>.env.example</code>; setting it per deployment would
+            make the app misreport the image it is running. Local <code>npm run dev</code> reads
+            <code>VERSION</code> directly, and an image built with no build arg reports <code>dev</code>.</li>
         </ul>
         <p class="muted">Examples here use placeholder hosts like <code>budget.example.com</code>; this document contains no secrets.</p>
       </section>
