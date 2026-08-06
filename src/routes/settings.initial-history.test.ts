@@ -63,6 +63,10 @@ test("admin can store a valid window", async (t) => {
 
   assert.equal(res.statusCode, 200);
   assert.equal(settings.get(INITIAL_HISTORY_DAYS_KEY), "365");
+
+  const view = await app.inject({ method: "GET", url: "/settings" });
+  assert.equal(view.statusCode, 200);
+  assert.match(view.body, /id="initial_history_days"[^>]*value="365"/);
 });
 
 test("the range bounds are inclusive", async (t) => {

@@ -18,9 +18,9 @@
 
 ## 4. UI and i18n
 
-- [ ] 4.1 Add the number-input card to `src/views/settings.eta`, modeled on the sync rate-limit card, mobile-first and flex-based.
-- [ ] 4.2 Add `en` and `es` message-catalog entries for the card label, validation error, and help text covering both (a) the value applies to newly linked accounts only and (b) deeper history may have billing implications depending on the operator's Plaid plan, directing them to their Plaid Dashboard. Do not name a specific fee or amount — Transactions pricing is contract-specific and no history-depth surcharge is documented for the Transactions product.
-- [ ] 4.3 Confirm no user-facing string is hardcoded in the template.
+- [x] 4.1 Add the number-input card to `src/views/settings.eta`, modeled on the sync rate-limit card, mobile-first and flex-based.
+- [x] 4.2 Add `en` and `es` message-catalog entries for the card label, validation error, and help text covering both (a) the value applies to newly linked accounts only and (b) deeper history may have billing implications depending on the operator's Plaid plan, directing them to their Plaid Dashboard. Do not name a specific fee or amount — Transactions pricing is contract-specific and no history-depth surcharge is documented for the Transactions product.
+- [x] 4.3 Confirm no user-facing string is hardcoded in the template.
 
 ## 5. Verification
 
