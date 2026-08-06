@@ -36,7 +36,7 @@
     <div class="wrap">
       <header>
         <h1>version-footer</h1>
-        <p>Change delta — the running app learns its own version and shows it in a global footer.</p>
+        <p>Change delta — the running app learns its own version and shows it beside the title.</p>
       </header>
 
       <section>
@@ -92,18 +92,35 @@
         <p style="margin:0"><code>render()</code> in <code>src/views/render.ts</code> is already the single funnel
           for every page: it enriches the data, renders the page template, then wraps it in
           <code>layout.eta</code>. Adding <code>version</code> to the enriched object gives every page the value
-          in one edit, and <code>layout.eta</code> renders the new <code>&lt;footer&gt;</code> below
-          <code>&lt;main&gt;</code>.</p>
+          in one edit, and <code>layout.eta</code> renders it beside the brand in the top bar.</p>
         <p class="muted" style="margin:0.5rem 0 0">Formatting happens in <code>render.ts</code>, not the template
           — the view stays free of logic.</p>
       </section>
 
+      <h2>Placement</h2>
+      <section>
+        <p style="margin:0">A page footer was built first, then moved: the top bar keeps the version visible
+          without scrolling, and beside the title it reads as an attribute <em>of the app</em> rather than as page
+          furniture.</p>
+        <ul>
+          <li><code>.brand-block</code> wraps the brand anchor + version so <code>.topbar</code>'s
+            <code>justify-content: space-between</code> still sees one left child and the nav on the right.</li>
+          <li>The version sits <strong>outside</strong> the anchor — not part of the link text or target.</li>
+          <li>Baseline-aligned at <code>0.75rem</code> in <code>--muted</code>, so it reads as a subscript to the
+            title rather than another nav entry.</li>
+        </ul>
+        <p class="muted" style="margin:0.5rem 0 0">The 375px top bar already overflows with nav present
+          (<code>scrollWidth</code> 530). Measured against the pre-change baseline, the version label reproduces
+          those numbers exactly — it neither causes nor worsens it. That pre-existing issue is left for its own
+          change.</p>
+      </section>
+
       <h2>Why no catalog string</h2>
       <section>
-        <p style="margin:0">The footer's entire content is a version number or the literal <code>dev</code>. There
-          is no prose to translate, so <code>en.ts</code>/<code>es.ts</code> are untouched and the footer renders
+        <p style="margin:0">The label's entire content is a version number or the literal <code>dev</code>. There
+          is no prose to translate, so <code>en.ts</code>/<code>es.ts</code> are untouched and it renders
           identically in both locales. This follows the i18n rule rather than excepting it — the rule targets
-          user-facing prose. A future label ("Version 2.8.0") or license line would go in the catalog then.</p>
+          user-facing prose. A future label ("Version 2.8.0") would go in the catalog then.</p>
       </section>
 
       <h2>Touched files</h2>
@@ -116,8 +133,9 @@
           <li><code>src/config.ts</code> — <code>APP_VERSION</code> in the zod schema; <code>appVersion</code> on
             the resolved config.</li>
           <li><code>src/views/render.ts</code> — <code>version</code> added to the enriched template data.</li>
-          <li><code>src/views/layout.eta</code> — new <code>&lt;footer class="app-footer"&gt;</code>.</li>
-          <li><code>public/style.css</code> — muted, mobile-first footer styling, normal document flow.</li>
+          <li><code>src/views/layout.eta</code> — <code>.brand-block</code> wrapper + version span in the top
+            bar.</li>
+          <li><code>public/style.css</code> — <code>.brand-block</code> / <code>.app-version</code>, mobile-first.</li>
         </ul>
         <p class="muted" style="margin:0.5rem 0 0">Not touched: <code>deploy.sh</code> (already correct),
           <code>.env.example</code> (<code>APP_VERSION</code> is deliberately build-time, not runtime config),
@@ -129,7 +147,7 @@
         <ul>
           <li>Settings → "About" card with version, build date, commit SHA.</li>
           <li><code>/healthz</code> version field for monitoring.</li>
-          <li>Linking the footer to the GitHub release for its tag.</li>
+          <li>Linking the version to the GitHub release for its tag.</li>
         </ul>
       </section>
     </div>

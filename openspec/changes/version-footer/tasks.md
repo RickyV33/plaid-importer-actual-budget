@@ -29,28 +29,28 @@
       and confirm `docker run --rm plaid-importer:argcheck printenv APP_VERSION`
       prints `9.9.9`; confirm a build with no build arg yields `dev`.
 
-## 4. Render the footer
+## 4. Render the version label
 
 - [x] 4.1 Add `version: formatVersion(config.appVersion)` to the enriched
       template data in `render()` (`src/views/render.ts`), so every page and the
       layout receive it.
-- [x] 4.2 Add `<footer class="app-footer">` below `<main>` in
-      `src/views/layout.eta` rendering the version, with no message-catalog
-      lookup.
-- [x] 4.3 Style `.app-footer` in `public/style.css` — muted secondary text,
-      normal document flow (not fixed or sticky), mobile-first with no
-      breakpoint needed.
+- [x] 4.2 Render the version beside the brand in the top bar in
+      `src/views/layout.eta`, outside the brand's link target, with no
+      message-catalog lookup.
+- [x] 4.3 Style `.brand-block` / `.app-version` in `public/style.css` — muted
+      secondary text, baseline-aligned with the title, wrapping under the brand
+      before it can squeeze the nav.
 
 ## 5. Verify
 
 - [x] 5.1 Run the full suite in the dev container
       (`devcontainer exec --workspace-folder . npm test`) and confirm it is green,
       including the new `version.test.ts`.
-- [x] 5.2 Run the app locally with no `APP_VERSION` set and confirm the footer
+- [x] 5.2 Run the app locally with no `APP_VERSION` set and confirm the top bar
       reads `v2.8.0` (from the `VERSION` file) on both an authenticated page and
       the signed-out login page, in `en` and `es`.
-- [x] 5.3 Confirm the footer does not overlap or crowd content at a 375px
-      viewport width.
+- [x] 5.3 Confirm the version label does not crowd the nav at a 375px viewport
+      width (measured against the pre-change baseline).
 
 ## 6. Documentation
 

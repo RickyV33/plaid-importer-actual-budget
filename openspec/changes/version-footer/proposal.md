@@ -14,9 +14,9 @@ so the value is silently discarded today.
 - The app resolves its version at startup: `APP_VERSION` from the environment,
   falling back to reading the repo-root `VERSION` file for local development,
   falling back to `dev`.
-- Every rendered page gains a footer showing the resolved version as `v<version>`
-  — muted, mobile-first, below the main content. The string is locale-neutral, so
-  it needs no message-catalog entry.
+- Every rendered page shows the resolved version as `v<version>` in the top bar,
+  beside the application title — muted, smaller, baseline-aligned. The string is
+  locale-neutral, so it needs no message-catalog entry.
 
 Out of scope for this change: a Settings "About" card and a version field in the
 `/healthz` payload. Both remain viable follow-ups.
@@ -30,7 +30,7 @@ Out of scope for this change: a Settings "About" card and a version field in the
 
 ### Modified Capabilities
 
-None. The footer is new page chrome and changes no existing requirement;
+None. The version label is new page chrome and changes no existing requirement;
 `app-navigation` continues to govern the nav and dashboard unchanged.
 
 ## Impact
@@ -38,7 +38,7 @@ None. The footer is new page chrome and changes no existing requirement;
 - `Dockerfile` — new `ARG`/`ENV` in the runner stage.
 - `src/config.ts` — new resolved `appVersion` value with a `VERSION`-file fallback.
 - `src/views/render.ts` — passes `version` into the shared template data.
-- `src/views/layout.eta` — new `<footer>` below `<main>`.
-- `public/style.css` — footer styling.
+- `src/views/layout.eta` — version label beside the brand in the top bar.
+- `public/style.css` — `.brand-block` / `.app-version` styling.
 - No database, API, dependency, or deploy-script changes. `deploy.sh` already
   passes the build arg and needs no edit.

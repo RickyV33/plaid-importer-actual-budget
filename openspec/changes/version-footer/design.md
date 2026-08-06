@@ -9,8 +9,8 @@ has no way to know its own version.
 
 The rendering path is centralized: `render()` in `src/views/render.ts` is the
 single funnel for every page — it enriches template data, renders the page
-template, then wraps it in `layout.eta`. That makes a global footer a
-one-location change. Configuration is likewise centralized: `src/config.ts`
+template, then wraps it in `layout.eta`. That makes a version shown on every page
+a one-location change. Configuration is likewise centralized: `src/config.ts`
 parses `process.env` with zod at module load and `process.exit(1)`s on failure.
 
 ## Goals / Non-Goals
@@ -78,15 +78,28 @@ blanket prefix would render the fallback as `vdev`, which reads as a typo. This
 keeps `v2.8.0` and `dev` both looking deliberate, and the rule is one testable
 predicate.
 
-### The footer carries no catalog string
+### The version label carries no catalog string
 
-The footer's entire content is the formatted version — a number, or the literal
-`dev`. There is no prose to translate, so it needs no entry in `src/i18n/en.ts` /
+Its entire content is the formatted version — a number, or the literal `dev`.
+There is no prose to translate, so it needs no entry in `src/i18n/en.ts` /
 `es.ts` and renders identically in both locales. This is consistent with the
 repo's i18n rule rather than an exception to it: the rule exists to keep
-*user-facing prose* out of templates, and a version number is not prose. If the
-footer later gains a label ("Version 2.8.0") or a license line, that text goes in
-the catalog at that point.
+*user-facing prose* out of templates, and a version number is not prose. If it
+later gains a label ("Version 2.8.0"), that text goes in the catalog at that
+point.
+
+### Beside the title, not in a footer
+
+The version sits in the top bar next to the brand rather than in a page footer.
+A footer was built first and then moved: the top bar keeps the version visible
+without scrolling, and next to the title is where a version reads as an
+attribute *of the app* rather than as page furniture.
+
+The brand anchor and the version are wrapped in a `.brand-block` flex container
+so `.topbar`'s `justify-content: space-between` still sees one left-hand child
+and the nav on the right. The version sits *outside* the anchor so it is not
+part of the link text or target, and is baseline-aligned at `0.75rem` so it
+reads as a subscript to the title rather than as another nav entry.
 
 ### `ARG VERSION` goes in the runner stage
 
@@ -102,7 +115,7 @@ it is declared in the second (runner) stage next to the other `ENV` lines, with
   prompted to set it; it is a build-time value the image supplies. Documented as
   such in the config schema comment.
 
-- **The footer adds a page element to every view, including the login page.**
+- **The version shows on every view, including the login page.**
   → That is intended (support questions come from signed-out users too), and the
   version number is not sensitive — it is already public in the image tag and the
   git tag. No credentials, hostnames, or env values are exposed.
@@ -112,10 +125,12 @@ it is declared in the second (runner) stage next to the other `ENV` lines, with
   `dev`). A pre-release like `2.9.0-rc1` still starts with a digit and formats
   correctly.
 
-- **Existing pages were not designed with a footer.** → It renders below `<main>`
-  as de-emphasized text in normal document flow — not fixed or sticky — so it
-  cannot overlap content on short viewports, and mobile-first styling comes
-  first with no breakpoint needed.
+- **The top bar is already tight at 375px.** → With nav present it already
+  overflows (brand wraps word-by-word, `scrollWidth` 530 against a 375px
+  viewport). Measured against the pre-change baseline, the version label
+  reproduces those numbers exactly, so it neither causes nor worsens the
+  overflow. `.brand-block` wraps rather than shrinking the nav. Fixing the
+  pre-existing mobile top bar is out of scope here and worth its own change.
 
 ## Migration Plan
 
@@ -124,10 +139,10 @@ before it simply lacks `APP_VERSION`, and an image built after it carries the
 value. Rollback is reverting the commit — nothing persists state.
 
 One ordering note: the first deploy carrying this change is also the first build
-whose `--build-arg VERSION` is honored, so the footer becomes correct from that
-deploy onward with no manual step.
+whose `--build-arg VERSION` is honored, so the displayed version becomes correct
+from that deploy onward with no manual step.
 
 ## Open Questions
 
-None blocking. Whether the footer should later link to the GitHub release for its
+None blocking. Whether the version should later link to the GitHub release for its
 tag is a follow-up, and depends on whether the repo has a public remote.

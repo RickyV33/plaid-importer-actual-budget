@@ -61,42 +61,48 @@ to `dev`.
 ### Requirement: Every rendered page displays the running version
 
 Every page rendered through the shared application layout SHALL display the
-resolved version in a footer positioned below the page's main content.
+resolved version in the top bar, beside the application title.
 
-The footer SHALL render a resolved version that begins with a digit prefixed with
-a lowercase `v` (for example, `v2.8.0`), and SHALL render any other resolved
-version verbatim, so that the non-numeric fallback reads `dev` rather than
-`vdev`.
+The version SHALL render prefixed with a lowercase `v` when the resolved version
+begins with a digit (for example, `v2.8.0`), and verbatim otherwise, so that the
+non-numeric fallback reads `dev` rather than `vdev`.
 
-The footer SHALL be styled as de-emphasized secondary text so it does not compete
-with page content, and SHALL follow the project's mobile-first layout
-conventions.
+The version SHALL be styled as de-emphasized secondary text, smaller than the
+title and baseline-aligned with it, so it reads as a subscript to the title
+rather than as a navigation entry. It SHALL NOT be part of the title's link
+target, and SHALL follow the project's mobile-first layout conventions.
 
 Because the displayed text is a version number with a single-character prefix, it
-is locale-neutral and SHALL NOT require an entry in the message catalog; the
-footer SHALL render identically in every supported locale.
+is locale-neutral and SHALL NOT require an entry in the message catalog; it SHALL
+render identically in every supported locale.
 
 #### Scenario: Version appears on an authenticated page
 
 - **WHEN** an authenticated user views any page rendered through the shared
   layout and the resolved version is `2.8.0`
-- **THEN** the page shows a footer below the main content reading `v2.8.0`
+- **THEN** the top bar shows `v2.8.0` beside the application title
 
 #### Scenario: Version appears before sign-in
 
 - **WHEN** an unauthenticated visitor views the login page and the resolved
   version is `2.8.0`
-- **THEN** the page shows the same footer reading `v2.8.0`
+- **THEN** the top bar shows the same `v2.8.0` beside the title
 
-#### Scenario: Footer is locale-neutral
+#### Scenario: The version is not part of the title link
+
+- **WHEN** a user activates the application title in the top bar
+- **THEN** the title navigates to the landing route, and the version text is
+  outside that link target
+
+#### Scenario: Version display is locale-neutral
 
 - **WHEN** the same page is rendered under the `en` locale and under the `es`
   locale
-- **THEN** the footer text is identical in both, and no message-catalog lookup is
-  performed to produce it
+- **THEN** the version text is identical in both, and no message-catalog lookup
+  is performed to produce it
 
 #### Scenario: Unresolved version still renders
 
 - **WHEN** a page is rendered while the resolved version is the fallback `dev`
-- **THEN** the footer reads `dev` — rendered verbatim without the `v` prefix —
+- **THEN** the top bar reads `dev` — rendered verbatim without the `v` prefix —
   rather than being blank or omitted
