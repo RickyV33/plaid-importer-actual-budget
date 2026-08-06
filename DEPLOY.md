@@ -22,6 +22,19 @@ than redirecting to the bank. Many smaller banks and credit unions fall here.
 docker pull rickyv33/plaid-importer:latest
 ```
 
+### Version reporting
+
+The running app shows its version beside the title in the top bar. That value
+comes from the image, not from `.env`:
+
+`VERSION` (repo root) → `deploy.sh --build-arg VERSION` → `ARG VERSION` in the
+`Dockerfile` → `APP_VERSION` env var → the top bar.
+
+`APP_VERSION` is a build-time value and deliberately absent from `.env.example` —
+don't set it per deployment, or the app will report something other than the
+image it is running. An image built without the build arg reports `dev`, and
+local `npm run dev` falls back to reading the `VERSION` file directly.
+
 ## Configure
 
 Copy `.env.example` to `.env` and fill it in (see the env table in

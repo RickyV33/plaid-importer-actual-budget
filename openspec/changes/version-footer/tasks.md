@@ -43,17 +43,17 @@
 
 ## 5. Verify
 
-- [ ] 5.1 Run the full suite in the dev container
+- [x] 5.1 Run the full suite in the dev container
       (`devcontainer exec --workspace-folder . npm test`) and confirm it is green,
       including the new `version.test.ts`.
-- [ ] 5.2 Run the app locally with no `APP_VERSION` set and confirm the footer
+- [x] 5.2 Run the app locally with no `APP_VERSION` set and confirm the footer
       reads `v2.8.0` (from the `VERSION` file) on both an authenticated page and
       the signed-out login page, in `en` and `es`.
-- [ ] 5.3 Confirm the footer does not overlap or crowd content at a 375px
+- [x] 5.3 Confirm the footer does not overlap or crowd content at a 375px
       viewport width.
 
 ## 6. Documentation
 
-- [ ] 6.1 Note the `APP_VERSION` build-arg → env plumbing in `DEPLOY.md` so the
+- [x] 6.1 Note the `APP_VERSION` build-arg → env plumbing in `DEPLOY.md` so the
       relationship between `VERSION`, `--build-arg`, and the displayed version is
       discoverable.
