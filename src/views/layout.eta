@@ -11,7 +11,13 @@
   </head>
   <body>
     <header class="topbar">
-      <a href="/" class="brand">Plaid Importer <span class="brand-sub">for Actual Budget</span></a>
+      <div class="brand-block">
+        <a href="/" class="brand">Plaid Importer <span class="brand-sub">for Actual Budget</span></a>
+        <!-- Version only: a number (or the literal "dev"), so there is no prose
+             to translate and no message-catalog lookup is needed. Outside the
+             anchor so it is not part of the link text. -->
+        <span class="app-version"><%= it.version %></span>
+      </div>
       <nav>
         <% if (it.authed) { %>
           <a href="/connections"><%= it.t("nav.connections") %></a>
@@ -40,9 +46,6 @@
     <main>
       <%~ it.body %>
     </main>
-    <!-- Version only: a number (or the literal "dev"), so there is no prose to
-         translate and no message-catalog lookup is needed. -->
-    <footer class="app-footer"><%= it.version %></footer>
     <script>
       (function () {
         document.querySelectorAll('.banner-dismiss').forEach(function (btn) {
