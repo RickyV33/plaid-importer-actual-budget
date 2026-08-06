@@ -13,10 +13,10 @@
 
 ## 2. Wire resolution into config
 
-- [ ] 2.1 Add `APP_VERSION` to the zod schema in `src/config.ts` as an optional
+- [x] 2.1 Add `APP_VERSION` to the zod schema in `src/config.ts` as an optional
       string defaulting to `""`, with a comment noting it is supplied by the
       image at build time and deliberately absent from `.env.example`.
-- [ ] 2.2 Expose `appVersion` on the resolved `Config` by calling
+- [x] 2.2 Expose `appVersion` on the resolved `Config` by calling
       `resolveVersion` in `loadConfig()`, reading
       `path.resolve(__dirname, "..", "VERSION")` as the file fallback.
 

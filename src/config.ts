@@ -1,11 +1,25 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import "dotenv/config";
 import { z } from "zod";
+
+import { resolveVersion } from "./version.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const schema = z.object({
   APP_PORT: z.coerce.number().int().positive().default(8080),
   APP_BIND: z.string().default("0.0.0.0"),
   APP_URL: z.string().url(),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+
+  // Baked into the image at build time from the VERSION file (see Dockerfile's
+  // ARG VERSION). Deliberately absent from .env.example — it is a build-time
+  // value, not something to set per deployment. Local dev leaves it unset and
+  // falls back to reading VERSION directly.
+  APP_VERSION: z.string().default(""),
 
   APP_USER: z.string().min(1),
   APP_PASSWORD: z.string().min(1),
@@ -46,7 +60,13 @@ export type Config = z.infer<typeof schema> & {
   redirectUri: string | undefined;
   encryptionKeyBytes: Buffer;
   blockPrivateActualHosts: boolean;
+  appVersion: string;
 };
+
+// One level up from src/ under tsx and from dist/ in the built output, so a
+// single expression finds the repo-root VERSION either way. Absent inside the
+// container image by design — APP_VERSION answers there.
+const VERSION_FILE = path.resolve(__dirname, "..", "VERSION");
 
 function loadConfig(): Config {
   const parsed = schema.safeParse(process.env);
@@ -81,6 +101,7 @@ function loadConfig(): Config {
     redirectUri,
     encryptionKeyBytes: keyBytes,
     blockPrivateActualHosts: env.BLOCK_PRIVATE_ACTUAL_HOSTS === "true",
+    appVersion: resolveVersion(env, () => fs.readFileSync(VERSION_FILE, "utf8")),
   };
 }
 
