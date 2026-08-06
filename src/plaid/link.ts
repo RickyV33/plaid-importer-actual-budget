@@ -8,6 +8,7 @@ import {
 } from "plaid";
 
 import { config } from "../config.js";
+import { effectiveInitialHistoryDays } from "./history.js";
 import { plaid } from "./client.js";
 
 export type ExchangeResult = {
@@ -25,6 +26,10 @@ export async function createLinkToken(): Promise<{ link_token: string }> {
     products: config.products.map((p) => p as Products),
     country_codes: config.countryCodes.map((c) => c as CountryCode),
     language: config.PLAID_LANGUAGE,
+    // Binds how much history Plaid will ever make available for this Item.
+    // Only meaningful here, at first link — the update-mode token creators
+    // below deliberately omit it, since re-auth must not alter history depth.
+    transactions: { days_requested: effectiveInitialHistoryDays() },
     ...(config.redirectUri !== undefined ? { redirect_uri: config.redirectUri } : {}),
   };
 

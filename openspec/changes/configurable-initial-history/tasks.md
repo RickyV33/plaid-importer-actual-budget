@@ -5,15 +5,15 @@
 
 ## 2. Plaid link wiring
 
-- [ ] 2.1 In `src/plaid/link.ts`, have `createLinkToken()` resolve the window via the helper and include `transactions: { days_requested: N }` in the `LinkTokenCreateRequest`.
-- [ ] 2.2 Confirm update-mode token creation (`/link/items/:itemId/update-token`) does NOT apply the setting, so re-auth stays unchanged.
-- [ ] 2.3 Unit-test `createLinkToken()`: configured value is passed through; unset/invalid setting yields `days_requested: 90`.
+- [x] 2.1 In `src/plaid/link.ts`, have `createLinkToken()` resolve the window via the helper and include `transactions: { days_requested: N }` in the `LinkTokenCreateRequest`.
+- [x] 2.2 Confirm update-mode token creation (`/link/items/:itemId/update-token`) does NOT apply the setting, so re-auth stays unchanged.
+- [x] 2.3 Unit-test `createLinkToken()`: configured value is passed through; unset/invalid setting yields `days_requested: 90`.
 
 ## 3. Admin route
 
-- [ ] 3.1 Extend `viewData()` in `src/routes/settings.ts` to expose the current value (or default) to the settings view.
-- [ ] 3.2 Add a `POST` handler for the new setting that validates 90–730 inclusive and persists via `settings.set`, re-rendering with a validation error on bad input.
-- [ ] 3.3 Verify the route is covered by `requireAdmin` so members receive 403.
+- [x] 3.1 Extend `viewData()` in `src/routes/settings.ts` to expose the current value (or default) to the settings view.
+- [x] 3.2 Add a `POST` handler for the new setting that validates 90–730 inclusive and persists via `settings.set`, re-rendering with a validation error on bad input.
+- [x] 3.3 Verify the route is covered by `requireAdmin` so members receive 403.
 - [ ] 3.4 Unit-test the handler: valid write persists; below 90, above 730, and non-numeric are each rejected without changing the stored value; member access is denied.
 
 ## 4. UI and i18n

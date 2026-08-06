@@ -26,3 +26,16 @@ export function parseInitialHistoryDays(raw: string | undefined): number {
   if (days < MIN_HISTORY_DAYS || days > MAX_HISTORY_DAYS) return DEFAULT_HISTORY_DAYS;
   return days;
 }
+
+/**
+ * Strict validation for admin-submitted input. Unlike the read-side parse, this
+ * rejects rather than falls back, so a typo is surfaced instead of silently
+ * storing (or keeping) something the operator did not intend.
+ */
+export function validateInitialHistoryDays(raw: string): number | null {
+  if (raw.trim() === "") return null;
+  const days = Number(raw);
+  if (!Number.isInteger(days)) return null;
+  if (days < MIN_HISTORY_DAYS || days > MAX_HISTORY_DAYS) return null;
+  return days;
+}
