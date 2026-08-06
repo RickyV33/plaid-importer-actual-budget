@@ -21,6 +21,13 @@ COPY --chown=node:node public ./public
 COPY --chown=node:node docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
+# Supplied by deploy.sh as --build-arg VERSION from the VERSION file. Defaults
+# to "dev" so a plain `docker build` (which passes no build arg) still produces
+# a runnable image. VERSION itself is not copied into the image — this env var
+# is how the running app learns its version.
+ARG VERSION=dev
+ENV APP_VERSION=${VERSION}
+
 ENV NODE_ENV=production
 ENV APP_BIND=0.0.0.0
 ENV APP_PORT=8080

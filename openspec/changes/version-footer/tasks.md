@@ -22,9 +22,9 @@
 
 ## 3. Container carries the version
 
-- [ ] 3.1 Declare `ARG VERSION=dev` and `ENV APP_VERSION=${VERSION}` in the
+- [x] 3.1 Declare `ARG VERSION=dev` and `ENV APP_VERSION=${VERSION}` in the
       runner stage of `Dockerfile`, alongside the existing `ENV` block.
-- [ ] 3.2 Verify the build arg lands: build with
+- [x] 3.2 Verify the build arg lands: build with
       `docker buildx build --build-arg VERSION=9.9.9 -t plaid-importer:argcheck .`
       and confirm `docker run --rm plaid-importer:argcheck printenv APP_VERSION`
       prints `9.9.9`; confirm a build with no build arg yields `dev`.
