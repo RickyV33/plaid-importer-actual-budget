@@ -32,6 +32,10 @@ Full architecture, data model, and security notes:
 - **Per-connection sync limits**: cap how often a connection can be pulled in a
   window. Plaid bills per pull, so you get a lever for family/friends. (A
   connection is one institution, e.g. Wells Fargo, which may hold several accounts.)
+- **Initial history depth**: choose how far back Plaid opens up transactions when
+  a bank is first linked — 90 to 730 days, defaulting to Plaid's 90-day floor.
+  Plaid fixes this at link time, so it applies to newly linked accounts only and
+  won't backfill banks you've already connected.
 - **Connection lifecycle**: when a connection errors because you changed your
   bank credentials, re-link it without losing your setup.
 - **Manage accounts**: add or drop which accounts a connection shares without
@@ -41,7 +45,7 @@ Full architecture, data model, and security notes:
   failures.
 - **Registration secret**: only people with the secret can register an account.
 - **Admin controls**: the first account is admin and manages the registration
-  secret, sync limits, and every profile.
+  secret, sync limits, initial history depth, and every profile.
 - **Encryption**: Plaid tokens and profile secrets are encrypted at rest;
   transaction data is encrypted and short-lived.
 - **Bilingual**: English and Spanish.

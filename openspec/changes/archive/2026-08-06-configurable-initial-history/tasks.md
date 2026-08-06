@@ -25,4 +25,4 @@
 ## 5. Verification
 
 - [x] 5.1 Run the full test suite in the dev container and confirm it passes.
-- [ ] 5.2 Manually verify end to end: set the value on `/settings`, confirm it persists across a reload, and confirm a newly created link token carries the configured `days_requested`.
+- [x] 5.2 Manually verify end to end: set the value on `/settings`, confirm it persists across a reload, and confirm a newly created link token carries the configured `days_requested`.

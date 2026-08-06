@@ -174,6 +174,32 @@ PRUNE  delete events delivered to every active connected profile</pre>
           instead of reloading, and a running total sits below the sync buttons.</p>
       </section>
 
+      <h2>Initial transaction history</h2>
+      <section>
+        <p>Two distinct things decide "how far back" a connection reaches, and only one of them is
+          configurable:</p>
+        <ul>
+          <li><strong>Depth is bound once, at link time.</strong> <code>transactions.days_requested</code> on
+            <code>/link/token/create</code> fixes how much history Plaid will ever make available for that
+            item. An admin sets it under <code>/settings</code> (90–730, default 90 — Plaid's floor);
+            <code>createLinkToken()</code> reads the setting and falls back to 90 on anything unparseable, so a
+            stale row can never break link-token creation.</li>
+          <li><strong>Position is the cursor.</strong> A fresh item has <code>cursor = NULL</code>, so its first
+            sync streams everything available; afterwards the stored cursor yields only the incremental delta.
+            Ongoing sync has no window to configure and is untouched by this setting.</li>
+        </ul>
+        <p class="note">The value applies to <strong>newly linked accounts only</strong>. Raising it does not
+          backfill already-linked items, touch cursors, or change ongoing syncs — and update-mode (re-auth)
+          token creation deliberately omits <code>days_requested</code> so re-linking never alters history depth
+          as a side effect. Deepening an existing connection means a brand-new item, which also means new Plaid
+          <code>transaction_id</code>s: since imports dedupe on <code>imported_id</code>, any overlap with what
+          was already imported lands in the budget again as duplicates.</p>
+        <p class="muted">Plaid documents no depth surcharge for the Transactions product (the per-item
+          "Additional History" fee above 61 days belongs to <strong>Assets</strong>, which this project does not
+          use), but Transactions rates are contract-specific — so the settings card points operators at their own
+          Plaid Dashboard rather than naming a number, and the default stays at 90.</p>
+      </section>
+
       <h2>Security model</h2>
       <section>
         <h3>Encryption at rest</h3>
@@ -198,7 +224,7 @@ PRUNE  delete events delivered to every active connected profile</pre>
       <section>
         <table>
           <tr><th>Table</th><th>Role</th></tr>
-          <tr><td><code>users</code>, <code>settings</code></td><td>Accounts/roles; key-value settings (registration secret, sync limit)</td></tr>
+          <tr><td><code>users</code>, <code>settings</code></td><td>Accounts/roles; key-value settings (registration secret, sync limit, initial history window)</td></tr>
           <tr><td><code>plaid_items</code>, <code>plaid_accounts</code></td><td>Connections and their accounts (item owns <code>owner_user_id</code> + cursor)</td></tr>
           <tr><td><code>profiles</code></td><td>One per Actual budget: server URL, budget id, encrypted secrets</td></tr>
           <tr><td><code>profile_account_mappings</code></td><td>(profile, account) → target Actual account + pending flag</td></tr>
