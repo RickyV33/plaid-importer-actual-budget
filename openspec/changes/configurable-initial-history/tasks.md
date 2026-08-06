@@ -14,7 +14,7 @@
 - [x] 3.1 Extend `viewData()` in `src/routes/settings.ts` to expose the current value (or default) to the settings view.
 - [x] 3.2 Add a `POST` handler for the new setting that validates 90–730 inclusive and persists via `settings.set`, re-rendering with a validation error on bad input.
 - [x] 3.3 Verify the route is covered by `requireAdmin` so members receive 403.
-- [ ] 3.4 Unit-test the handler: valid write persists; below 90, above 730, and non-numeric are each rejected without changing the stored value; member access is denied.
+- [x] 3.4 Unit-test the handler: valid write persists; below 90, above 730, and non-numeric are each rejected without changing the stored value; member access is denied.
 
 ## 4. UI and i18n
 
