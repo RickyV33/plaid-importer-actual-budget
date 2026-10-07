@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Build + version + push __PROJECT_NAME__ to the Forgejo registry, then publish
-# its mental-model.html to plop.
+# Build + version + push plaid-importer to the Forgejo registry.
 #
 # Usage:
 #   ./deploy.sh            # build + push the current VERSION (no bump / tag)
@@ -23,10 +22,7 @@
 #   export DEPLOY_TARGET=hub
 #   alias deploy-hub='TARGET=hub ./deploy.sh'   alias deploy-prod='TARGET=prod ./deploy.sh'
 #
-# One-time: `docker login "$REGISTRY"`. Optional: export
-# PLOP_ADMIN_URL (or set it in a gitignored deploy.env) to publish the
-# mental-model to plop. PLOP_ADMIN_URL is deploy-time config read only here on
-# your machine — it never ships in the image, and it is NOT the app's .env.
+# One-time: `docker login "$REGISTRY"`.
 
 # ─── Pure helpers (also sourced by the test harness) ─────────────────
 
@@ -123,35 +119,6 @@ build_and_push() {
   fi
 }
 
-# Best-effort: a down/unreachable plop warns but never fails the deploy.
-publish_mental_model() {
-  local v="$1"
-  if [ -z "${PLOP_ADMIN_URL:-}" ]; then
-    echo "PLOP_ADMIN_URL unset — skipping mental-model publish"
-    return 0
-  fi
-  if [ ! -f mental-model.html ]; then
-    echo "no mental-model.html — skipping publish"
-    return 0
-  fi
-  local tmp stable pinned name
-  tmp="$(mktemp)"
-  sed "s/__VERSION__/${v}/g" mental-model.html > "$tmp"
-  stable="${IMAGE_NAME}-mental-model.html"
-  pinned="${IMAGE_NAME}-mental-model-${v}.html"
-  for name in "$stable" "$pinned"; do
-    if curl -fsS -X POST "${PLOP_ADMIN_URL%/}/upload" \
-        -F "file=@${tmp};filename=${name};type=text/html" \
-        -F "name=${name}" -F "overwrite=true" >/dev/null 2>&1; then
-      echo "  published ${name}"
-    else
-      echo "  warn: failed to publish ${name} (continuing)"
-    fi
-  done
-  rm -f "$tmp"
-  return 0
-}
-
 main() {
   set -euo pipefail
 
@@ -195,7 +162,6 @@ main() {
   fi
 
   build_and_push "$ver"
-  publish_mental_model "$ver"
   echo "✓ Done: ${IMAGE_NAME} v${ver} → ${PULL_REGISTRY}/${OWNER}/${IMAGE_NAME}"
 }
 
