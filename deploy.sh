@@ -7,6 +7,8 @@
 #   ./deploy.sh minor      # bump minor
 #   ./deploy.sh major      # bump major
 #   ./deploy.sh 1.4.0      # set an explicit version, commit, tag, build + push
+#   ./deploy.sh jank v1.4.0  # any of the above, to a named target (see below);
+#   ./deploy.sh hub          # a leading "v" on the version is optional
 #
 # Config comes from deploy.env or your shell (e.g. ~/.zshrc): REGISTRY (required),
 # PULL_REGISTRY (default: $REGISTRY), OWNER (required), IMAGE_NAME,
@@ -14,7 +16,8 @@
 # builds a multi-arch manifest).
 #
 # Named targets: to keep several destinations side by side and switch between
-# them, set TARGET=<name> (or DEPLOY_TARGET as the default) and define
+# them, pass the name as the first argument (or set TARGET=<name>, or
+# DEPLOY_TARGET as the default) and define
 # <NAME>_REGISTRY / <NAME>_OWNER / <NAME>_PLATFORMS in deploy.env or ~/.zshrc.
 # Each falls back to the plain var. Example in ~/.zshrc:
 #   export HUB_REGISTRY=docker.io HUB_OWNER=you HUB_PLATFORMS=linux/amd64,linux/arm64
@@ -41,11 +44,20 @@ EOF
     minor) printf '%s.%s.0\n' "$major" "$((minor + 1))" ;;
     patch) printf '%s.%s.%s\n' "$major" "$minor" "$((patch + 1))" ;;
     [0-9]*.[0-9]*.[0-9]*) printf '%s\n' "$spec" ;;
-    *) echo "invalid bump/version: $spec" >&2; return 1 ;;
+    *) echo "invalid bump/version: $spec (a target name needs <NAME>_REGISTRY set)" >&2; return 1 ;;
   esac
 }
 
 current_version() { tr -d '[:space:]' < VERSION; }
+
+# is_target <word> → true when <WORD>_REGISTRY is defined, i.e. the word names
+# a deploy target rather than a bump/version.
+is_target() {
+  local up
+  case "${1:-}" in ''|*[!a-zA-Z0-9_]*) return 1 ;; esac
+  up="$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]')"
+  eval "[ -n \"\${${up}_REGISTRY:-}\" ]"
+}
 
 # resolve_target: when TARGET (or DEPLOY_TARGET) names a destination, set
 # REGISTRY/PULL_REGISTRY/OWNER/PLATFORMS from its <NAME>_* vars, each falling
@@ -56,7 +68,7 @@ resolve_target() {
   [ -n "$target" ] || return 0
   up="$(printf '%s' "$target" | tr '[:lower:]' '[:upper:]')"
   eval "REGISTRY=\"\${${up}_REGISTRY:-\${REGISTRY:-}}\""
-  eval "PULL_REGISTRY=\"\${${up}_PULL_REGISTRY:-\${PULL_REGISTRY:-}}\""
+  eval "PULL_REGISTRY=\"\${${up}_PULL_REGISTRY:-\${${up}_REGISTRY:-\${PULL_REGISTRY:-}}}\""
   eval "OWNER=\"\${${up}_OWNER:-\${OWNER:-}}\""
   eval "PLATFORMS=\"\${${up}_PLATFORMS:-\${PLATFORMS:-}}\""
 }
@@ -129,6 +141,10 @@ main() {
   # Optional named target: pick <NAME>_REGISTRY/_OWNER/_PLATFORMS so several
   # destinations can live in deploy.env / ~/.zshrc and switch with TARGET=<name>
   # (or DEPLOY_TARGET as the default). Each falls back to the plain var.
+  if is_target "${1:-}"; then
+    TARGET="$1"
+    shift
+  fi
   resolve_target
 
   REGISTRY="${REGISTRY:?set REGISTRY (deploy.env or ~/.zshrc), or <TARGET>_REGISTRY}"
@@ -138,6 +154,7 @@ main() {
   PLATFORMS="${PLATFORMS:-linux/amd64}"
 
   local arg="${1:-}" cur next ver
+  case "$arg" in v[0-9]*) arg="${arg#v}" ;; esac
   cur="$(current_version)"
 
   if [ -n "$arg" ]; then
