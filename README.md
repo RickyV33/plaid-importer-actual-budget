@@ -5,8 +5,6 @@ Self-hosted web app that pulls your bank transactions from
 
 One Plaid pull per connection fans out to every budget that maps it, through a
 local encrypted journal, so adding more budgets never costs more Plaid calls.
-Full architecture, data model, and security notes:
-**[How it works →](https://plop.jankbyrick.com/plaid-importer-mental-model.html)**
 
 > **You bring your own Plaid credentials.** This app needs a Plaid `client_id` /
 > `secret` with **production access** (Plaid's free tier is sandbox-only).
