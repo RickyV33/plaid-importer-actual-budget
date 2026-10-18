@@ -49,7 +49,7 @@
 
 - [x] 7.1 Overview
 - [x] 7.2 Connections: sync selected/all with per-bank results as notices, link, relink, manage accounts, remove bank, remove deselected account; refetch instead of reload
-- [ ] 7.3 OAuth return page at `/link/oauth-return` (re-open Link with the stored token and `receivedRedirectUri`)
+- [x] 7.3 OAuth return page at `/link/oauth-return` (re-open Link with the stored token and `receivedRedirectUri`)
 - [ ] 7.4 Profiles: panels with coverage meter, routing rows saving in place (mapping select, pending switch), delete
 - [ ] 7.5 Profile create/edit pages with the budget loader and manual budget entry
 - [ ] 7.6 Schedules: week strip, rows with toggle/edit/delete, legacy warning

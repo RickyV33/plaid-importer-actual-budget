@@ -294,4 +294,8 @@ export const es: Record<string, string> = {
   "errors.forbidden": "Solo un administrador puede hacer eso.",
   "connections.syncDone": "Sincronización terminada: {count} transacciones importadas.",
   "connections.syncFailed": "La sincronización terminó con errores ({count} transacciones importadas). El historial tiene los detalles.",
+  "oauth.title": "Terminando la vinculación",
+  "oauth.description": "Tu banco te devolvió aquí. Plaid se vuelve a abrir para terminar.",
+  "oauth.expired": "Esta sesión de vinculación ha caducado.",
+  "oauth.back": "Empezar de nuevo desde Conexiones",
 };

@@ -294,4 +294,8 @@ export const en: Record<string, string> = {
   "errors.forbidden": "Only an administrator can do that.",
   "connections.syncDone": "Sync finished: {count} transactions imported.",
   "connections.syncFailed": "The sync finished with errors ({count} transactions imported). History has the details.",
+  "oauth.title": "Finishing the link",
+  "oauth.description": "Your bank sent you back. Plaid reopens to finish linking.",
+  "oauth.expired": "This link session has expired.",
+  "oauth.back": "Start again from Connections",
 };
