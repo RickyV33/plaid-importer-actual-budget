@@ -32,6 +32,7 @@ const {
   syncAccountResults,
   schedules,
   users,
+  profiles,
 } = await import("./queries.js");
 
 runMigrations();
@@ -505,6 +506,37 @@ test("syncAccountResults.importedBy{Item,Account}Since: windowed and owner-scope
   const byAccount = new Map(syncAccountResults.importedByAccountSince(owner, since).map((r) => [r.plaid_account_id, r.imported]));
   assert.equal(byAccount.get("plaid-BI1"), 5);
   assert.equal(byAccount.get("plaid-BI2"), 1);
+});
+
+test("syncAccountResults.latestForProfilesByOwner: only the latest run per profile, owner-scoped", () => {
+  const owner = users.create({ username: "health-owner", passwordHash: "x", role: "member" });
+  const other = users.create({ username: "health-other", passwordHash: "x", role: "member" });
+  const mk = (o: number, name: string) =>
+    profiles.create({ ownerUserId: o, name, serverUrl: "https://budget.example", budgetId: name, serverPasswordEnc: "x", encryptionPasswordEnc: null });
+  const home = mk(owner, "Home");
+  const work = mk(owner, "Work");
+  const theirs = mk(other, "Theirs");
+  seedMapping("plaid-H1", "actual-H1");
+  const run = (o: number) => syncRuns.start({ triggeredBy: "manual", scope: "all", ownerUserId: o });
+  const rec = (runId: number, profileId: number, status: "success" | "failure", reason: string | null) =>
+    syncAccountResults.record({ syncRunId: runId, plaidAccountId: "plaid-H1", status, txnsImported: 0, reason, profileId });
+
+  const r1 = run(owner);
+  rec(r1, home, "failure", "actual_unreachable: ECONNREFUSED");
+  rec(r1, work, "failure", "boom");
+  const r2 = run(owner);
+  rec(r2, home, "success", null); // Home recovered in a later run; Work wasn't in it.
+  const r3 = run(other);
+  rec(r3, theirs, "failure", "actual_unreachable: x");
+
+  const rows = syncAccountResults.latestForProfilesByOwner(owner);
+  assert.deepEqual(
+    rows.map((r) => [r.profile_id, r.sync_run_id, r.status, r.reason]),
+    [
+      [home, r2, "success", null],
+      [work, r1, "failure", "boom"],
+    ],
+  );
 });
 
 test("schedules.create/update: persists name, trims it, and collapses blank to null", () => {

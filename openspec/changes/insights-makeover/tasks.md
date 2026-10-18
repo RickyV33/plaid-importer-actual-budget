@@ -20,8 +20,8 @@
 
 ## 4. Connection-health banners
 
-- [ ] 4.1 Add an owner-scoped query returning, per profile, the result rows (status, reason, run id) of the latest run that recorded results for it; test owner scoping and "latest run only" in `src/db/queries.test.ts`
-- [ ] 4.2 Add pure `src/insights/health.ts` building incidents (`actual_unreachable`, `import_failed`, `relink`) with per-incident keys; unit tests for each kind, recovery clearing, reason-prefix classification, and key changing with a new run / new relink time
+- [x] 4.1 Add an owner-scoped query returning, per profile, the result rows (status, reason, run id) of the latest run that recorded results for it; test owner scoping and "latest run only" in `src/db/queries.test.ts`
+- [x] 4.2 Add pure `src/insights/health.ts` building incidents (`actual_unreachable`, `import_failed`, `relink`) with per-incident keys; unit tests for each kind, recovery clearing, reason-prefix classification, and key changing with a new run / new relink time
 - [ ] 4.3 Wire into `render.ts` ahead of named banners (filtering dismissed keys); render in `layout.eta` as notices with icon, message, fix link, dismiss icon; add `health.*` strings (en + es)
 - [ ] 4.4 Manually verify: point a profile at an unreachable server, sync, see the banner on every page, dismiss it, sync again (banner returns), fix the server, sync (banner clears)
 

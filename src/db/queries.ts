@@ -662,6 +662,29 @@ export const syncAccountResults = {
       .all(syncRunId);
   },
 
+  // For each of an owner's profiles, the result rows of the latest run that
+  // recorded anything for it: the last word on whether that budget is
+  // receiving transactions. Run ids only grow, so the max is the latest.
+  latestForProfilesByOwner(
+    ownerUserId: number,
+  ): Pick<SyncAccountResultRow, "profile_id" | "sync_run_id" | "status" | "reason">[] {
+    return db()
+      .prepare<[number], Pick<SyncAccountResultRow, "profile_id" | "sync_run_id" | "status" | "reason">>(
+        `WITH latest AS (
+           SELECT sar.profile_id AS profile_id, MAX(sar.sync_run_id) AS run_id
+             FROM sync_account_results sar
+             JOIN profiles p ON p.id = sar.profile_id
+           WHERE p.owner_user_id = ?
+           GROUP BY sar.profile_id
+         )
+         SELECT sar.profile_id, sar.sync_run_id, sar.status, sar.reason
+           FROM sync_account_results sar
+           JOIN latest l ON l.profile_id = sar.profile_id AND l.run_id = sar.sync_run_id
+         ORDER BY sar.profile_id, sar.id`,
+      )
+      .all(ownerUserId);
+  },
+
   // Per-connection imported sums over an owner's runs since `sinceTs`.
   importedByItemSince(ownerUserId: number, sinceTs: number): { item_id: string; imported: number }[] {
     return db()
