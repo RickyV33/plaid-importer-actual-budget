@@ -275,5 +275,7 @@ export function demoApi(now: number): Record<string, unknown> {
     schedules,
     history,
     settings,
+    profiles_new: { profile: null, defaults: { serverUrl: "https://actual.example.com", hasServerPassword: true } },
+    schedules_new: { scheduleId: null, connections: schedules.connections, prefill: null },
   };
 }

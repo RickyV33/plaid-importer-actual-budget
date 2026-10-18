@@ -301,4 +301,6 @@ export const es: Record<string, string> = {
   "profiles.eyebrow": "Presupuestos",
   "profiles.emptyTitle": "Aún no hay presupuestos",
   "profiles.coverage": "{routed} de {total} cuentas enlazadas a este presupuesto",
+  "profiles.formLede": "El servidor de Actual y el presupuesto en que importa este perfil.",
+  "profiles.pickFromList": "Elegir de la lista",
 };

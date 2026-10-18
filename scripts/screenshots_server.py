@@ -32,9 +32,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 return self.send_file(file)
             return self.send_error(404)
         if path.startswith("/api/"):
-            file = os.path.join(ROOT, "api", path[len("/api/"):].split("/")[0] + ".json")
-            if os.path.isfile(file):
-                return self.send_file(file)
+            # /api/profiles/new -> profiles_new.json, falling back to profiles.json.
+            parts = path[len("/api/"):].strip("/").split("/")
+            for name in ("_".join(parts), parts[0]):
+                file = os.path.join(ROOT, "api", name + ".json")
+                if os.path.isfile(file):
+                    return self.send_file(file)
             return self.send_error(404)
         return self.send_file(os.path.join(ROOT, "static", "app", "index.html"))
 

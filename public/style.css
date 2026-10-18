@@ -198,6 +198,7 @@ p { margin: 0; }
 .panel-actions { display: flex; gap: 8px; flex-shrink: 0; }
 .panel-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 8px; font-size: 0.85rem; color: var(--muted); }
 .panel > .notice { margin: 16px 0 0; }
+.form-panel { max-width: 46rem; }
 .panel-meter { margin-bottom: 14px; max-width: 32rem; }
 .bank-select { margin-bottom: 4px; }
 .conn-messages:not(:empty) { margin-top: 12px; }
