@@ -245,4 +245,13 @@ export const es: Record<string, string> = {
   "insights.freshness.relink": "Requiere revincular",
   "login.eyebrow": "Bienvenido de nuevo",
   "register.eyebrow": "Cuenta nueva",
+
+  // connection-health banners
+  "health.actualUnreachable": "No se puede conectar con el presupuesto de Actual \u201c{name}\u201d. Las transacciones nuevas esperan y entrarán en la próxima sincronización correcta.",
+  "health.importFailed": "Algunas transacciones no se pudieron importar en \u201c{name}\u201d en la última sincronización.",
+  "health.relink": "{name} debe volver a conectarse para poder sincronizar.",
+  "health.unknownBank": "Un banco",
+  "health.fixProfile": "Revisar el presupuesto",
+  "health.fixRelink": "Volver a conectar",
+  "health.fixHistory": "Ver qué falló",
 };

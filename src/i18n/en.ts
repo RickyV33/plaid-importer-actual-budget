@@ -245,4 +245,13 @@ export const en: Record<string, string> = {
   "insights.freshness.relink": "Needs relink",
   "login.eyebrow": "Welcome back",
   "register.eyebrow": "New account",
+
+  // connection-health banners
+  "health.actualUnreachable": "Can't reach the Actual budget \u201c{name}\u201d. New transactions are waiting and will go in on the next successful sync.",
+  "health.importFailed": "Some transactions couldn't be imported into \u201c{name}\u201d on the last sync.",
+  "health.relink": "{name} needs to be reconnected before it can sync again.",
+  "health.unknownBank": "A bank",
+  "health.fixProfile": "Check the budget",
+  "health.fixRelink": "Reconnect",
+  "health.fixHistory": "See what failed",
 };
