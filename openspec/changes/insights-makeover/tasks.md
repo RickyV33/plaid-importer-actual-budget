@@ -33,8 +33,8 @@
 
 ## 6. Connections
 
-- [ ] 6.1 In the `/connections` handler, add per-connection freshness, rate-limit usage (when a ceiling is set), and per-account 30-day imported and "feeds N budgets" counts
-- [ ] 6.2 Rewrite `connections.eta`: page intro with Sync all / Sync selected / Link bank actions, a panel per connection (status + freshness chips, rate-limit meter), calm account rows with checkbox and hover actions; keep every id/data-attribute the inline script uses (or update the script in step); sync result messages render as notices
+- [x] 6.1 In the `/connections` handler, add per-connection freshness, rate-limit usage (when a ceiling is set), and per-account 30-day imported and "feeds N budgets" counts
+- [x] 6.2 Rewrite `connections.eta`: page intro with Sync all / Sync selected / Link bank actions, a panel per connection (status + freshness chips, rate-limit meter), calm account rows with checkbox and hover actions; keep every id/data-attribute the inline script uses (or update the script in step); sync result messages render as notices
 - [ ] 6.3 Manually exercise link, sync selected/all, relink, manage accounts, remove connection, remove deselected account in the dev container
 
 ## 7. Profiles

@@ -1,7 +1,7 @@
 // Demo view data for scripts/screenshots.ts: the same shapes the routes pass to
 // each template, filled with made-up banks, budgets, and runs.
 
-import { freshness } from "../src/insights/connections.js";
+import { freshness, rateLimitUsage } from "../src/insights/connections.js";
 import { byConnection, dailySeries } from "../src/insights/imports.js";
 import { outcomeSummary } from "../src/insights/runs.js";
 
@@ -88,5 +88,42 @@ export function demoPages(now: number): DemoPage[] {
         otherUsers: 2,
       },
     },
+    {
+      name: "connections",
+      template: "connections",
+      url: "/connections",
+      data: {
+        ...signedIn,
+        items: BANKS.map((b, i) => ({
+          id: b.id,
+          institutionName: b.name,
+          status: b.status,
+          lastSyncedAt: now - b.lastSync,
+          freshness: freshness({ status: b.status, last_synced_at: now - b.lastSync }, now),
+          rateLimit: rateLimitUsage([4, 1, 0, 0][i]!, now - 20 * HOUR, { max: 4, windowHours: 24 }, now),
+          accounts: ACCOUNTS.filter((a) => a.item === b.id).map((a) => ({
+            plaidAccountId: a.id,
+            name: a.name,
+            mask: a.mask,
+            type: a.type,
+            accessStatus: a.off ? "deselected" : "active",
+            budgets: a.budgets,
+            imported30: a.imported,
+          })),
+        })),
+      },
+    },
   ];
 }
+
+export const ACCOUNTS = [
+  { item: "item-harbor", id: "acct-hb-chk", name: "Everyday Checking", mask: "4821", type: "depository", budgets: 2, imported: 71, off: false },
+  { item: "item-harbor", id: "acct-hb-sav", name: "High-Yield Savings", mask: "0937", type: "depository", budgets: 1, imported: 9, off: false },
+  { item: "item-harbor", id: "acct-hb-old", name: "Holiday Club", mask: "1150", type: "depository", budgets: 0, imported: 0, off: true },
+  { item: "item-northwind", id: "acct-nw-chk", name: "Shared Checking", mask: "3304", type: "depository", budgets: 1, imported: 58, off: false },
+  { item: "item-northwind", id: "acct-nw-auto", name: "Auto Loan", mask: "7712", type: "loan", budgets: 0, imported: 2, off: false },
+  { item: "item-summit", id: "acct-sm-cash", name: "Cashback Card", mask: "6620", type: "credit", budgets: 1, imported: 44, off: false },
+  { item: "item-summit", id: "acct-sm-trv", name: "Travel Card", mask: "9081", type: "credit", budgets: 1, imported: 13, off: false },
+  { item: "item-lakeside", id: "acct-ls-sav", name: "Emergency Fund", mask: "2245", type: "depository", budgets: 1, imported: 0, off: false },
+  { item: "item-lakeside", id: "acct-ls-cd", name: "12-Month CD", mask: "5068", type: "depository", budgets: 0, imported: 0, off: false },
+];

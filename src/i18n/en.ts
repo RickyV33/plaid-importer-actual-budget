@@ -271,4 +271,14 @@ export const en: Record<string, string> = {
   "health.fixProfile": "Check the budget",
   "health.fixRelink": "Reconnect",
   "health.fixHistory": "See what failed",
+
+  // connections page
+  "connections.eyebrow": "Banks",
+  "connections.emptyHelp": "Link a bank through Plaid, then map its accounts to a budget on the Profiles page.",
+  "connections.rateLimit": "{used} of {max} syncs used in the last {hours} h",
+  "connections.rateLimitFull": "next sync available {when}",
+  "connections.selectBank": "All accounts at this bank",
+  "connections.feeds": "feeds {count} budget(s)",
+  "connections.notRouted": "not routed to a budget yet",
+  "connections.last30": "last 30 days",
 };

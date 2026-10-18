@@ -67,6 +67,8 @@ export const CLIENT_KEYS: string[] = [
   "home.plaidExited",
   "home.removeConfirm",
   "home.removeFailed",
+  "home.accountRemoveConfirm",
+  "home.accountRemoveFailed",
   "home.relinkTokenError",
   "home.mappingSaveError",
   "home.pendingUpdateError",

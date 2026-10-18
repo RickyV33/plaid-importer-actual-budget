@@ -15,10 +15,11 @@ import {
   type PlaidAccountRow,
   type PlaidItemRow,
 } from "../db/queries.js";
-import { freshness } from "../insights/connections.js";
+import { freshness, rateLimitUsage, type Freshness, type RateLimitUsage } from "../insights/connections.js";
 import { coverage } from "../insights/coverage.js";
 import { byConnection, dailySeries } from "../insights/imports.js";
 import { outcomeSummary } from "../insights/runs.js";
+import { effectiveSyncLimit } from "../sync/ratelimit.js";
 import { render, viewerTimeZone } from "../views/render.js";
 
 const DAY_MS = 86_400_000;
@@ -31,12 +32,20 @@ type HomeAccount = {
   accessStatus: "active" | "deselected";
 };
 
+type ConnectionAccountView = HomeAccount & {
+  /** How many of the user's budgets this account feeds. */
+  budgets: number;
+  imported30: number;
+};
+
 type HomeItemView = {
   id: string;
   institutionName: string | null;
   status: string;
   lastSyncedAt: number | null;
-  accounts: HomeAccount[];
+  freshness: Freshness;
+  rateLimit: RateLimitUsage | null;
+  accounts: ConnectionAccountView[];
 };
 
 type ProfileAccountView = HomeAccount & {
@@ -140,13 +149,33 @@ export function registerHomeRoute(app: FastifyInstance): void {
 
     const items = plaidItems.listByOwner(userId);
     const accounts = plaidAccounts.listByOwnerAll(userId);
+    const now = Date.now();
+    const limit = effectiveSyncLimit();
+    const windowStart = limit ? now - limit.windowHours * 3_600_000 : now;
+    const imported = new Map(
+      syncAccountResults.importedByAccountSince(userId, now - 30 * DAY_MS).map((r) => [r.plaid_account_id, r.imported]),
+    );
+    const ownProfiles = new Set(profiles.listByOwner(userId).map((p) => p.id));
 
     const itemViews: HomeItemView[] = items.map((item) => ({
       id: item.id,
       institutionName: item.institution_name,
       status: item.status,
       lastSyncedAt: item.last_synced_at,
-      accounts: accountsForItem(accounts, item).map(toHomeAccount),
+      freshness: freshness(item, now),
+      rateLimit: limit
+        ? rateLimitUsage(
+            syncRuns.countPullsForItemSince(item.id, windowStart),
+            syncRuns.oldestPullForItemSince(item.id, windowStart),
+            limit,
+            now,
+          )
+        : null,
+      accounts: accountsForItem(accounts, item).map((a) => ({
+        ...toHomeAccount(a),
+        budgets: profileAccountMappings.listByPlaidAccount(a.plaid_account_id).filter((m) => ownProfiles.has(m.profile_id)).length,
+        imported30: imported.get(a.plaid_account_id) ?? 0,
+      })),
     }));
 
     return render(reply, "connections", {

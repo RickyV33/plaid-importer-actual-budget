@@ -1,97 +1,116 @@
-<section data-panel="connections">
-  <div class="section-header">
-    <h1><%= it.t("home.connections") %></h1>
-    <p class="muted"><%= it.t("home.connectionsDesc") %></p>
+<% var f = it.fmt; %>
+<header class="page-intro">
+  <div class="page-intro-text">
+    <p class="eyebrow"><%= it.t("connections.eyebrow") %></p>
+    <h2><%= it.t("home.connections") %></h2>
+    <p class="lede"><%= it.t("home.connectionsDesc") %></p>
   </div>
-  <% if (it.items.length === 0) { %>
-    <div class="card">
-      <p class="muted"><%= it.t("home.noBanks") %></p>
-      <button type="button" id="link-btn"><i class="fa-solid fa-link" aria-hidden="true"></i><%= it.t("home.linkAccount") %></button>
+  <% if (it.items.length > 0) { %>
+    <div class="page-intro-actions">
+      <button type="button" class="primary" id="sync-selected-btn"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i><%= it.t("home.syncSelected") %></button>
+      <button type="button" class="secondary" id="sync-all-btn"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i><%= it.t("home.syncAll") %></button>
+      <button type="button" class="icon-button" id="link-btn" aria-label="<%= it.t('home.linkAnother') %>" title="<%= it.t('home.linkAnother') %>"><i class="fa-solid fa-plus" aria-hidden="true"></i></button>
     </div>
-  <% } else { %>
-    <div class="card conn-toolbar">
-      <label class="check-label"><input type="checkbox" class="bigcheck" id="select-all-accounts" /> <%= it.t("home.selectAll") %></label>
+  <% } %>
+</header>
+
+<% if (it.items.length === 0) { %>
+  <section class="empty-state">
+    <h3><%= it.t("home.noBanks") %></h3>
+    <p class="muted"><%= it.t("connections.emptyHelp") %></p>
+    <div class="button-row">
+      <button type="button" class="primary" id="link-btn"><i class="fa-solid fa-link" aria-hidden="true"></i><%= it.t("home.linkAccount") %></button>
     </div>
+  </section>
+<% } else { %>
+  <div class="stack">
+    <div class="form-actions">
+      <label class="check"><input type="checkbox" id="select-all-accounts" /> <%= it.t("home.selectAll") %></label>
+      <span id="sync-status" class="muted small" aria-live="polite"></span>
+    </div>
+    <div id="sync-result" class="stack" aria-live="polite"></div>
+
     <% it.items.forEach(function(item) { %>
-      <div class="card item-card list-row" data-item-id="<%= item.id %>">
-        <div class="item-header">
-          <div>
-            <h2 class="item-title"><%= item.institutionName ?? "(unknown institution)" %></h2>
-            <p class="muted item-meta">
-              <% if (item.status === "requires_relink") { %>
-                <span class="error"><%= it.t("home.relinkNeeded") %></span> ·
-              <% } else if (item.status === "active") { %>
-                <span class="success"><%= it.t("home.active") %></span> ·
-              <% } else { %>
-                <span class="warn"><%= item.status %></span> ·
-              <% } %>
+      <section class="panel panel-hover item-card" data-item-id="<%= item.id %>">
+        <div class="panel-head">
+          <div class="panel-head-main">
+            <h3><%= item.institutionName ?? it.t("health.unknownBank") %></h3>
+            <div class="panel-meta">
+              <%~ include("partials/freshness_chip", { kind: item.freshness, t: it.t }) %>
               <span class="conn-last-sync" data-item-id="<%= item.id %>">
                 <% if (item.lastSyncedAt) { %>
-                  <%~ it.t("home.lastSync", { when: '<span class="local-ts" data-ts="' + item.lastSyncedAt + '">' + new Date(item.lastSyncedAt).toLocaleString() + '</span>' }) %>
+                  <%~ it.t("home.lastSync", { when: '<span class="rel-ts" data-ts="' + item.lastSyncedAt + '">' + f.dateTime(item.lastSyncedAt) + '</span>' }) %>
                 <% } else { %>
                   <%= it.t("home.neverSynced") %>
                 <% } %>
               </span>
-            </p>
+            </div>
           </div>
-          <div class="item-actions row-actions">
+          <div class="panel-actions">
             <% if (item.status === "requires_relink") { %>
-              <button type="button" class="relink-btn secondary" data-item-id="<%= item.id %>"><%= it.t("home.relink") %></button>
-            <% } else { %>
-              <button type="button" class="icon-btn manage-accounts-btn" data-item-id="<%= item.id %>" aria-label="<%= it.t('home.manageAccounts') %>" title="<%= it.t('home.manageAccounts') %>">
-                <i class="fa-solid fa-list-check" aria-hidden="true"></i>
-              </button>
+              <button type="button" class="relink-btn secondary" data-item-id="<%= item.id %>"><i class="fa-solid fa-link" aria-hidden="true"></i><%= it.t("home.relink") %></button>
             <% } %>
-            <button type="button" class="icon-btn remove-btn" data-item-id="<%= item.id %>" data-institution="<%= item.institutionName ?? '' %>" aria-label="<%= it.t('home.remove') %>" title="<%= it.t('home.remove') %>">
-              <i class="fa-solid fa-link-slash" aria-hidden="true"></i>
-            </button>
+            <span class="row-actions">
+              <% if (item.status !== "requires_relink") { %>
+                <button type="button" class="icon-button manage-accounts-btn" data-item-id="<%= item.id %>" aria-label="<%= it.t('home.manageAccounts') %>" title="<%= it.t('home.manageAccounts') %>">
+                  <i class="fa-solid fa-pen" aria-hidden="true"></i>
+                </button>
+              <% } %>
+              <button type="button" class="icon-button danger remove-btn" data-item-id="<%= item.id %>" data-institution="<%= item.institutionName ?? '' %>" aria-label="<%= it.t('home.remove') %>" title="<%= it.t('home.remove') %>">
+                <i class="fa-solid fa-trash" aria-hidden="true"></i>
+              </button>
+            </span>
           </div>
         </div>
-        <table class="account-table">
-          <thead>
-            <tr>
-              <th style="width: 2.5rem;"><input type="checkbox" class="bigcheck item-select-all" data-item-id="<%= item.id %>" /></th>
-              <th><%= it.t("home.account") %></th>
-            </tr>
-          </thead>
-          <tbody>
-            <% item.accounts.forEach(function(acct) { %>
-              <tr class="<%= acct.accessStatus === 'deselected' ? 'account-deselected' : '' %>">
-                <td><input type="checkbox" class="bigcheck account-check" value="<%= acct.plaidAccountId %>" <%= acct.accessStatus === 'deselected' ? 'disabled' : '' %> /></td>
-                <td>
-                  <div class="account-cell">
-                    <span class="account-label">
-                      <%= acct.name %>
-                      <% if (acct.mask) { %><span class="muted">····<%= acct.mask %></span><% } %>
-                      <% if (acct.type) { %><span class="muted">· <%= acct.type %></span><% } %>
-                      <% if (acct.accessStatus === 'deselected') { %><span class="warn">· <%= it.t("home.notSyncing") %> <span class="info-icon" title="<%= it.t('home.notSyncingHelp') %>"><i class="fa-regular fa-circle-question" aria-hidden="true"></i></span></span><% } %>
-                    </span>
-                    <% if (acct.accessStatus === 'deselected') { %>
-                      <button type="button" class="icon-btn account-remove-btn" data-item-id="<%= item.id %>" data-plaid-account-id="<%= acct.plaidAccountId %>" data-name="<%= acct.name %>" aria-label="<%= it.t('home.remove') %>" title="<%= it.t('home.remove') %>">
-                        <i class="fa-solid fa-trash" aria-hidden="true"></i>
-                      </button>
-                    <% } %>
-                  </div>
-                </td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-        <div class="conn-messages" data-item-id="<%= item.id %>"></div>
-      </div>
-    <% }) %>
 
-    <div class="card sync-actions">
-      <div class="sync-actions-row">
-        <button type="button" id="sync-selected-btn"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i><%= it.t("home.syncSelected") %></button>
-        <button type="button" class="secondary" id="sync-all-btn"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i><%= it.t("home.syncAll") %></button>
-        <button type="button" class="secondary" id="link-btn"><i class="fa-solid fa-link" aria-hidden="true"></i><%= it.t("home.linkAnother") %></button>
-        <span id="sync-status" class="muted"></span>
-      </div>
-      <div id="sync-result" class="sync-result"></div>
-    </div>
-  <% } %>
-</section>
+        <% if (item.rateLimit) { %>
+          <div class="panel-meter">
+            <%~ include("partials/meter", {
+              value: item.rateLimit.used,
+              max: item.rateLimit.max,
+              full: item.rateLimit.full,
+              label: it.t("connections.rateLimit", { used: f.num(item.rateLimit.used), max: f.num(item.rateLimit.max), hours: f.num(item.rateLimit.windowHours) }),
+              detail: item.rateLimit.full && item.rateLimit.freesAt ? it.t("connections.rateLimitFull", { when: f.dateTime(item.rateLimit.freesAt) }) : "",
+            }) %>
+          </div>
+        <% } %>
+
+        <label class="check small bank-select"><input type="checkbox" class="item-select-all" data-item-id="<%= item.id %>" /> <%= it.t("connections.selectBank") %></label>
+        <ul class="row-list">
+          <% item.accounts.forEach(function(acct) { %>
+            <% var off = acct.accessStatus === 'deselected'; %>
+            <li class="row<%= off ? ' muted-row' : '' %>">
+              <input type="checkbox" class="account-check" value="<%= acct.plaidAccountId %>" aria-label="<%= acct.name %>" <%= off ? 'disabled' : '' %> />
+              <span class="row-main">
+                <span class="row-title">
+                  <%= acct.name %><% if (acct.mask) { %> <span class="muted mono small">····<%= acct.mask %></span><% } %>
+                  <% if (off) { %><span class="chip warn" title="<%= it.t('home.notSyncingHelp') %>"><%= it.t("home.notSyncing") %></span><% } %>
+                </span>
+                <span class="row-secondary">
+                  <% if (acct.type) { %><%= acct.type %> · <% } %>
+                  <% if (acct.budgets > 0) { %><%= it.t("connections.feeds", { count: f.num(acct.budgets) }) %><% } else { %><%= it.t("connections.notRouted") %><% } %>
+                </span>
+              </span>
+              <% if (!off) { %>
+                <span class="row-aside">
+                  <span><%= it.t("insights.chart.imported", { count: f.num(acct.imported30) }) %></span>
+                  <small><%= it.t("connections.last30") %></small>
+                </span>
+              <% } else { %>
+                <span class="row-actions">
+                  <button type="button" class="icon-button danger account-remove-btn" data-item-id="<%= item.id %>" data-plaid-account-id="<%= acct.plaidAccountId %>" data-name="<%= acct.name %>" aria-label="<%= it.t('home.remove') %>" title="<%= it.t('home.remove') %>">
+                    <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                  </button>
+                </span>
+              <% } %>
+            </li>
+          <% }) %>
+        </ul>
+        <div class="conn-messages stack" data-item-id="<%= item.id %>"></div>
+      </section>
+    <% }) %>
+  </div>
+<% } %>
 
 <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
 <script>
@@ -118,12 +137,14 @@
 
     function buildMsg(cls, text) {
       var wrap = document.createElement('div');
-      wrap.className = 'sync-msg ' + cls;
-      var span = document.createElement('span');
+      wrap.className = 'notice ' + ({ success: 'ok', warn: 'warn', error: 'error' }[cls] || '');
+      wrap.setAttribute('role', cls === 'error' ? 'alert' : 'status');
+      var span = document.createElement('div');
+      span.className = 'notice-body';
       span.textContent = text;
       var btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'icon-btn sync-msg-close';
+      btn.className = 'icon-button';
       btn.setAttribute('aria-label', t('home.dismiss'));
       btn.title = t('home.dismiss');
       btn.innerHTML = '<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
@@ -186,7 +207,7 @@
     document.getElementById('sync-all-btn')?.addEventListener('click', () => runSync({ scope: 'all' }));
     document.getElementById('sync-selected-btn')?.addEventListener('click', () => {
       const ids = Array.from(document.querySelectorAll('.account-check:checked')).map((c) => c.value);
-      if (ids.length === 0) { document.getElementById('sync-result').innerHTML = '<p class="warn">' + t('home.pickAccount') + '</p>'; return; }
+      if (ids.length === 0) { var r = document.getElementById('sync-result'); r.innerHTML = ''; r.appendChild(buildMsg('warn', t('home.pickAccount'))); return; }
       runSync({ scope: 'selected', plaidAccountIds: ids });
     });
 

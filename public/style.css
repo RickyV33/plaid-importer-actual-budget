@@ -198,6 +198,10 @@ p { margin: 0; }
 .panel-actions { display: flex; gap: 8px; flex-shrink: 0; }
 .panel-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 8px; font-size: 0.85rem; color: var(--muted); }
 .panel > .notice { margin: 16px 0 0; }
+.panel-meter { margin-bottom: 14px; max-width: 32rem; }
+.bank-select { margin-bottom: 4px; }
+.conn-messages:not(:empty) { margin-top: 12px; }
+.conn-messages .notice, #sync-result .notice { margin: 0; }
 .panel-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; }
 .section-head { display: flex; flex-direction: column; gap: 4px; margin: 26px 0 14px; }
 .empty-state { padding: 40px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }

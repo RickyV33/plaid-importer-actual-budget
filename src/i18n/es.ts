@@ -271,4 +271,14 @@ export const es: Record<string, string> = {
   "health.fixProfile": "Revisar el presupuesto",
   "health.fixRelink": "Volver a conectar",
   "health.fixHistory": "Ver qué falló",
+
+  // connections page
+  "connections.eyebrow": "Bancos",
+  "connections.emptyHelp": "Vincula un banco con Plaid y luego asigna sus cuentas a un presupuesto en la página Perfiles.",
+  "connections.rateLimit": "{used} de {max} sincronizaciones usadas en las últimas {hours} h",
+  "connections.rateLimitFull": "próxima sincronización disponible {when}",
+  "connections.selectBank": "Todas las cuentas de este banco",
+  "connections.feeds": "alimenta {count} presupuesto(s)",
+  "connections.notRouted": "aún sin asignar a un presupuesto",
+  "connections.last30": "últimos 30 días",
 };
