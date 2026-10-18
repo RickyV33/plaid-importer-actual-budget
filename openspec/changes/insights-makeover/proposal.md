@@ -44,6 +44,13 @@ here gives the app one coherent look and a vocabulary for showing its data.
 - **History shows trends.** Metric cards for the last 30 days (runs, success
   rate, imported, failures), a 90-day imports column chart, and runs as calm
   expandable rows instead of a nested table.
+- **Connection-health banners on every page.** When a budget's most recent sync
+  couldn't reach Actual, when its most recent sync hit import errors, or when a
+  bank needs reconnecting, every signed-in page shows a notice naming the budget
+  or bank, saying what's wrong, and linking to the fix. Banners clear on their own
+  once a later sync succeeds (or the bank is relinked). Dismissing hides only that
+  incident; a new failure brings the banner back. Built from stored sync results,
+  so pages make no live Plaid or Actual calls to show them.
 - **Settings, login, register, forms** restyled into panels and the shared form
   styles. No setting changes meaning.
 
@@ -71,6 +78,9 @@ changes. One read-only aggregate query set is added; no DB migrations.
   takes precedence over `Accept-Language`.
 - `sync-history`: the history view adds 30-day summary metrics and a 90-day
   imports chart, and presents runs as expandable rows.
+- `app-notifications`: adds connection-health banners (Actual unreachable,
+  import errors, bank needs relink), derived from local state, auto-clearing,
+  dismissable per incident.
 - `account-mapping`: the "aligned columns" requirement becomes routing rows
   (bank account → Actual account) with a per-profile coverage meter.
 
@@ -82,7 +92,8 @@ changes. One read-only aggregate query set is added; no DB migrations.
 - **Views**: every `.eta` file restyled; `layout.eta` rebuilt; new partials for
   page intro, metric, bar list, column chart, meter.
 - **Routes**: `home.ts`, `history.ts`, `schedules.ts` pass insight data;
-  `render.ts` reads the language and time-zone cookies.
+  `render.ts` reads the language and time-zone cookies and builds the
+  health banners alongside the existing named banners.
 - **New module**: `src/insights/` (pure functions + tests); new read-only queries
   in `src/db/queries.ts`.
 - **i18n**: new `shell.*`, `theme.*`, `lang.*`, `insights.*` keys in `en` + `es`;

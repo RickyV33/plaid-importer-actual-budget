@@ -113,6 +113,37 @@ the absolute time in `title`. Hero figures render their final value; `app.js`
 counts up from zero over 900 ms only when `prefers-reduced-motion` is not set.
 Bar and column fills grow in with a CSS transition gated the same way.
 
+### Connection-health banners come from the last recorded outcome
+Showing a banner on every page can't depend on live calls (each Actual check
+downloads a budget). Instead `src/insights/health.ts` (pure) takes:
+- per owned profile, the result rows of the **latest run that recorded results
+  for that profile** (one owner-scoped query), and
+- the owner's items with `status = 'requires_relink'`,
+and returns incidents:
+- `actual_unreachable` (error): any of those rows has a reason starting
+  `actual_unreachable` → "Can't reach the Actual budget <profile>." Link:
+  Profiles. Copy notes that transactions wait in the journal and go through on
+  the next successful sync, which is true (watermarks don't advance on failure).
+- `import_failed` (warn): failures with any other reason → "Some transactions
+  couldn't be imported into <profile>." Link: History.
+- `relink` (error): "<bank> needs to be reconnected." Link: Connections.
+Because only the latest run per profile is considered, an incident clears as
+soon as a later run for that profile succeeds; relink clears when the item goes
+back to `active`.
+
+Each incident has a key that names the incident, not just the condition:
+`health:actual:<profileId>:<runId>`, `health:import:<profileId>:<runId>`,
+`health:relink:<itemId>:<updatedAt>`. Dismissal reuses `dismissed_banners` and
+`POST /banners/:key/dismiss` unchanged, so dismissing hides that incident only,
+and a later failing run (new run id) shows again.
+*Alternatives:* a live Actual ping cached for N minutes (adds background I/O and
+a cache to invalidate; the sync itself already is the probe); never dismissable
+(nags during a known outage).
+
+`render.ts` merges health incidents ahead of the existing named banners; the
+layout renders both as notices with an icon, the message, a "Fix" text link, and
+a dismiss icon button.
+
 ### Navigation shell
 Header: title + version on the left; theme pill, language select, and a
 sign-out pill on the right. Below, a `.tabs` strip: Overview, Connections,
