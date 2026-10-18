@@ -447,7 +447,7 @@ a.metric:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; 
 .route-arrow { display: none; color: var(--muted); }
 .route-to { display: flex; align-items: center; gap: 12px; }
 .route-to select { flex: 1; min-width: 0; }
-.route-pending { flex: 0 0 auto; display: flex; justify-content: center; min-width: 5.5rem; }
+.route-pending { flex: 0 0 auto; display: flex; }
 
 /* ── schedules week strip ─────────────────────────────────────── */
 
@@ -488,8 +488,10 @@ a.metric:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; 
   .route-from { flex: 1 1 40%; }
   .route-arrow { display: block; flex-shrink: 0; }
   .route-to { flex: 1 1 50%; }
-  .route-to select { flex: 0 1 18rem; }
   .route-to { justify-content: flex-end; }
+  /* Fixed columns, with the switch's space kept on unmapped rows, so every row lines up. */
+  .route-to select { flex: 0 1 18rem; }
+  .route-pending { flex: 0 0 9.5rem; }
 }
 
 @media (min-width: 900px) {

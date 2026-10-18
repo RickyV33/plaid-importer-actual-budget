@@ -298,4 +298,7 @@ export const en: Record<string, string> = {
   "oauth.description": "Your bank sent you back. Plaid reopens to finish linking.",
   "oauth.expired": "This link session has expired.",
   "oauth.back": "Start again from Connections",
+  "profiles.eyebrow": "Budgets",
+  "profiles.emptyTitle": "No budgets yet",
+  "profiles.coverage": "{routed} of {total} accounts routed to this budget",
 };

@@ -298,4 +298,7 @@ export const es: Record<string, string> = {
   "oauth.description": "Tu banco te devolvió aquí. Plaid se vuelve a abrir para terminar.",
   "oauth.expired": "Esta sesión de vinculación ha caducado.",
   "oauth.back": "Empezar de nuevo desde Conexiones",
+  "profiles.eyebrow": "Presupuestos",
+  "profiles.emptyTitle": "Aún no hay presupuestos",
+  "profiles.coverage": "{routed} de {total} cuentas enlazadas a este presupuesto",
 };

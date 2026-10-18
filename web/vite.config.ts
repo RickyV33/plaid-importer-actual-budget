@@ -10,6 +10,11 @@ export default defineConfig({
   root: here,
   base: "/static/app/",
   plugins: [react()],
-  build: { outDir: "../dist/web", emptyOutDir: true, chunkSizeWarningLimit: 600 },
+  build: {
+    outDir: "../dist/web",
+    emptyOutDir: true,
+    // React + motion is ~175 kB gzip: loaded once over the LAN, then cached.
+    chunkSizeWarningLimit: 700,
+  },
   server: { port: 5173, strictPort: true, host: true, origin: "http://localhost:5173" },
 });
