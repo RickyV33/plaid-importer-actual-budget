@@ -27,6 +27,17 @@ test("resolveLocale: honors quality ordering", () => {
   assert.equal(resolveLocale("es;q=0.3,en;q=0.9"), "en");
 });
 
+test("resolveLocale: a chosen locale (cookie) overrides the header", () => {
+  assert.equal(resolveLocale("en-US", "es"), "es");
+  assert.equal(resolveLocale(undefined, "es"), "es");
+});
+
+test("resolveLocale: an unsupported chosen locale is ignored", () => {
+  assert.equal(resolveLocale("es", "fr"), "es");
+  assert.equal(resolveLocale(undefined, "fr"), "en");
+  assert.equal(resolveLocale("en", ""), "en");
+});
+
 test("translator: returns localized strings with English fallback", () => {
   assert.equal(translator("es")("login.title"), "Iniciar sesión");
   assert.equal(translator("en")("login.title"), "Sign in");

@@ -1,5 +1,16 @@
 export const es: Record<string, string> = {
   // common / nav
+  "nav.overview": "Resumen",
+  "nav.label": "Páginas",
+  "shell.appName": "Plaid Importer",
+  "shell.appSub": "para Actual Budget",
+  "shell.signOut": "Cerrar sesión",
+  "shell.dismiss": "Descartar",
+  "theme.dark": "Oscuro",
+  "theme.light": "Claro",
+  "lang.label": "Idioma",
+  "lang.en": "English",
+  "lang.es": "Español",
   "nav.connections": "Conexiones",
   "nav.profiles": "Perfiles",
   "nav.schedules": "Programaciones",

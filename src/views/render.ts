@@ -5,7 +5,7 @@ import { Eta } from "eta";
 import type { FastifyReply } from "fastify";
 
 import { config } from "../config.js";
-import { clientMessages, resolveLocale, translator } from "../i18n/index.js";
+import { clientMessages, LOCALE_COOKIE, resolveLocale, translator } from "../i18n/index.js";
 import { dismissedBanners, schedules } from "../db/queries.js";
 import { formatVersion } from "../version.js";
 
@@ -49,7 +49,7 @@ export function render(
   template: string,
   data: Record<string, unknown> = {},
 ): FastifyReply {
-  const locale = resolveLocale(reply.request?.headers["accept-language"]);
+  const locale = resolveLocale(reply.request?.headers["accept-language"], reply.request?.cookies?.[LOCALE_COOKIE]);
   const t = translator(locale);
 
   const userId = reply.request?.session?.userId as number | undefined;

@@ -9,8 +9,15 @@ const catalogs: Record<Locale, Record<string, string>> = { en, es };
 
 export type Translate = (key: string, params?: Record<string, string | number>) => string;
 
-/** Resolve the best supported locale from an Accept-Language header. */
-export function resolveLocale(acceptLanguage: string | undefined): Locale {
+/** Name of the cookie the language picker sets. */
+export const LOCALE_COOKIE = "lang";
+
+/**
+ * Resolve the active locale: the viewer's explicit choice (the `lang` cookie)
+ * when it names a supported locale, else the best match from Accept-Language.
+ */
+export function resolveLocale(acceptLanguage: string | undefined, chosen?: string): Locale {
+  if (chosen && (SUPPORTED_LOCALES as string[]).includes(chosen)) return chosen as Locale;
   if (!acceptLanguage) return DEFAULT_LOCALE;
   // Parse "es-ES,es;q=0.9,en;q=0.8" into ordered base languages.
   const ordered = acceptLanguage

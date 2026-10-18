@@ -6,8 +6,8 @@
 
 ## 2. Locale cookie
 
-- [ ] 2.1 Extend `resolveLocale` with an optional cookie value (supported cookie wins; unsupported ignored); update `render.ts` to pass `req.cookies.lang`; add tests to `src/i18n/i18n.test.ts` for the four spec scenarios
-- [ ] 2.2 Add `shell.*`, `theme.*`, `lang.*` keys (en + es); keep the parity test green
+- [x] 2.1 Extend `resolveLocale` with an optional cookie value (supported cookie wins; unsupported ignored); update `render.ts` to pass `req.cookies.lang`; add tests to `src/i18n/i18n.test.ts` for the four spec scenarios
+- [x] 2.2 Add `shell.*`, `theme.*`, `lang.*` keys (en + es); keep the parity test green
 
 ## 3. Design system foundation
 
