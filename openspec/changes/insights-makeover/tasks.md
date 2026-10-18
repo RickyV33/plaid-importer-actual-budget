@@ -1,7 +1,7 @@
 ## 1. Insights core (pure, tested first)
 
-- [ ] 1.1 Create `src/insights/` with pure functions: `dailySeries(runs, days, now, tz)`, `byConnection(results, items)`, `byAccount(results)`, `outcomeSummary(runs)`, `freshness(item, now)`, `rateLimitUsage(pulls, oldest, limit, now)`, `coverage(accounts, mappings)`, `upcomingWeek(schedules, now, tz)` (reusing `nextOccurrence`), plus `safeTimeZone(raw)`
-- [ ] 1.2 Unit tests for each in `src/insights/*.test.ts`: zero-filled gaps, time-zone bucketing across midnight, invalid zone → UTC, shares, running runs excluded from success rate, no-runs → absent rate, freshness boundaries and relink precedence, at-ceiling free time, deselected accounts excluded from coverage, paused/legacy schedules excluded from the week
+- [x] 1.1 Create `src/insights/` with pure functions: `dailySeries(runs, days, now, tz)`, `byConnection(results, items)`, `byAccount(results)`, `outcomeSummary(runs)`, `freshness(item, now)`, `rateLimitUsage(pulls, oldest, limit, now)`, `coverage(accounts, mappings)`, `upcomingWeek(schedules, now, tz)` (reusing `nextOccurrence`), plus `safeTimeZone(raw)`
+- [x] 1.2 Unit tests for each in `src/insights/*.test.ts`: zero-filled gaps, time-zone bucketing across midnight, invalid zone → UTC, shares, running runs excluded from success rate, no-runs → absent rate, freshness boundaries and relink precedence, at-ceiling free time, deselected accounts excluded from coverage, paused/legacy schedules excluded from the week
 - [ ] 1.3 Add read-only, owner-scoped queries in `src/db/queries.ts`: runs since a timestamp (`started_at`, `status`, `total_imported`), per-account imported since a timestamp (joined to item); cover owner scoping in `src/db/queries.test.ts`
 
 ## 2. Locale cookie
