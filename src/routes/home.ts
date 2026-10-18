@@ -16,7 +16,7 @@ import {
   type PlaidItemRow,
 } from "../db/queries.js";
 import { freshness, rateLimitUsage, type Freshness, type RateLimitUsage } from "../insights/connections.js";
-import { coverage } from "../insights/coverage.js";
+import { coverage, type Coverage } from "../insights/coverage.js";
 import { byConnection, dailySeries } from "../insights/imports.js";
 import { outcomeSummary } from "../insights/runs.js";
 import { effectiveSyncLimit } from "../sync/ratelimit.js";
@@ -67,6 +67,7 @@ type ProfileView = {
   actualError: boolean;
   actualAccounts: { id: string; name: string }[];
   connections: ProfileConnectionView[];
+  coverage: Coverage;
 };
 
 export function registerHomeRoute(app: FastifyInstance): void {
@@ -217,6 +218,7 @@ export function registerHomeRoute(app: FastifyInstance): void {
         budgetId: p.budget_id,
         actualError,
         actualAccounts,
+        coverage: coverage(accounts, new Set(mappings.keys())),
         connections: items
           .map((item) => ({
             itemId: item.id,
