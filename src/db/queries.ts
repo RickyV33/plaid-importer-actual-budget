@@ -596,6 +596,22 @@ export const syncRuns = {
       .get(ownerUserId, sinceTs);
     return row?.total ?? 0;
   },
+
+  // An owner's runs started at or after `sinceTs`, oldest first: the raw input
+  // for daily series and outcome summaries.
+  listSinceByOwner(
+    ownerUserId: number,
+    sinceTs: number,
+  ): Pick<SyncRunRow, "started_at" | "status" | "total_imported">[] {
+    return db()
+      .prepare<[number, number], Pick<SyncRunRow, "started_at" | "status" | "total_imported">>(
+        `SELECT started_at, status, total_imported
+           FROM sync_runs
+         WHERE owner_user_id = ? AND started_at >= ?
+         ORDER BY started_at ASC`,
+      )
+      .all(ownerUserId, sinceTs);
+  },
 };
 
 export const syncAccountResults = {
@@ -644,6 +660,33 @@ export const syncAccountResults = {
          GROUP BY pa.item_id`,
       )
       .all(syncRunId);
+  },
+
+  // Per-connection imported sums over an owner's runs since `sinceTs`.
+  importedByItemSince(ownerUserId: number, sinceTs: number): { item_id: string; imported: number }[] {
+    return db()
+      .prepare<[number, number], { item_id: string; imported: number }>(
+        `SELECT pa.item_id AS item_id, SUM(sar.txns_imported) AS imported
+           FROM sync_account_results sar
+           JOIN sync_runs sr ON sr.id = sar.sync_run_id
+           JOIN plaid_accounts pa ON pa.plaid_account_id = sar.plaid_account_id
+         WHERE sr.owner_user_id = ? AND sr.started_at >= ?
+         GROUP BY pa.item_id`,
+      )
+      .all(ownerUserId, sinceTs);
+  },
+
+  // Per-account imported sums over an owner's runs since `sinceTs`.
+  importedByAccountSince(ownerUserId: number, sinceTs: number): { plaid_account_id: string; imported: number }[] {
+    return db()
+      .prepare<[number, number], { plaid_account_id: string; imported: number }>(
+        `SELECT sar.plaid_account_id AS plaid_account_id, SUM(sar.txns_imported) AS imported
+           FROM sync_account_results sar
+           JOIN sync_runs sr ON sr.id = sar.sync_run_id
+         WHERE sr.owner_user_id = ? AND sr.started_at >= ?
+         GROUP BY sar.plaid_account_id`,
+      )
+      .all(ownerUserId, sinceTs);
   },
 };
 

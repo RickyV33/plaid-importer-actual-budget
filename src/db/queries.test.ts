@@ -454,6 +454,59 @@ test("syncRuns.totalImportedSince: sums total_imported in window, owner-scoped, 
   assert.equal(syncRuns.totalImportedSince(owner, base + 86_400_000), 0);
 });
 
+test("syncRuns.listSinceByOwner: windowed, owner-scoped, oldest first", () => {
+  const owner = users.create({ username: "since-owner", passwordHash: "x", role: "member" });
+  const other = users.create({ username: "since-other", passwordHash: "x", role: "member" });
+  const base = Date.now();
+  const insert = (o: number, startedAt: number, status: string, imported: number) =>
+    db()
+      .prepare(
+        "INSERT INTO sync_runs (started_at, status, triggered_by, scope, total_imported, owner_user_id) VALUES (?, ?, 'manual', 'all', ?, ?)",
+      )
+      .run(startedAt, status, imported, o);
+  insert(owner, base - 1 * 86_400_000, "failure", 0);
+  insert(owner, base - 2 * 86_400_000, "success", 4);
+  insert(owner, base - 40 * 86_400_000, "success", 9);
+  insert(other, base - 1 * 86_400_000, "success", 7);
+
+  assert.deepEqual(syncRuns.listSinceByOwner(owner, base - 30 * 86_400_000), [
+    { started_at: base - 2 * 86_400_000, status: "success", total_imported: 4 },
+    { started_at: base - 1 * 86_400_000, status: "failure", total_imported: 0 },
+  ]);
+});
+
+test("syncAccountResults.importedBy{Item,Account}Since: windowed and owner-scoped", () => {
+  const owner = users.create({ username: "byitem-owner", passwordHash: "x", role: "member" });
+  const other = users.create({ username: "byitem-other", passwordHash: "x", role: "member" });
+  seedMapping("plaid-BI1", "actual-BI1"); // item-plaid-BI1
+  seedMapping("plaid-BI2", "actual-BI2"); // item-plaid-BI2
+  const base = Date.now();
+  const run = (o: number, startedAt: number) =>
+    Number(
+      db()
+        .prepare(
+          "INSERT INTO sync_runs (started_at, status, triggered_by, scope, total_imported, owner_user_id) VALUES (?, 'success', 'manual', 'all', 0, ?)",
+        )
+        .run(startedAt, o).lastInsertRowid,
+    );
+  const recent = run(owner, base - 86_400_000);
+  const old = run(owner, base - 60 * 86_400_000);
+  const others = run(other, base - 86_400_000);
+  syncAccountResults.record({ syncRunId: recent, plaidAccountId: "plaid-BI1", status: "success", txnsImported: 3, reason: null, profileId: null });
+  syncAccountResults.record({ syncRunId: recent, plaidAccountId: "plaid-BI1", status: "success", txnsImported: 2, reason: null, profileId: null });
+  syncAccountResults.record({ syncRunId: recent, plaidAccountId: "plaid-BI2", status: "success", txnsImported: 1, reason: null, profileId: null });
+  syncAccountResults.record({ syncRunId: old, plaidAccountId: "plaid-BI2", status: "success", txnsImported: 50, reason: null, profileId: null });
+  syncAccountResults.record({ syncRunId: others, plaidAccountId: "plaid-BI2", status: "success", txnsImported: 70, reason: null, profileId: null });
+
+  const since = base - 30 * 86_400_000;
+  const byItem = new Map(syncAccountResults.importedByItemSince(owner, since).map((r) => [r.item_id, r.imported]));
+  assert.equal(byItem.get("item-plaid-BI1"), 5);
+  assert.equal(byItem.get("item-plaid-BI2"), 1);
+  const byAccount = new Map(syncAccountResults.importedByAccountSince(owner, since).map((r) => [r.plaid_account_id, r.imported]));
+  assert.equal(byAccount.get("plaid-BI1"), 5);
+  assert.equal(byAccount.get("plaid-BI2"), 1);
+});
+
 test("schedules.create/update: persists name, trims it, and collapses blank to null", () => {
   const base = {
     ownerUserId,
