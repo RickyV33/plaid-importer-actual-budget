@@ -1,203 +1,210 @@
 ## Context
 
-plaid-importer is a Fastify app that renders Eta templates, with a little inline
-vanilla JS per page (Plaid Link, sync buttons, mapping selects). Styling is one
-hand-grown `public/style.css`. Font Awesome comes from cdnjs.
+plaid-importer is a Fastify app with SQLite, cookie sessions, Plaid, Actual,
+and an in-process scheduler. Its pages were Eta templates with a little inline
+vanilla JS each (Plaid Link, sync buttons, mapping selects); actions mostly end
+in `location.reload()` and errors in `alert()`.
 
-Media Insights is a React + Vite SPA whose look we want: `web/src/styles.css`
-(tokens for light and dark, Playfair Display / DM Sans / DM Mono), components
-`PageIntro`, `Panel`, `HeroNumber`, `BarList`, `RankList`, `ItemPanel`
-(calm rows, icon actions on hover/focus), `Notice`, `Segmented`, and a header
-with a theme pill and language select over an underlined tab strip.
+Media Insights is a React 19 + Vite SPA served by a small node server. Its
+look lives in `web/src/styles.css` (light/dark tokens; Playfair Display, DM Sans,
+DM Mono) and its UX in a handful of components: `PageIntro`, `Panel`, `Notice`,
+`HeroNumber`, `BarList`, `RankList`, `ItemPanel` (calm rows, icon actions on
+hover/focus), `Segmented`, a header with a theme pill and language select over a
+tab strip, and `motion` for count-ups and transitions. Types flow from server
+modules into `web/src/api.ts`.
 
-The data the new views need already exists locally: `sync_runs`
-(`started_at`, `status`, `total_imported`, owner), `sync_account_results`
-(per account and profile), `plaid_items.last_synced_at` / `status`,
-`countPullsForItemSince` for rate-limit usage, `profile_account_mappings`, and
-`schedules` + `nextOccurrence()` for upcoming runs.
+The data the new views need already exists locally: `sync_runs`,
+`sync_account_results` (per account and profile), `plaid_items` status and last
+sync, `countPullsForItemSince` for rate-limit usage, `profile_account_mappings`,
+and `schedules` + `nextOccurrence()`.
+
+The first part of this change (already landed) added `src/insights/` (pure
+figures), read-only queries, health incidents, the locale cookie, the Media
+Insights stylesheet and fonts, and Eta versions of the shell, Overview and
+Connections. This design moves the signed-in pages to React; the Eta page work
+is superseded, the rest carries over.
 
 ## Goals / Non-Goals
 
 **Goals:**
-- One design system, ported from Media Insights, applied to every page.
+- The same frontend stack and components as Media Insights for every signed-in
+  page, so the two apps share UX and code shape.
 - Show what the app already knows: trends, health, routing, upcoming runs.
-- Keep every existing behavior, endpoint, and client script contract working.
-- Stay within the repo's frontend rules: mobile first, flexbox first, i18n
-  catalog, no emoji, solid colors (gradients only for backgrounds), SVG imagery,
-  Font Awesome for a non-React app, CRUD as icons, calm rows.
+- Actions update in place: no full reloads, no `alert()`.
+- Keep every page URL, the auth flow, Plaid Link flows, and all sync/scheduler
+  behavior unchanged.
+- Repo frontend rules: mobile first, flexbox first, one i18n catalog (en + es),
+  no emoji, solid colors, SVG icons from `react-icons`, CRUD as icons, calm rows.
 
 **Non-Goals:**
-- No React/Vite rewrite, no client-side router, no JSON API for pages.
-- No new sync, scheduling, or mapping behavior; no migrations.
-- No charting library.
-- No per-user stored preferences in the DB (theme lives in the browser,
-  language in a cookie).
+- No backend rewrite (Media Insights' `node:http` + JSON files would be a step
+  down here: no auth, no SQL).
+- No change to sign-in pages' flow; they stay server-rendered.
+- No inline editing of profiles or schedules (their forms keep dedicated pages,
+  which the specs require); only small toggles and selects act in place.
+- No charting library; no component test framework (pure modules are tested).
 
 ## Decisions
 
-### Stay server-rendered; port the CSS and re-express components as Eta partials
-The Media Insights look is ~90% CSS. Its React components are thin markup
-wrappers, which map cleanly to Eta partials (`partials/page_intro`,
-`partials/metric`, `partials/bar_list`, `partials/column_chart`,
-`partials/meter`). Interactions that need JS (theme, count-up, disclosure,
-relative time) go in one shared `public/app.js`.
-*Alternative:* migrate to React + Vite to reuse components verbatim. Rejected:
-every route, form post, and the Plaid Link flows would need an API and a
-rewrite, which is far more risk than a restyle warrants. It stays possible
-later because the class names and tokens will match.
+### React SPA for signed-in pages; server keeps Fastify
+`web/` holds a Vite + React app built to `dist/web/` with `base: "/static/app/"`.
+Fastify serves it under `/static/app/` (already outside the auth allowlist
+question, since `/static/*` is exempt) and answers every page URL — `/`,
+`/connections`, `/profiles`, `/profiles/new`, `/profiles/:id/edit`,
+`/schedules`, `/schedules/new`, `/schedules/:id/edit`, `/history`, `/settings`,
+`/link/oauth-return` — with the app's `index.html`, behind the existing auth
+gate. So bookmarks, the Plaid OAuth redirect URI, and `?next=` all keep working.
+*Alternative:* finish the Eta restyle (rejected: every interaction needs bespoke
+JS, and nothing is shared with Media Insights); hash routing like Media Insights
+(rejected: would change URLs, including the registered OAuth redirect).
 
-### Copy the token sheet, keep the class vocabulary
-`public/style.css` is rewritten starting from Media Insights' `styles.css`
-(same token names, same class names: `.panel`, `.page-intro`, `.hero-card`,
-`.metric-grid`, `.bar-list`, `.row-list`/`.row`/`.row-actions`, `.notice`,
-`.icon-button`, `.primary`/`.secondary`, `.segmented`, `.tabs`, `.chip`).
-App-specific additions (column chart, routing row, week strip, chips) are
-written in the same style and appended. Old class names are dropped as their
-templates move over; nothing keeps the old sheet alive.
+### Client routing over the History API
+A small router (`web/src/router.ts`, pure path matching + a `useRoute` hook on
+`popstate`) maps paths to pages and intercepts same-origin `<a>` clicks. Page
+switches animate with `motion` (`AnimatePresence`), as in Media Insights.
+*Alternative:* react-router (rejected: a dependency for ~10 static routes).
 
-### Fonts are vendored woff2 files
-Copy the latin-subset woff2 files for DM Sans (400/500/600/700), DM Mono
-(400/500) and Playfair Display (600/700) into `public/fonts/` with their OFL
-license, declared via `@font-face` with `font-display: swap`.
-*Alternatives:* Google Fonts (third-party request on a finance app, privacy
-cost); `@fontsource` npm packages served from `node_modules` (the production
-image prunes dev deps; serving package internals is brittle).
+### Sign-in stays server-rendered
+`GET/POST /login`, `GET/POST /register`, `POST /logout`, rate limiting, and
+`next` handling are untouched. `login.eta`/`register.eta` and a slimmed
+`layout.eta` (no tabs) use the shared `/static/style.css`; a tiny inline script
+does the theme switch and language picker; the two icons there are inline SVGs.
 
-### Charts are HTML/CSS, computed on the server
-- **Bar list**: identical markup to Media Insights' `BarList` (label, track,
-  value + share as text, hover/focus tooltip).
-- **Column chart** (imports per day): a flex row of columns whose heights are
-  inline percentages; each column is focusable with a tooltip (date, count),
-  plus a visually-hidden table with the same numbers. Zero days render as a
-  hairline so the time axis is still readable. Axis labels: first, middle, and
-  last date only.
-- **Meter**: Media Insights' `.meter` (rate-limit usage, mapping coverage), with
-  the figures always written next to it.
-No SVG path math or charting library is needed for these shapes; Recharts would
-only matter for line/area charts, which this change doesn't use.
+### JSON API: view models move out of the page routes
+Today's page handlers already assemble view objects. Those move into
+`src/api/*.ts` as functions (`overviewFor(userId, now, tz)`, `connectionsFor`,
+`profilesFor`, `schedulesFor`, `historyFor`, `settingsFor`), registered as
+`GET /api/<page>` in `src/routes/api.ts`. Their return types are exported and
+imported by `web/src/api.ts`, as Media Insights does, so client and server can't
+drift without the typecheck noticing.
 
-### Insights are pure functions over plain rows
-`src/insights/` exports pure functions (`dailySeries`, `byConnection`,
-`outcomeSummary`, `freshness`, `rateLimitUsage`, `coverage`, `upcomingWeek`)
-that take rows and a `now`/time zone, and return view-ready numbers. Routes
-fetch rows with a few new read-only queries (`syncRuns.listSinceByOwner`,
-`syncAccountResults.importedByAccountSince`) and call these. This keeps the
-logic unit-testable without a DB and keeps templates logic-free.
+Form posts become JSON endpoints with the same zod validation and error keys,
+returned as `{ error: "<i18n key>" }` with the same status codes:
+`POST /api/profiles`, `PUT /api/profiles/:id`, `GET /api/profiles/:id`,
+`POST /api/schedules`, `PUT /api/schedules/:id`, `GET /api/schedules/:id`,
+`POST /api/schedules/:id/toggle`, `PUT /api/settings/registration-secret`,
+`PUT /api/settings/sync-limit`, `PUT /api/settings/initial-history`. Endpoints
+that are already JSON keep their paths. `GET /api/me` returns the user, role,
+and version; `GET /api/banners` returns health incidents and named banners.
 
-### Day buckets use the viewer's time zone
-`app.js` writes the browser's IANA zone (`Intl.DateTimeFormat().resolvedOptions().timeZone`)
-to a `tz` cookie. `render`/routes read it, validate it (`Intl` accepts it), and
-fall back to `UTC`. `dailySeries` buckets with `Intl.DateTimeFormat(…, {timeZone})`
-date parts. The first visit before the cookie exists buckets in UTC; that page
-reloads into correct buckets on the next view, which is acceptable.
-*Alternative:* ship raw runs to the client and bucket there. Rejected: moves
-logic out of tested server code and renders an empty chart until JS runs.
+### Auth gate: `401` for the API
+`authPreHandler` keeps its allowlist. For a protected path under `/api/`, an
+unauthenticated request gets `401 { error: "unauthenticated" }` instead of the
+login redirect, so `fetch` callers can react. The app's API client sends the
+browser to `/login?next=<current path>` on `401`. Mutations are JSON-only
+(Fastify parses bodies by content type), so a cross-site form can't post to
+them, and the session cookie stays `SameSite=Lax`.
 
-### Theme: browser-only, applied before paint
-Inline `<script>` in `<head>` reads `localStorage["pi-theme"]` (try/catch),
-else `prefers-color-scheme`, and sets `data-theme` on `<html>` — same approach
-as Media Insights' `index.html`. The header pill toggles and stores it. Without
-JS the page follows the OS via a `prefers-color-scheme` block guarded by
-`:root:not([data-theme="light"])`.
+### One catalog, imported by the app
+`src/i18n/en.ts` / `es.ts` stay the single catalog. The app imports them
+(`import { en } from "../../src/i18n/en"`) and adds Media Insights' provider
+shape (`t`, number/percent/date formatters bound to the locale). Initial locale:
+the `lang` cookie if supported, else the first supported entry of
+`navigator.languages`, else `en`, matching the server rule. Switching sets the
+cookie and re-renders without a reload. Health and named banners arrive as data
+(kind, subject, key) and are translated in the app.
 
-### Language: cookie overrides Accept-Language
-`resolveLocale(acceptLanguage, cookieLang?)`: a supported `lang` cookie wins,
-otherwise the existing header negotiation. The header `<select>` sets the cookie
-(1 year, `SameSite=Lax`, `Path=/`) and reloads. Login/register pages get the
-picker too.
+### Viewer time zone travels as a query parameter
+Endpoints that bucket by day (`/api/overview`, `/api/history`, `/api/schedules`)
+take `?tz=<IANA zone>`; the API client adds the browser's zone. The server
+validates it with `safeTimeZone` (falls back to UTC). The `tz` cookie from the
+first part of the change is dropped.
 
-### Relative times and count-up are progressive enhancement
-Server renders absolute times (existing `.local-ts` pattern). `app.js` rewrites
-`.rel-ts[data-ts]` with `Intl.RelativeTimeFormat` in the page's `lang` and keeps
-the absolute time in `title`. Hero figures render their final value; `app.js`
-counts up from zero over 900 ms only when `prefers-reduced-motion` is not set.
-Bar and column fills grow in with a CSS transition gated the same way.
+### Theme
+Same as Media Insights: `useTheme` hook with `localStorage["pi-theme"]`
+(guarded), OS preference by default, a pre-paint script in `index.html` (and in
+`layout.eta`) sets `data-theme`, and the stylesheet's OS-dark block covers the
+moment before it runs.
+
+### Stylesheet and fonts are shared, not bundled
+`public/style.css` (Media Insights' tokens and class vocabulary plus this app's
+pieces) and the vendored `public/fonts/` stay where they are, served at
+`/static/`. The app links `/static/style.css` from `index.html` instead of
+importing CSS through Vite, so the sign-in pages and the app use one file.
+
+### Dev uses Vite's backend integration, not a proxy
+In production the shell route serves `dist/web/index.html`. In development
+(`VITE_DEV_SERVER` set, e.g. `http://localhost:5173`), it serves the same shell
+with module scripts pointing at the Vite dev server (`@vite/client` and
+`src/main.tsx`), so the app, API, cookies, and redirects all live on Fastify's
+origin and Vite only supplies modules and HMR. No proxy list to keep in sync.
+
+### Components
+Ported from Media Insights with the same props and class names: `PageIntro`,
+`Panel`, `SectionHead`, `Notice`, `HeroNumber` (count-up, reduced-motion aware),
+`BarList` (value + share as text, tooltip). New in the same style: `ColumnChart`
+(flex columns, focusable with labelled tooltips, hidden table), `Meter`,
+`FreshnessChip`, `Row` (calm row with hover/focus actions), `ConfirmButton`
+(icon button that asks with `window.confirm`, as Media Insights does). Icons
+come from `react-icons/fi`.
+
+### Plaid Link
+`web/src/plaid.ts` loads Plaid's script once and exposes
+`openLink(token, { onSuccess, onExit, receivedRedirectUri? })`. Pages call the
+existing endpoints exactly as the old inline scripts did: link
+(`/link/token` → `/link/exchange`), relink (`update-token` → `mark-active`),
+manage accounts (`account-select-token` → `refresh-accounts`), and the OAuth
+return page (re-open with the stored token and `receivedRedirectUri`). After a
+success the page re-fetches its data instead of reloading.
+
+### Insights stay pure functions over plain rows
+Unchanged from the first part: `src/insights/` computes daily series (viewer's
+zone), shares by connection, outcome summaries, freshness, rate-limit usage,
+coverage, and the upcoming week; the API builders call them.
 
 ### Connection-health banners come from the last recorded outcome
-Showing a banner on every page can't depend on live calls (each Actual check
-downloads a budget). Instead `src/insights/health.ts` (pure) takes:
-- per owned profile, the result rows of the **latest run that recorded results
-  for that profile** (one owner-scoped query), and
-- the owner's items with `status = 'requires_relink'`,
-and returns incidents:
-- `actual_unreachable` (error): any of those rows has a reason starting
-  `actual_unreachable` → "Can't reach the Actual budget <profile>." Link:
-  Profiles. Copy notes that transactions wait in the journal and go through on
-  the next successful sync, which is true (watermarks don't advance on failure).
-- `import_failed` (warn): failures with any other reason → "Some transactions
-  couldn't be imported into <profile>." Link: History.
-- `relink` (error): "<bank> needs to be reconnected." Link: Connections.
-Because only the latest run per profile is considered, an incident clears as
-soon as a later run for that profile succeeds; relink clears when the item goes
-back to `active`.
-
-Each incident has a key that names the incident, not just the condition:
-`health:actual:<profileId>:<runId>`, `health:import:<profileId>:<runId>`,
-`health:relink:<itemId>:<updatedAt>`. Dismissal reuses `dismissed_banners` and
-`POST /banners/:key/dismiss` unchanged, so dismissing hides that incident only,
-and a later failing run (new run id) shows again.
-*Alternatives:* a live Actual ping cached for N minutes (adds background I/O and
-a cache to invalidate; the sync itself already is the probe); never dismissable
-(nags during a known outage).
-
-`render.ts` merges health incidents ahead of the existing named banners; the
-layout renders both as notices with an icon, the message, a "Fix" text link, and
-a dismiss icon button.
-
-### Navigation shell
-Header: title + version on the left; theme pill, language select, and a
-sign-out pill on the right. Below, a `.tabs` strip: Overview, Connections,
-Profiles, Schedules, History, Settings (admin). The active tab is derived
-from the request path in `src/views/nav.ts` (sub-pages count toward their
-section), so routes don't pass anything (`aria-current="page"`). The strip scrolls
-horizontally on small screens rather than wrapping.
+Unchanged in substance: `healthIncidents()` over the latest run per profile and
+relink-flagged items, keyed per incident
+(`health:actual:<profileId>:<runId>`, `health:import:…`, `health:relink:<itemId>:<updatedAt>`)
+so a dismissal hides one incident and a later failure shows again. They're
+served by `GET /api/banners` (ahead of named banners, dismissed keys removed),
+rendered by the app shell on every page, and re-fetched after a sync. No live
+Plaid or Actual calls.
 
 ### Page-by-page mapping
-- **Overview (`/`)**: hero (30-day imported + 7/60/90 pills | next sync side);
-  metric grid (connections + relink alert, profiles, accounts routed + meter,
-  success rate, other users for admins); two-col panels: imports per day,
-  imports by connection; "Sync status" row list (freshness chip, last, next).
-- **Connections**: page intro with actions (Sync all, Sync selected, Link
-  bank as icon + label); one panel per connection: status chip, freshness,
-  rate-limit meter; account rows (checkbox, name ····mask, type, "feeds N
-  budgets", 30-day imported) with remove/manage actions revealed on hover.
-  Existing element ids/classes the inline script uses are kept or the script is
-  updated in the same task.
-- **Profiles**: a panel per profile: name, host + budget id (no secrets),
-  coverage meter, edit/delete icons revealed on hover; routing rows grouped by
-  connection: account → arrow → Actual select → pending switch.
-- **Schedules**: week strip (seven day columns from today, each listing the
-  runs that fall on it with time and name), then schedule rows (name + chip,
-  recurrence, connections · next) with toggle/edit/delete on hover.
-- **History**: 30-day metrics, 90-day column chart, run rows with chevron
-  disclosure revealing per-account result rows; pager as secondary buttons.
-- **Settings / forms / auth**: panels; settings uses `two-col` for sync limit
-  and initial history; admin profile list becomes calm rows.
+- **Overview**: hero (30-day imported + 7/60/90 pills | next sync), metric grid
+  (connections + relink alert, budgets, accounts routed + meter, success rate,
+  other users for admins), imports per day, imports by connection, sync status
+  rows.
+- **Connections**: intro actions (Sync selected, Sync all, add bank icon); a
+  panel per bank with status/freshness chips, rate-limit meter, account rows
+  (checkbox, name, mask, type, budgets fed, 30-day imports; remove icon for
+  deselected accounts); results as notices on the panel.
+- **Profiles**: a panel per profile (name, host · budget, coverage meter,
+  edit/delete icons on hover); routing rows grouped by bank (account → Actual
+  select → pending switch), saved in place. Create/edit at `/profiles/new` and
+  `/profiles/:id/edit` with the budget loader.
+- **Schedules**: week strip, then calm rows (name + chip, recurrence, banks ·
+  next) with toggle/edit/delete; create/edit pages with the day picker as a
+  segmented control.
+- **History**: 30-day metrics, 90-day column chart, expandable run rows with
+  per-account results, pager, orphan notice with acknowledge.
+- **Settings** (admin): registration secret, sync limit, initial history as
+  panels; all-profiles list as calm rows.
 
 ## Risks / Trade-offs
 
-- [Restyle breaks an inline script selector] → keep ids/data-attributes the
-  scripts rely on; each page task includes a manual pass of its flows in the
-  dev container, and existing route tests stay green.
-- [Big CSS rewrite leaves pages half-styled mid-change] → the new sheet lands
-  first with the shell, then pages move one per task; the old classes each page
-  needs are deleted only when that page moves.
-- [Time-zone cookie is spoofable] → it only changes bucketing for the viewer's
-  own data; it is validated through `Intl` and never interpolated into SQL.
-- [Hover-only actions on touch] → `@media (hover: none)` keeps row actions
-  visible, as in Media Insights.
-- [Color contrast in dark mode] → reuse Media Insights' validated tokens
-  (including dark `--on-accent`) rather than inventing new ones.
-- [Font payload] → eight latin woff2 files, cached by `@fastify/static`; system
-  fallbacks in every stack.
+- [Plaid Link flows regress] → the hook calls the same endpoints in the same
+  order as the old scripts; the flows are listed as a manual check against
+  Plaid sandbox before archive.
+- [Client and server drift] → API types are imported from the server builders;
+  `tsc` checks both projects.
+- [A page URL that the server doesn't answer with the app] → one route table
+  shared by the server's shell route and its test.
+- [Unauthenticated fetches get HTML] → the `401` branch is unit-tested; the
+  client redirects to login on `401`.
+- [Bundle size] → React + motion is ~175 kB gzip, loaded once and cached; a
+  self-hosted LAN app.
+- [No JavaScript, no app] → acceptable: Plaid Link already requires JavaScript;
+  sign-in pages still work without it.
+- [Dev needs two processes] → a VS Code task runs both; Vite proxies to Fastify.
 
 ## Migration Plan
 
-Pure presentation plus read-only queries: deploy normally. Rollback is a
-redeploy of the previous image; there's no data to undo. Cookies `lang` and `tz`
-are ignored by older builds.
+Deploy normally; there's no data migration. Old HTML form endpoints are removed
+in the same release as the app that replaces them. Rollback is the previous
+image. Cookies (`lang`) are ignored by older builds.
 
 ## Open Questions
 
-- None blocking. Whether to later move to React to share components with Media
-  Insights is left for a separate change.
+- None blocking.

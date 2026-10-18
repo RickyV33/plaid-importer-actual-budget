@@ -111,3 +111,41 @@ degrade to a calm empty state when the underlying data is absent.
 - **WHEN** the overview is rendered
 - **THEN** it contains no controls that create, edit, or delete connections,
   profiles, schedules, or mappings; such actions remain on their respective pages
+
+## ADDED Requirements
+
+### Requirement: Signed-in pages are one client application
+
+Every signed-in page SHALL be served as one client application that reads and
+writes through JSON endpoints. Each page SHALL keep its own URL: requesting a
+page URL directly (a bookmark, a reload, a redirect back from sign-in or from a
+bank's OAuth flow) SHALL open the application on that page. Moving between
+pages through the tab strip or in-app links SHALL NOT reload the document, and
+the browser's back and forward buttons SHALL move between visited pages. After
+an action (a sync, a mapping change, a toggle, a delete), the page SHALL update
+in place rather than reloading the document, and failures SHALL be shown as
+notices on the page rather than browser alert dialogs.
+
+#### Scenario: Deep link opens the right page
+- **WHEN** a signed-in user opens `/schedules/new` directly
+- **THEN** the application opens on the schedule creation page
+
+#### Scenario: Tab switch without reload
+- **WHEN** a signed-in user selects the History tab from the Overview
+- **THEN** the History page shows, the URL becomes `/history`, and the document is not reloaded
+
+#### Scenario: Back button
+- **WHEN** the user then presses the browser's back button
+- **THEN** the Overview shows again
+
+#### Scenario: Action updates in place
+- **WHEN** a user changes an account's "Mapped to" selection on the Profiles page
+- **THEN** the mapping is saved and the page's coverage figure updates without a document reload
+
+#### Scenario: Failure is a notice
+- **WHEN** a sync request fails
+- **THEN** the page shows an error notice describing the failure and no alert dialog opens
+
+#### Scenario: Session expired while using the app
+- **WHEN** the application's data request is rejected because the session has expired
+- **THEN** the browser is sent to the sign-in page with the current page as the return destination

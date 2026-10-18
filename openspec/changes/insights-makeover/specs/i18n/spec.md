@@ -2,13 +2,15 @@
 
 ### Requirement: Locale is resolved from the request
 
-The system SHALL resolve the active locale for each request in this order: a
-`lang` cookie naming a supported locale (`en`, `es`); otherwise the best match
-from the request's `Accept-Language` header among supported locales; otherwise
-`en`. A `lang` cookie naming an unsupported locale SHALL be ignored. Every page
-SHALL offer a language picker that sets the `lang` cookie and re-renders the page
-in the chosen locale, and the page's `<html lang>` SHALL reflect the active
-locale.
+The system SHALL resolve the active locale in this order: a `lang` cookie
+naming a supported locale (`en`, `es`); otherwise the best supported match from
+the viewer's preferred languages (the request's `Accept-Language` header on
+server-rendered pages, the browser's language list in the client application);
+otherwise `en`. A `lang` cookie naming an unsupported locale SHALL be ignored.
+Every page SHALL offer a language picker that sets the `lang` cookie and shows
+the page in the chosen locale (in the client application, without reloading),
+and the document's `lang` attribute SHALL reflect the active locale. Server
+pages and the client application SHALL use the same message catalog.
 
 #### Scenario: Spanish preferred
 - **WHEN** a request without a `lang` cookie sends `Accept-Language: es-ES,es;q=0.9`
@@ -29,4 +31,4 @@ locale.
 
 #### Scenario: Picking a language
 - **WHEN** a viewer chooses Español in the language picker
-- **THEN** the page reloads in Spanish and later pages stay in Spanish
+- **THEN** the page shows in Spanish and later pages, including the sign-in page, stay in Spanish

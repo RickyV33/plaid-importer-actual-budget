@@ -8,8 +8,8 @@ Headlines SHALL use Playfair Display, body text DM Sans, and eyebrow labels, tab
 labels and other small caps-style labels DM Mono, each with a system fallback.
 Font files SHALL be served by the application itself; pages SHALL NOT request
 fonts from a third-party host. Gradients SHALL appear only as backgrounds; text,
-borders, buttons, and data marks SHALL use solid colors. The UI SHALL NOT use
-emoji as icons, bullets, or decoration.
+borders, buttons, and data marks SHALL use solid colors. Icons SHALL be SVG.
+The UI SHALL NOT use emoji as icons, bullets, or decoration.
 
 #### Scenario: Fonts are self-hosted
 - **WHEN** any page loads
@@ -111,10 +111,9 @@ hover, row actions SHALL stay visible.
 
 ### Requirement: Motion is optional and respects reduced-motion
 
-Animations SHALL be skipped when the viewer prefers reduced motion, and final
-values SHALL be present in the server-rendered HTML so pages are correct without
-JavaScript. Within those limits, hero figures may count up from zero once on
-load and bar and column fills may grow in.
+Animations SHALL be skipped when the viewer prefers reduced motion, showing
+final values immediately. Within that limit, hero figures may count up from zero
+once on load, bar and column fills may grow in, and page changes may fade.
 
 #### Scenario: Reduced motion
 - **WHEN** a viewer with `prefers-reduced-motion: reduce` opens the overview

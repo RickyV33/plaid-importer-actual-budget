@@ -19,8 +19,9 @@ them SHALL NOT call Plaid or Actual Budget and SHALL NOT change any stored state
 The system SHALL produce, for a window of N days ending today, one entry per
 calendar day containing the sum of `total_imported` over the viewer's runs that
 started on that day. Days with no runs SHALL be present with a value of zero.
-Days SHALL be calendar days in the viewer's time zone, taken from a `tz` cookie
-holding an IANA zone name; a missing or invalid zone SHALL fall back to UTC.
+Days SHALL be calendar days in the viewer's time zone, sent by the application
+as an IANA zone name with the request; a missing or invalid zone SHALL fall back
+to UTC.
 
 #### Scenario: Gaps are zero-filled
 - **WHEN** a user imported 5 transactions three days ago and nothing else in the
@@ -32,7 +33,7 @@ holding an IANA zone name; a missing or invalid zone SHALL fall back to UTC.
 - **THEN** the run counts toward the previous calendar day
 
 #### Scenario: Invalid zone
-- **WHEN** the `tz` cookie holds a value that is not a valid IANA zone
+- **WHEN** the request names a time zone that is not a valid IANA zone
 - **THEN** days are bucketed in UTC
 
 ### Requirement: Imports by connection and by account
