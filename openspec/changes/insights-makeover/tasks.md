@@ -29,7 +29,7 @@
 
 ## 5. Server: JSON API
 
-- [ ] 5.1 Auth gate: protected `/api/*` without a session → `401 { error: "unauthenticated" }`; other paths still redirect; extend `src/routes/auth.gate.test.ts`
+- [x] 5.1 Auth gate: protected `/api/*` without a session → `401 { error: "unauthenticated" }`; other paths still redirect; extend `src/routes/auth.gate.test.ts`
 - [ ] 5.2 Move page view-model building out of `home.ts` / `history.ts` / `schedules.ts` / `settings.ts` into `src/api/*.ts` (`overviewFor`, `connectionsFor`, `profilesFor`, `schedulesFor`, `historyFor`, `settingsFor`, `bannersFor`, `meFor`) with exported return types; `tz` from a query param via `safeTimeZone`
 - [ ] 5.3 `src/routes/api.ts`: `GET /api/me`, `/api/banners`, `/api/overview`, `/api/connections`, `/api/profiles`, `/api/profiles/:id`, `/api/schedules`, `/api/schedules/:id`, `/api/history`, `/api/settings` (admin); tests for owner scoping, admin gate, and the history summary being independent of paging
 - [ ] 5.4 JSON writes replacing the form posts, same validation and error keys: `POST /api/profiles`, `PUT /api/profiles/:id`, `POST /api/schedules`, `PUT /api/schedules/:id`, `POST /api/schedules/:id/toggle`, `PUT /api/settings/{registration-secret,sync-limit,initial-history}`; move `settings.initial-history.test.ts` and `health-banners.test.ts` onto the API

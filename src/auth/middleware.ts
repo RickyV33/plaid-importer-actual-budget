@@ -12,6 +12,17 @@ const ALLOWLIST_EXACT: ReadonlySet<string> = new Set([
 
 const ALLOWLIST_PREFIX: readonly string[] = ["/static/"];
 
+/** The app's data calls: answered with 401 JSON so the client can send the viewer to sign in. */
+const API_PREFIX = "/api/";
+
+function rejectUnauthenticated(req: FastifyRequest, reply: FastifyReply): void {
+  if ((req.url.split("?")[0] ?? "").startsWith(API_PREFIX)) {
+    reply.code(401).send({ error: "unauthenticated" });
+    return;
+  }
+  reply.redirect(`/login?next=${encodeURIComponent(req.url)}`);
+}
+
 export async function authPreHandler(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   const rawPath = req.url.split("?")[0] ?? "";
   const key = `${req.method} ${rawPath}`;
@@ -21,8 +32,7 @@ export async function authPreHandler(req: FastifyRequest, reply: FastifyReply): 
 
   if (req.session?.authed === true) return;
 
-  const next = encodeURIComponent(req.url);
-  reply.redirect(`/login?next=${next}`);
+  rejectUnauthenticated(req, reply);
 }
 
 export function safeNextPath(raw: unknown): string {
@@ -47,7 +57,7 @@ export function currentUser(req: FastifyRequest): UserRow | undefined {
 export function requireUserId(req: FastifyRequest, reply: FastifyReply): number | undefined {
   const id = req.session?.userId;
   if (typeof id !== "number") {
-    reply.redirect("/login");
+    rejectUnauthenticated(req, reply);
     return undefined;
   }
   return id;
