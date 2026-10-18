@@ -58,4 +58,4 @@
 
 - [ ] 10.1 Run `npm test` and `npx tsc --noEmit` in the dev container; check every page at 360px and desktop width in light and dark, and with reduced motion
 - [ ] 10.2 Update `.vscode/tasks.json` / `launch.json` if any command changed
-- [ ] 10.3 At archive: fold this change's `mental-model.html` into the root `mental-model.html`, refresh `README.md` (with a screenshot of the overview), and archive the change
+- [ ] 10.3 At archive: refresh `README.md` (with a screenshot of the overview), and archive the change

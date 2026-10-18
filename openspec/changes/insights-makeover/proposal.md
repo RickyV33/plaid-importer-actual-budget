@@ -89,4 +89,4 @@ changes. One read-only aggregate query set is added; no DB migrations.
   existing keys kept where the wording still fits.
 - **Dependencies**: none added at runtime (fonts are vendored files; Font Awesome
   stays, per the non-React icon rule).
-- **Docs**: root `mental-model.html` and `README.md` refreshed at archive.
+- **Docs**: `README.md` refreshed at archive.
