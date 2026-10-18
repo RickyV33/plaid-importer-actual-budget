@@ -310,4 +310,6 @@ export const en: Record<string, string> = {
   "schedules.week.none": "No syncs",
   "schedules.list.title": "All schedules",
   "schedules.legacy.chip": "Needs update",
+  "schedules.timeOfDay": "Time",
+  "schedules.repeatLabel": "Repeat every",
 };

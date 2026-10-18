@@ -310,4 +310,6 @@ export const es: Record<string, string> = {
   "schedules.week.none": "Sin sincronizaciones",
   "schedules.list.title": "Todas las programaciones",
   "schedules.legacy.chip": "Requiere actualizar",
+  "schedules.timeOfDay": "Hora",
+  "schedules.repeatLabel": "Repetir cada",
 };
