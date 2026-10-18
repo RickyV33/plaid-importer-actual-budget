@@ -37,7 +37,7 @@
 
 ## 6. Frontend scaffold
 
-- [ ] 6.1 Add dev deps (`react`, `react-dom`, `motion`, `react-icons`, `vite`, `@vitejs/plugin-react`, `@types/react`, `@types/react-dom`); `web/` with `index.html` (pre-paint theme script, `/static/style.css`), `vite.config.ts` (`base: /static/app/`, out `dist/web`), `tsconfig.json`; scripts `dev:web`, `build` (tsc + vite build), `typecheck`; tests keep `node --test` and include `web/src/**/*.test.ts`
+- [x] 6.1 Add dev deps (`react`, `react-dom`, `motion`, `react-icons`, `vite`, `@vitejs/plugin-react`, `@types/react`, `@types/react-dom`); `web/` with `index.html` (pre-paint theme script, `/static/style.css`), `vite.config.ts` (`base: /static/app/`, out `dist/web`), `tsconfig.json`; scripts `dev:web`, `build` (tsc + vite build), `typecheck`; tests keep `node --test` and include `web/src/**/*.test.ts`
 - [ ] 6.2 `web/src/router.ts` (pure path matching, tested) + `useRoute` on `popstate` and link interception; `api.ts` typed client (adds `tz`, sends `401` to `/login?next=`, maps `{ error }` to messages)
 - [ ] 6.3 `theme.ts` (`pi-theme`), i18n provider over `src/i18n` catalogs (`lang` cookie ▸ `navigator.languages` ▸ en; switch without reload; tested pure helpers), `format.ts` (number, percent, day keys, times; tested)
 - [ ] 6.4 Shell: header (title, version, theme pill, language select, sign-out form), tab strip with `aria-current`, banners from `/api/banners` with dismiss, page transition

@@ -8,16 +8,18 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc && npm run copy-assets",
+    "build": "tsc && npm run copy-assets && vite build --config web/vite.config.ts",
     "copy-assets": "mkdir -p dist/views/partials dist/db/migrations && cp src/views/*.eta dist/views/ && cp src/views/partials/*.eta dist/views/partials/ && cp src/db/migrations/*.sql dist/db/migrations/",
     "start": "node dist/server.js",
     "migrate": "tsx src/db/migrate.ts",
     "smoke": "tsx scripts/smoke.ts",
-    "test": "node --test --import tsx/esm \"src/**/*.test.ts\"",
+    "test": "node --test --import tsx/esm \"src/**/*.test.ts\" \"web/src/**/*.test.ts\"",
     "docker:build": "docker buildx build --platform linux/amd64 -t plaid-importer:local --load .",
     "docker:run": "docker run --rm -it -p 8080:8080 --env-file .env -v $(pwd)/data:/app/data plaid-importer:local",
     "deploy": "./deploy.sh",
-    "deploy:latest": "./deploy.sh latest"
+    "deploy:latest": "./deploy.sh latest",
+    "dev:web": "vite --config web/vite.config.ts",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p web"
   },
   "dependencies": {
     "@actual-app/api": "^26.10.0",
@@ -40,7 +42,15 @@
     "@types/bcrypt": "^6.0.0",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.8.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "motion": "13.5.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-icons": "5.7.0",
     "tsx": "^4.22.1",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vite": "8.3.2"
   }
 }
