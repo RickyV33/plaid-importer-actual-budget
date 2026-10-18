@@ -283,4 +283,13 @@ export const en: Record<string, string> = {
   "connections.last30": "last 30 days",
   "schedules.errInvalid": "Pick at least one day, a time, how often it repeats, and a time zone.",
   "schedules.errNoConnections": "Pick at least one bank for this schedule.",
+
+  // errors shown in the app
+  "errors.network": "Couldn't reach the server. Check your connection and try again.",
+  "errors.generic": "Something went wrong ({code}). Check the server logs.",
+  "errors.exchange": "Plaid linked the bank, but saving the connection failed. Check the server logs.",
+  "errors.refreshAccounts": "Couldn't refresh this bank's accounts from Plaid.",
+  "errors.sync": "The sync failed. Check the server logs.",
+  "errors.notFound": "That item no longer exists. It may have been removed in another tab.",
+  "errors.forbidden": "Only an administrator can do that.",
 };

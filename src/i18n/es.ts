@@ -283,4 +283,13 @@ export const es: Record<string, string> = {
   "connections.last30": "últimos 30 días",
   "schedules.errInvalid": "Elige al menos un día, una hora, cada cuánto se repite y una zona horaria.",
   "schedules.errNoConnections": "Elige al menos un banco para esta programación.",
+
+  // errors shown in the app
+  "errors.network": "No se pudo contactar con el servidor. Revisa tu conexión e inténtalo de nuevo.",
+  "errors.generic": "Algo salió mal ({code}). Revisa los registros del servidor.",
+  "errors.exchange": "Plaid vinculó el banco, pero no se pudo guardar la conexión. Revisa los registros del servidor.",
+  "errors.refreshAccounts": "No se pudieron actualizar las cuentas de este banco desde Plaid.",
+  "errors.sync": "La sincronización falló. Revisa los registros del servidor.",
+  "errors.notFound": "Ese elemento ya no existe. Puede que se haya eliminado en otra pestaña.",
+  "errors.forbidden": "Solo un administrador puede hacer eso.",
 };
