@@ -296,7 +296,7 @@ legend { font: 0.72rem "DM Mono", monospace; letter-spacing: 0.12em; text-transf
   display: flex; gap: 10px; align-items: flex-start; border-radius: 12px; padding: 12px 14px; margin-bottom: 16px;
   background: var(--accent-soft); color: var(--accent-ink); font-size: 0.9rem;
 }
-.notice > i:first-child { flex-shrink: 0; margin-top: 3px; }
+.notice > svg:first-child { flex-shrink: 0; margin-top: 3px; }
 .notice-body { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
 .notice-body a { color: inherit; font-weight: 700; text-underline-offset: 3px; }
 .notice .icon-button { width: 30px; height: 30px; border: 0; background: none; color: inherit; margin: -4px -6px -4px 0; }
@@ -389,15 +389,6 @@ a.metric:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; 
 .column:nth-last-child(-n + 4) .tooltip { left: auto; right: 0; transform: none; }
 .column:hover .tooltip, .column:focus-visible .tooltip { visibility: visible; opacity: 1; }
 .chart-axis { display: flex; justify-content: space-between; font: 0.7rem "DM Mono", monospace; color: var(--muted); }
-
-/* Bars and columns grow in on first paint unless motion is reduced. The
-   head script marks <html class="js">; without it, fills render at full size. */
-@media (prefers-reduced-motion: no-preference) {
-  .js .grow .bar-fill { transition: width 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
-  .js .grow .column-fill { transition: height 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
-  .js .grow:not(.grown) .bar-fill { width: 0 !important; }
-  .js .grow:not(.grown) .column-fill { height: 1px !important; }
-}
 
 /* ── tables ───────────────────────────────────────────────────── */
 
@@ -517,56 +508,3 @@ a.metric:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; 
   .week-run b { white-space: nowrap; }
   .week-run span { white-space: normal; overflow-wrap: anywhere; }
 }
-
-/* ── legacy (pages not yet moved to the system above) ──────────
-   Old class names restyled with the new tokens so unconverted pages stay
-   readable. Each block goes when its page moves over. */
-
-.card {
-  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 20px;
-  padding: 20px; box-shadow: var(--panel-shadow); margin-bottom: 15px; min-width: 0;
-}
-.card > h1, .card > h2 { font-size: 1.45rem; margin: 0 0 10px; }
-.section-header, .profiles-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 18px; }
-.section-header h1, .profiles-header h1 { font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 6px; }
-.shell main button:not([class]), .shell main .button:not(.secondary) {
-  display: inline-flex; align-items: center; gap: 8px; border-radius: 9px; padding: 10px 15px; font-weight: 700;
-  background: var(--accent); border: 1px solid var(--accent); color: var(--on-accent); text-decoration: none;
-}
-.shell main button.secondary, .shell main .button.secondary {
-  display: inline-flex; align-items: center; gap: 8px; border-radius: 9px; padding: 10px 15px; font-weight: 700;
-  background: var(--panel); border: 1px solid var(--input-border); color: var(--accent-ink); text-decoration: none;
-}
-.icon-btn {
-  display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0;
-  border-radius: 10px; border: 1px solid var(--input-border); background: var(--panel); color: var(--accent-ink); text-decoration: none;
-}
-.icon-btn:hover { background: var(--hover-wash); }
-.item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
-.item-title { font-size: 1.3rem; margin: 0; }
-.item-actions { display: flex; gap: 6px; }
-.list-row .row-actions { opacity: 0; transition: opacity 0.12s; }
-.list-row:hover .row-actions, .list-row:focus-within .row-actions { opacity: 1; }
-@media (hover: none) { .list-row .row-actions { opacity: 1; } }
-.list-row.is-disabled { opacity: 0.65; }
-.main-legacy table, .card table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-.card th, .card td { padding: 8px 10px; border-top: 1px solid var(--grid); text-align: left; }
-.card thead th { border-top: 0; color: var(--muted); font-weight: 600; font-size: 0.8rem; }
-.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-.field label { font-weight: 600; font-size: 0.82rem; }
-.success { color: var(--ok-ink); }
-.warn { color: var(--warn-ink); }
-.error { color: var(--danger); }
-.badge { display: inline-flex; padding: 3px 9px; border-radius: 99px; font: 500 0.72rem "DM Mono", monospace; background: var(--track); color: var(--ink-2); }
-.badge-scheduled, .badge-active { background: var(--accent-soft); color: var(--accent-ink); }
-.day-picker { display: flex; flex-wrap: wrap; gap: 6px; }
-.day-btn { display: inline-flex; cursor: pointer; flex-direction: row; }
-.day-btn input[type="checkbox"] { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.day-btn span { display: inline-flex; align-items: center; justify-content: center; min-width: 3rem; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--input-border); background: var(--panel); color: var(--accent-ink); font-weight: 600; font-size: 0.85rem; }
-.day-btn input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.time-repeat-row, .repeat-row, .budget-row, .reveal-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.time-repeat-row input, .repeat-row input { width: auto; }
-.budget-row select, .reveal-row input { flex: 1; min-width: 0; }
-.repeat-input { width: 4.5rem !important; text-align: center; }
-.server-fieldset { margin-bottom: 14px; }
-.legacy-warning { display: flex; flex-direction: column; gap: 2px; margin: 6px 0; }

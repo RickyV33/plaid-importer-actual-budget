@@ -108,10 +108,16 @@ posts; nothing in the repo does).
 - `i18n`: locale resolution gains an explicit viewer choice (cookie) that
   takes precedence over `Accept-Language` / the browser's languages.
 - `sync-history`: the history view adds 30-day summary metrics and a 90-day
-  imports chart, and presents runs as expandable rows.
+  imports chart, and presents runs as expandable rows; acknowledging an orphan
+  moves to `POST /api/history/orphans/:id/ack` and returns JSON.
 - `app-notifications`: adds connection-health banners (Actual unreachable,
   import errors, bank needs relink), derived from local state, auto-clearing,
   dismissable per incident.
+- `user-management`: the registration-secret settings move from
+  `GET/POST /settings` to the `/settings` page over `GET /api/settings` and
+  `PUT /api/settings/registration-secret`; members still get 403.
+- `schedule-recurrence`, `sync-scheduling`: the dedicated create/edit pages stay,
+  saving through `POST /api/schedules` / `PUT /api/schedules/:id`.
 - `account-mapping`: the "aligned columns" requirement becomes routing rows
   (bank account → Actual account) with a per-profile coverage meter.
 

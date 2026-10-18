@@ -1,3 +1,0 @@
-<%/* How recently a connection synced, as text (never by color alone). it: kind, t */%>
-<% var tone = { fresh: "ok", stale: "warn", old: "error", relink: "error", never: "" }[it.kind]; %>
-<span class="chip <%= tone %>"><%= it.t("insights.freshness." + it.kind) %></span>

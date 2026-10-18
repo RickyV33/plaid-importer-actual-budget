@@ -15,11 +15,9 @@ import { registerScheduleRoutes } from "./routes/schedules.js";
 import { startScheduler } from "./scheduler/runner.js";
 import { authPreHandler } from "./auth/middleware.js";
 import { registerAuthRoutes } from "./routes/auth.js";
-import { registerSettingsRoutes } from "./routes/settings.js";
 import { registerLinkRoutes } from "./routes/link.js";
 import { registerProfileRoutes } from "./routes/profiles.js";
 import { registerSyncRoutes } from "./routes/sync.js";
-import { registerHistoryRoutes } from "./routes/history.js";
 import { registerApiRoutes } from "./routes/api.js";
 import { registerAppRoutes } from "./routes/app.js";
 import { registerBannerRoutes } from "./routes/banners.js";
@@ -86,12 +84,10 @@ export async function build() {
   app.addHook("preHandler", authPreHandler);
 
   await registerAuthRoutes(app);
-  registerSettingsRoutes(app);
   registerLinkRoutes(app);
   registerProfileRoutes(app);
   registerScheduleRoutes(app);
   registerSyncRoutes(app);
-  registerHistoryRoutes(app);
   registerBannerRoutes(app);
   registerApiRoutes(app);
   await registerAppRoutes(app);

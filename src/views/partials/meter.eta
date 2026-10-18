@@ -1,6 +1,0 @@
-<%/* A filled bar with its figures written beside it.
-     it: value, max, label, detail, full? */%>
-<div class="meter-row">
-  <span class="meter-label"><span><%= it.label %></span><% if (it.detail) { %><span class="muted"><%= it.detail %></span><% } %></span>
-  <span class="meter<%= it.full ? ' full' : '' %>" aria-hidden="true"><span style="width: <%= it.max ? Math.min(100, it.value / it.max * 100).toFixed(1) : 0 %>%"></span></span>
-</div>

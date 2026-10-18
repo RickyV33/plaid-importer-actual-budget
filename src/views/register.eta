@@ -2,10 +2,10 @@
   <p class="eyebrow"><%= it.t("register.eyebrow") %></p>
   <h2><%= it.t("register.title") %></h2>
   <% if (it.errorKey) { %>
-    <div class="notice error" role="alert"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><div class="notice-body"><%= it.t(it.errorKey) %></div></div>
+    <div class="notice error" role="alert"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg><div class="notice-body"><%= it.t(it.errorKey) %></div></div>
   <% } %>
   <% if (!it.usersExist) { %>
-    <div class="notice"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><div class="notice-body"><%= it.t("register.firstAdmin") %></div></div>
+    <div class="notice"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg><div class="notice-body"><%= it.t("register.firstAdmin") %></div></div>
   <% } %>
   <form method="post" action="/register">
     <label for="username"><%= it.t("login.username") %>
@@ -19,7 +19,7 @@
         <input id="registration_secret" name="registration_secret" type="password" autocomplete="off" required />
       </label>
     <% } %>
-    <button type="submit" class="primary"><i class="fa-solid fa-user-plus" aria-hidden="true"></i><%= it.t("register.submit") %></button>
+    <button type="submit" class="primary"><%= it.t("register.submit") %></button>
   </form>
   <p class="foot muted"><a href="/login"><%= it.t("register.haveAccount") %></a></p>
 </section>

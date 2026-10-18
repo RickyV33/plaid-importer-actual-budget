@@ -46,3 +46,19 @@ is shown.
 - **WHEN** an authenticated user opens an older page of the history list
 - **THEN** the 30-day summary and 90-day chart show the same figures as on the
   first page
+
+### Requirement: User can acknowledge an orphan
+
+The system SHALL provide an authenticated `POST /api/history/orphans/:id/ack` endpoint that sets `acknowledged_at` to now for the given row if it exists, belongs to one of the user's accounts, and is currently unacknowledged. The endpoint SHALL respond with the user's remaining unacknowledged orphans, so the page can update the list in place (and drop it entirely when none remain).
+
+#### Scenario: Ack an unacknowledged orphan
+- **WHEN** an authenticated user POSTs the ack endpoint for an existing unacknowledged orphan id
+- **THEN** the row's `acknowledged_at` is set to now, and the response's orphan list no longer contains it
+
+#### Scenario: Ack the last unacknowledged orphan
+- **WHEN** the user acks the last remaining unacknowledged orphan
+- **THEN** the response's orphan list is empty and the page no longer shows the orphan list
+
+#### Scenario: Ack an unknown or already-acknowledged orphan
+- **WHEN** the user POSTs the ack endpoint for an id that does not exist, belongs to someone else, or whose `acknowledged_at` is already set
+- **THEN** the endpoint responds with 404 and MUST NOT alter the existing `acknowledged_at` timestamp

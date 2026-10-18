@@ -7,7 +7,6 @@ import { config } from "../config.js";
 import { connectionForProfile, listBudgets, profileCacheDir } from "../actual/client.js";
 import { invalidateAccountsCache, listAccountsForProfile } from "../actual/accounts.js";
 import { requireAdmin, requireUserId } from "../auth/middleware.js";
-import { encrypt } from "../crypto/tokens.js";
 import {
   plaidAccounts,
   plaidTxnEvents,
@@ -16,34 +15,8 @@ import {
   profiles,
 } from "../db/queries.js";
 import { assertSafeServerUrl } from "../profiles/hostname.js";
-import { render } from "../views/render.js";
-
-const profileSchema = z.object({
-  name: z.string().min(1),
-  serverUrl: z.string().min(1),
-  budgetId: z.string().min(1),
-  serverPassword: z.string().optional().default(""),
-  encryptionPassword: z.string().optional().default(""),
-});
 
 export function registerProfileRoutes(app: FastifyInstance): void {
-  // Defaults for the New-profile form. The server URL is prefilled from env;
-  // the server password is NOT rendered into HTML (it would leak the operator's
-  // secret to every user) — instead the field may be left blank and the backend
-  // substitutes the configured password.
-  const newFormData = (extra: Record<string, unknown> = {}) => ({
-    title: "New profile",
-    authed: true,
-    profile: null,
-    errorKey: null,
-    defaults: {
-      serverUrl: config.ACTUAL_SERVER_URL ?? "",
-      hasServerPassword: Boolean(config.ACTUAL_SERVER_PASSWORD),
-    },
-    budgets: [] as Array<{ syncId: string; name: string }>,
-    ...extra,
-  });
-
   // Fetch the budgets available on a server, for the dynamic dropdown. A blank
   // password falls back to the configured ACTUAL_SERVER_PASSWORD (server-side,
   // never echoed), so the env-default case works without exposing the secret.
@@ -86,72 +59,6 @@ export function registerProfileRoutes(app: FastifyInstance): void {
     profiles.remove(id);
     invalidateAccountsCache(id);
     return reply.code(204).send();
-  });
-
-  app.post("/profiles", async (req, reply) => {
-    const userId = requireUserId(req, reply);
-    if (userId === undefined) return;
-    const parsed = profileSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return render(reply.code(400), "profile_form", newFormData({ errorKey: "profile.errRequired" }));
-    }
-    const d = parsed.data;
-    // Blank server password falls back to the configured default (never echoed).
-    const serverPassword =
-      d.serverPassword.length > 0 ? d.serverPassword : config.ACTUAL_SERVER_PASSWORD ?? "";
-    if (serverPassword.length === 0) {
-      return render(reply.code(400), "profile_form", newFormData({ errorKey: "profile.errServerPw" }));
-    }
-    try {
-      await assertSafeServerUrl(d.serverUrl, { blockPrivate: config.blockPrivateActualHosts });
-    } catch {
-      return render(reply.code(400), "profile_form", newFormData({ errorKey: "profile.errServerUrl" }));
-    }
-    if (profiles.findByOwnerServerBudget(userId, d.serverUrl, d.budgetId)) {
-      return render(reply.code(409), "profile_form", newFormData({ errorKey: "profile.errDuplicate" }));
-    }
-    profiles.create({
-      ownerUserId: userId,
-      name: d.name,
-      serverUrl: d.serverUrl,
-      budgetId: d.budgetId,
-      serverPasswordEnc: encrypt(serverPassword),
-      encryptionPasswordEnc: d.encryptionPassword.length > 0 ? encrypt(d.encryptionPassword) : null,
-    });
-    reply.redirect("/");
-  });
-
-  app.post<{ Params: { id: string } }>("/profiles/:id", async (req, reply) => {
-    const userId = requireUserId(req, reply);
-    if (userId === undefined) return;
-    const id = Number.parseInt(req.params.id, 10);
-    const existing = profiles.getOwned(id, userId);
-    if (!existing) return reply.code(404).send({ error: "not_found" });
-
-    const parsed = profileSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return render(reply.code(400), "profile_form", { title: "Edit profile", authed: true, profile: existing, errorKey: "profile.errRequired" });
-    }
-    const d = parsed.data;
-    try {
-      await assertSafeServerUrl(d.serverUrl, { blockPrivate: config.blockPrivateActualHosts });
-    } catch {
-      return render(reply.code(400), "profile_form", { title: "Edit profile", authed: true, profile: existing, errorKey: "profile.errServerUrl" });
-    }
-    const dup = profiles.findByOwnerServerBudget(userId, d.serverUrl, d.budgetId);
-    if (dup && dup.id !== id) {
-      return render(reply.code(409), "profile_form", { title: "Edit profile", authed: true, profile: existing, errorKey: "profile.errDuplicate" });
-    }
-    // Blank secret fields keep the existing stored values.
-    profiles.update(id, {
-      name: d.name,
-      serverUrl: d.serverUrl,
-      budgetId: d.budgetId,
-      serverPasswordEnc: d.serverPassword.length > 0 ? encrypt(d.serverPassword) : undefined,
-      encryptionPasswordEnc: d.encryptionPassword.length > 0 ? encrypt(d.encryptionPassword) : undefined,
-    });
-    invalidateAccountsCache(id);
-    reply.redirect("/");
   });
 
   app.post<{ Params: { id: string } }>("/profiles/:id/delete", async (req, reply) => {

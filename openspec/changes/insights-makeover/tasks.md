@@ -67,7 +67,7 @@
 
 ## 10. Cleanup and wrap-up
 
-- [ ] 10.1 Remove superseded Eta pages, partials, `app.js`, server `format.ts`/`nav.ts`, the old page and form-post routes, and Font Awesome; `layout.eta` keeps only what sign-in pages need (inline SVG icons)
+- [x] 10.1 Remove superseded Eta pages, partials, `app.js`, server `format.ts`/`nav.ts`, the old page and form-post routes, and Font Awesome; `layout.eta` keeps only what sign-in pages need (inline SVG icons)
 - [ ] 10.2 `npm test`, `npm run typecheck`, and `npm run build` in the dev container; check every page at 360px and desktop width, light and dark, and with reduced motion
 - [ ] 10.3 Manually verify Plaid Link flows against Plaid sandbox: link, OAuth return, relink, manage accounts, remove
 - [ ] 10.4 At archive: refresh `README.md` (stack, dev commands) and archive the change

@@ -7,81 +7,65 @@
     <title><%= it.title ?? "plaid-importer" %></title>
     <script>
       // Pick the theme before first paint so dark mode never flashes white.
-      document.documentElement.classList.add("js");
       try {
         var t = localStorage.getItem("pi-theme");
         document.documentElement.dataset.theme = t === "light" || t === "dark" ? t : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-      } catch (e) {
-        document.documentElement.dataset.theme = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-      }
+      } catch (e) {}
     </script>
     <link rel="preload" href="/static/fonts/playfair-display-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/static/fonts/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="/static/style.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
-    <!-- Client i18n catalog. In <head> so page scripts can read it on parse. -->
-    <script id="i18n-data" type="application/json"><%~ it.i18nClient %></script>
-    <script src="/static/app.js" defer></script>
   </head>
   <body>
+    <%/* Sign-in pages only; signed-in pages are the app (web/). Icons are Feather (MIT), inline. */%>
     <div class="shell">
       <header class="site-head">
         <div class="site-title">
-          <h1><a href="/"><%= it.t("shell.appName") %></a></h1>
+          <h1><%= it.t("shell.appName") %></h1>
           <span class="site-sub"><%= it.t("shell.appSub") %></span>
-          <!-- Version only: a number (or the literal "dev"), so there is no prose
-               to translate. Outside the link so it is not part of the link text. -->
+          <!-- Version only: locale-neutral, so no catalog entry. -->
           <span class="app-version"><%= it.version %></span>
         </div>
         <div class="site-tools">
-          <button type="button" class="pill-button" data-theme-toggle data-label-dark="<%= it.t('theme.dark') %>" data-label-light="<%= it.t('theme.light') %>" aria-pressed="false">
-            <i class="fa-solid fa-moon" aria-hidden="true"></i><span data-theme-label><%= it.t("theme.dark") %></span>
+          <button type="button" class="pill-button" id="theme-toggle" aria-pressed="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            <span data-dark="<%= it.t('theme.dark') %>" data-light="<%= it.t('theme.light') %>"><%= it.t("theme.dark") %></span>
           </button>
           <label class="lang-select">
             <span class="visually-hidden"><%= it.t("lang.label") %></span>
-            <select data-lang-select>
+            <select id="lang-select">
               <% ["en", "es"].forEach(function(l) { %>
                 <option value="<%= l %>" <%= it.locale === l ? "selected" : "" %>><%= it.t("lang." + l) %></option>
               <% }) %>
             </select>
           </label>
-          <% if (it.authed) { %>
-            <form method="post" action="/logout">
-              <button type="submit" class="pill-button"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i><%= it.t("shell.signOut") %></button>
-            </form>
-          <% } %>
         </div>
       </header>
-
-      <% if (it.authed) { %>
-        <nav class="tabs" aria-label="<%= it.t('nav.label') %>">
-          <% it.tabs.forEach(function(tab) { %>
-            <% if (tab.adminOnly && !it.isAdmin) return; %>
-            <a href="<%= tab.href %>" class="<%= it.activeTab === tab.id ? 'active' : '' %>"<%~ it.activeTab === tab.id ? ' aria-current="page"' : '' %>><%= it.t("nav." + tab.id) %></a>
-          <% }) %>
-        </nav>
-      <% } %>
-
-      <% if (it.banners && it.banners.length > 0) { %>
-        <div class="banners">
-          <% it.banners.forEach(function(b) { %>
-            <div class="notice <%= b.type %>" role="<%= b.type === 'error' ? 'alert' : 'status' %>">
-              <i class="fa-solid <%= b.type === 'info' ? 'fa-circle-info' : 'fa-triangle-exclamation' %>" aria-hidden="true"></i>
-              <div class="notice-body">
-                <span><%= b.message %></span>
-                <% if (b.href) { %><a href="<%= b.href %>"><%= b.linkLabel %></a><% } %>
-              </div>
-              <button type="button" class="icon-button" data-dismiss-key="<%= b.key %>" aria-label="<%= it.t('shell.dismiss') %>" title="<%= it.t('shell.dismiss') %>">
-                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-              </button>
-            </div>
-          <% }) %>
-        </div>
-      <% } %>
-
       <main>
         <%~ it.body %>
       </main>
     </div>
+    <script>
+      (function () {
+        var root = document.documentElement;
+        var btn = document.getElementById("theme-toggle");
+        var label = btn.querySelector("span");
+        function paint() {
+          var dark = root.dataset.theme === "dark";
+          btn.setAttribute("aria-pressed", String(dark));
+          label.textContent = dark ? label.dataset.light : label.dataset.dark;
+        }
+        paint();
+        btn.addEventListener("click", function () {
+          root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+          try { localStorage.setItem("pi-theme", root.dataset.theme); } catch (e) {}
+          paint();
+        });
+        document.getElementById("lang-select").addEventListener("change", function (e) {
+          document.cookie = "lang=" + e.target.value + "; path=/; max-age=31536000; samesite=lax";
+          location.reload();
+        });
+      })();
+    </script>
   </body>
 </html>
