@@ -21,6 +21,7 @@ import { registerProfileRoutes } from "./routes/profiles.js";
 import { registerSyncRoutes } from "./routes/sync.js";
 import { registerHistoryRoutes } from "./routes/history.js";
 import { registerHomeRoute } from "./routes/home.js";
+import { registerApiRoutes } from "./routes/api.js";
 import { registerBannerRoutes } from "./routes/banners.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -93,6 +94,7 @@ export async function build() {
   registerSyncRoutes(app);
   registerHistoryRoutes(app);
   registerBannerRoutes(app);
+  registerApiRoutes(app);
 
   return app;
 }

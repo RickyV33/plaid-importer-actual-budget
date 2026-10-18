@@ -1,11 +1,16 @@
 // The Profiles page and the profile form. Listing fetches each profile's Actual
 // accounts (for the mapping selects); a budget it can't reach is flagged, not fatal.
 
+import { z } from "zod";
+
 import { connectionForProfile } from "../actual/client.js";
-import { listAccountsForProfile } from "../actual/accounts.js";
+import { invalidateAccountsCache, listAccountsForProfile } from "../actual/accounts.js";
 import { config } from "../config.js";
+import { encrypt } from "../crypto/tokens.js";
 import { plaidAccounts, plaidItems, profileAccountMappings, profiles } from "../db/queries.js";
 import { coverage, type Coverage } from "../insights/coverage.js";
+import { assertSafeServerUrl } from "../profiles/hostname.js";
+import { fail, type Result } from "./result.js";
 import { accountsForItem, toAccountView, type AccountView } from "./shared.js";
 
 export type ProfileAccountView = AccountView & {
@@ -89,4 +94,63 @@ export function profileFormFor(userId: number, id: number | null): ProfileFormVi
   const p = profiles.getOwned(id, userId);
   if (!p) return undefined;
   return { profile: { id: p.id, name: p.name, serverUrl: p.server_url, budgetId: p.budget_id }, defaults };
+}
+
+// ── writes ──────────────────────────────────────────────────────────
+
+const profileInput = z.object({
+  name: z.string().trim().min(1),
+  serverUrl: z.string().trim().min(1),
+  budgetId: z.string().trim().min(1),
+  serverPassword: z.string().optional().default(""),
+  encryptionPassword: z.string().optional().default(""),
+});
+
+async function checkedInput(userId: number, body: unknown, id: number | null): Promise<Result<{ input: z.infer<typeof profileInput> }>> {
+  const parsed = profileInput.safeParse(body);
+  if (!parsed.success) return fail(400, "profile.errRequired");
+  const d = parsed.data;
+  try {
+    await assertSafeServerUrl(d.serverUrl, { blockPrivate: config.blockPrivateActualHosts });
+  } catch {
+    return fail(400, "profile.errServerUrl");
+  }
+  const dup = profiles.findByOwnerServerBudget(userId, d.serverUrl, d.budgetId);
+  if (dup && dup.id !== id) return fail(409, "profile.errDuplicate");
+  return { ok: true, input: d };
+}
+
+/** A blank server password falls back to the configured default (never echoed). */
+export async function createProfile(userId: number, body: unknown): Promise<Result<{ id: number }>> {
+  const checked = await checkedInput(userId, body, null);
+  if (!checked.ok) return checked;
+  const d = checked.input;
+  const serverPassword = d.serverPassword.length > 0 ? d.serverPassword : config.ACTUAL_SERVER_PASSWORD ?? "";
+  if (serverPassword.length === 0) return fail(400, "profile.errServerPw");
+  const id = profiles.create({
+    ownerUserId: userId,
+    name: d.name,
+    serverUrl: d.serverUrl,
+    budgetId: d.budgetId,
+    serverPasswordEnc: encrypt(serverPassword),
+    encryptionPasswordEnc: d.encryptionPassword.length > 0 ? encrypt(d.encryptionPassword) : null,
+  });
+  return { ok: true, id };
+}
+
+/** Blank secret fields keep the stored values. */
+export async function updateProfile(userId: number, id: number, body: unknown): Promise<Result<{ id: number }>> {
+  if (!profiles.getOwned(id, userId)) return fail(404, "not_found");
+  const checked = await checkedInput(userId, body, id);
+  if (!checked.ok) return checked;
+  const d = checked.input;
+  profiles.update(id, {
+    name: d.name,
+    serverUrl: d.serverUrl,
+    budgetId: d.budgetId,
+    serverPasswordEnc: d.serverPassword.length > 0 ? encrypt(d.serverPassword) : undefined,
+    encryptionPasswordEnc: d.encryptionPassword.length > 0 ? encrypt(d.encryptionPassword) : undefined,
+  });
+  invalidateAccountsCache(id);
+  return { ok: true, id };
 }

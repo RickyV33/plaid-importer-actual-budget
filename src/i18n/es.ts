@@ -281,4 +281,6 @@ export const es: Record<string, string> = {
   "connections.feeds": "alimenta {count} presupuesto(s)",
   "connections.notRouted": "aún sin asignar a un presupuesto",
   "connections.last30": "últimos 30 días",
+  "schedules.errInvalid": "Elige al menos un día, una hora, cada cuánto se repite y una zona horaria.",
+  "schedules.errNoConnections": "Elige al menos un banco para esta programación.",
 };

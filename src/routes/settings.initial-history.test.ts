@@ -6,7 +6,6 @@ import os from "node:os";
 import path from "node:path";
 
 import Fastify, { type FastifyInstance } from "fastify";
-import fastifyFormbody from "@fastify/formbody";
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "plaid-importer-settings-test-"));
 
@@ -25,7 +24,7 @@ process.env.ACTUAL_CACHE_DIR = path.join(tmpDir, "actual-cache");
 
 const { runMigrations } = await import("../db/migrate.js");
 const { settings, users, INITIAL_HISTORY_DAYS_KEY } = await import("../db/queries.js");
-const { registerSettingsRoutes } = await import("./settings.js");
+const { registerApiRoutes } = await import("./api.js");
 
 runMigrations();
 
@@ -38,19 +37,18 @@ const memberId = users.create({ username: "member", passwordHash: "x", role: "me
  */
 async function buildApp(userId: number): Promise<FastifyInstance> {
   const app = Fastify();
-  await app.register(fastifyFormbody);
   app.addHook("onRequest", async (req) => {
     (req as { session?: { userId: number } }).session = { userId };
   });
-  registerSettingsRoutes(app);
+  registerApiRoutes(app);
   return app;
 }
 
 function post(app: FastifyInstance, value: string) {
   return app.inject({
-    method: "POST",
-    url: "/settings/initial-history",
-    payload: { initial_history_days: value },
+    method: "PUT",
+    url: "/api/settings/initial-history",
+    payload: { days: value },
   });
 }
 
@@ -64,9 +62,9 @@ test("admin can store a valid window", async (t) => {
   assert.equal(res.statusCode, 200);
   assert.equal(settings.get(INITIAL_HISTORY_DAYS_KEY), "365");
 
-  const view = await app.inject({ method: "GET", url: "/settings" });
+  const view = await app.inject({ method: "GET", url: "/api/settings" });
   assert.equal(view.statusCode, 200);
-  assert.match(view.body, /id="initial_history_days"[^>]*value="365"/);
+  assert.equal(view.json().initialHistoryDays, 365);
 });
 
 test("the range bounds are inclusive", async (t) => {
@@ -100,7 +98,7 @@ test("a member is denied and cannot change the value", async (t) => {
   assert.equal(write.statusCode, 403);
   assert.equal(settings.get(INITIAL_HISTORY_DAYS_KEY), "180");
 
-  const view = await app.inject({ method: "GET", url: "/settings" });
+  const view = await app.inject({ method: "GET", url: "/api/settings" });
   assert.equal(view.statusCode, 403);
   assert.ok(!view.body.includes("180"));
 });

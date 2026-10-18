@@ -281,4 +281,6 @@ export const en: Record<string, string> = {
   "connections.feeds": "feeds {count} budget(s)",
   "connections.notRouted": "not routed to a budget yet",
   "connections.last30": "last 30 days",
+  "schedules.errInvalid": "Pick at least one day, a time, how often it repeats, and a time zone.",
+  "schedules.errNoConnections": "Pick at least one bank for this schedule.",
 };

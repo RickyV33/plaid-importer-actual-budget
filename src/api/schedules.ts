@@ -1,7 +1,12 @@
 // The Schedules page (rows plus the week ahead) and the schedule form.
 
+import { z } from "zod";
+
 import { plaidItems, schedules, type ScheduleRow } from "../db/queries.js";
+import { safeTimeZone } from "../insights/time.js";
 import { upcomingWeek, type WeekDay } from "../insights/week.js";
+import { nextOccurrence } from "../scheduler/recurrence.js";
+import { fail, type Result } from "./result.js";
 import { scheduleItemIds } from "./shared.js";
 
 export type ScheduleView = {
@@ -86,4 +91,58 @@ function inferTimeOfDay(nextRunAt: number | null): string {
   if (!nextRunAt) return "09:00";
   const d = new Date(nextRunAt);
   return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+}
+
+// ── writes ──────────────────────────────────────────────────────────
+
+const scheduleInput = z.object({
+  name: z.string().max(80).optional(),
+  daysOfWeek: z.array(z.number().int().min(0).max(6)).min(1),
+  timeOfDay: z.string().regex(/^\d{2}:\d{2}$/),
+  repeatWeeks: z.number().int().min(1).max(52),
+  timezone: z.string().min(1),
+  plaidItemIds: z.array(z.string()),
+});
+
+function checkedSchedule(userId: number, body: unknown) {
+  const parsed = scheduleInput.safeParse(body);
+  if (!parsed.success) return fail(400, "schedules.errInvalid");
+  const owned = new Set(plaidItems.listByOwner(userId).map((i) => i.id));
+  const plaidItemIds = parsed.data.plaidItemIds.filter((id) => owned.has(id));
+  if (plaidItemIds.length === 0) return fail(400, "schedules.errNoConnections");
+  const { daysOfWeek, timeOfDay, repeatWeeks, timezone } = parsed.data;
+  if (safeTimeZone(timezone) !== timezone) return fail(400, "schedules.errInvalid");
+  return {
+    ok: true as const,
+    fields: {
+      name: parsed.data.name ?? null,
+      plaidItemIds,
+      daysOfWeek,
+      timeOfDay,
+      repeatWeeks,
+      timezone,
+      nextRunAt: nextOccurrence(daysOfWeek, timeOfDay, repeatWeeks, timezone, Date.now()),
+    },
+  };
+}
+
+export function createSchedule(userId: number, body: unknown): Result<{ id: number }> {
+  const checked = checkedSchedule(userId, body);
+  if (!checked.ok) return checked;
+  return { ok: true, id: schedules.create({ ownerUserId: userId, ...checked.fields }) };
+}
+
+export function updateSchedule(userId: number, id: number, body: unknown): Result<{ id: number }> {
+  if (!schedules.getOwned(id, userId)) return fail(404, "not_found");
+  const checked = checkedSchedule(userId, body);
+  if (!checked.ok) return checked;
+  schedules.update(id, checked.fields);
+  return { ok: true, id };
+}
+
+export function toggleSchedule(userId: number, id: number): Result<{ enabled: boolean }> {
+  const s = schedules.getOwned(id, userId);
+  if (!s) return fail(404, "not_found");
+  schedules.setEnabled(s.id, s.enabled !== 1);
+  return { ok: true, enabled: s.enabled !== 1 };
 }

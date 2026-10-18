@@ -6,7 +6,6 @@ import os from "node:os";
 import path from "node:path";
 
 import Fastify, { type FastifyInstance } from "fastify";
-import fastifyCookie from "@fastify/cookie";
 
 const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "plaid-importer-health-test-"));
 
@@ -22,8 +21,7 @@ process.env.ACTUAL_CACHE_DIR = path.join(tmpDir, "actual-cache");
 
 const { runMigrations } = await import("../db/migrate.js");
 const { plaidAccounts, plaidItems, profiles, syncAccountResults, syncRuns, users } = await import("../db/queries.js");
-const { registerHistoryRoutes } = await import("./history.js");
-const { registerScheduleRoutes } = await import("./schedules.js");
+const { registerApiRoutes } = await import("./api.js");
 const { registerBannerRoutes } = await import("./banners.js");
 
 runMigrations();
@@ -51,12 +49,10 @@ plaidAccounts.upsert({
 
 async function buildApp(userId: number): Promise<FastifyInstance> {
   const app = Fastify();
-  await app.register(fastifyCookie);
   app.addHook("onRequest", async (req) => {
     (req as { session?: { userId: number } }).session = { userId };
   });
-  registerHistoryRoutes(app);
-  registerScheduleRoutes(app);
+  registerApiRoutes(app);
   registerBannerRoutes(app);
   return app;
 }
@@ -68,27 +64,29 @@ function failRun(reason: string): number {
   return id;
 }
 
-const UNREACHABLE = /reach the Actual budget/;
+type Banner = { key: string; type: string; message: string; vars?: { name: string }; href?: string };
 
-test("an unreachable budget shows a banner on every page, naming it and linking to the fix", async (t) => {
+async function banners(app: FastifyInstance): Promise<Banner[]> {
+  return (await app.inject({ method: "GET", url: "/api/banners" })).json().banners;
+}
+const unreachable = (bs: Banner[]) => bs.filter((b) => b.message === "health.actualUnreachable");
+
+test("an unreachable budget is a banner naming it and linking to the fix", async (t) => {
   const app = await buildApp(owner);
   t.after(() => app.close());
   failRun("actual_unreachable: connect ECONNREFUSED");
 
-  for (const url of ["/history", "/schedules"]) {
-    const res = await app.inject({ method: "GET", url });
-    assert.equal(res.statusCode, 200, url);
-    assert.match(res.body, UNREACHABLE, url);
-    assert.match(res.body, /Household/, url);
-    assert.match(res.body, /href="\/profiles"/, url);
-  }
+  const [b] = unreachable(await banners(app));
+  assert.ok(b);
+  assert.equal(b.type, "error");
+  assert.equal(b.vars?.name, "Household");
+  assert.equal(b.href, "/profiles");
 });
 
 test("other users don't see someone else's incident", async (t) => {
   const app = await buildApp(bystander);
   t.after(() => app.close());
-  const res = await app.inject({ method: "GET", url: "/history" });
-  assert.doesNotMatch(res.body, UNREACHABLE);
+  assert.deepEqual(unreachable(await banners(app)), []);
 });
 
 test("dismissing hides that incident; a new failing run brings it back; a success clears it", async (t) => {
@@ -99,25 +97,26 @@ test("dismissing hides that incident; a new failing run brings it back; a succes
 
   const dismiss = await app.inject({ method: "POST", url: `/banners/${encodeURIComponent(key)}/dismiss` });
   assert.equal(dismiss.statusCode, 204);
-  assert.doesNotMatch((await app.inject({ method: "GET", url: "/history" })).body, UNREACHABLE);
+  assert.deepEqual(unreachable(await banners(app)), []);
 
   failRun("actual_unreachable: timeout");
-  assert.match((await app.inject({ method: "GET", url: "/history" })).body, UNREACHABLE);
+  assert.equal(unreachable(await banners(app)).length, 1);
 
   const ok = syncRuns.start({ triggeredBy: "manual", scope: "all", ownerUserId: owner });
   syncAccountResults.record({ syncRunId: ok, plaidAccountId: "acct-1", status: "success", txnsImported: 2, reason: null, profileId: household });
   syncRuns.finish({ id: ok, status: "success", totalImported: 2 });
-  assert.doesNotMatch((await app.inject({ method: "GET", url: "/history" })).body, UNREACHABLE);
+  assert.deepEqual(unreachable(await banners(app)), []);
 });
 
-test("a bank that needs relinking shows a reconnect banner until it is active again", async (t) => {
+test("a bank that needs relinking is a reconnect banner until it is active again", async (t) => {
   const app = await buildApp(owner);
   t.after(() => app.close());
   plaidItems.setStatus("item-1", "requires_relink");
-  const flagged = await app.inject({ method: "GET", url: "/schedules" });
-  assert.match(flagged.body, /Harbor Bank needs to be reconnected/);
-  assert.match(flagged.body, /href="\/connections"/);
+  const relink = (await banners(app)).filter((b) => b.message === "health.relink");
+  assert.equal(relink.length, 1);
+  assert.equal(relink[0]!.vars?.name, "Harbor Bank");
+  assert.equal(relink[0]!.href, "/connections");
 
   plaidItems.setStatus("item-1", "active");
-  assert.doesNotMatch((await app.inject({ method: "GET", url: "/schedules" })).body, /needs to be reconnected/);
+  assert.deepEqual((await banners(app)).filter((b) => b.message === "health.relink"), []);
 });
