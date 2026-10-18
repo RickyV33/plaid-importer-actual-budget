@@ -44,11 +44,6 @@ export function registerProfileRoutes(app: FastifyInstance): void {
     ...extra,
   });
 
-  app.get("/profiles/new", async (req, reply) => {
-    if (requireUserId(req, reply) === undefined) return;
-    return render(reply, "profile_form", newFormData());
-  });
-
   // Fetch the budgets available on a server, for the dynamic dropdown. A blank
   // password falls back to the configured ACTUAL_SERVER_PASSWORD (server-side,
   // never echoed), so the env-default case works without exposing the secret.
@@ -91,14 +86,6 @@ export function registerProfileRoutes(app: FastifyInstance): void {
     profiles.remove(id);
     invalidateAccountsCache(id);
     return reply.code(204).send();
-  });
-
-  app.get<{ Params: { id: string } }>("/profiles/:id/edit", async (req, reply) => {
-    const userId = requireUserId(req, reply);
-    if (userId === undefined) return;
-    const profile = profiles.getOwned(Number.parseInt(req.params.id, 10), userId);
-    if (!profile) return reply.code(404).send({ error: "not_found" });
-    return render(reply, "profile_form", { title: "Edit profile", authed: true, profile, errorKey: null });
   });
 
   app.post("/profiles", async (req, reply) => {

@@ -5,20 +5,6 @@ import { acknowledgeOrphan, clampOffset, historyFor, orphansFor } from "../api/h
 import { render, renderPartial, viewerTimeZone } from "../views/render.js";
 
 export function registerHistoryRoutes(app: FastifyInstance): void {
-  app.get<{ Querystring: { offset?: string } }>("/history", async (req, reply) => {
-    const userId = requireUserId(req, reply);
-    if (userId === undefined) return;
-
-    const view = historyFor(userId, clampOffset(req.query.offset), Date.now(), viewerTimeZone(req));
-
-    return render(reply, "history", {
-      title: "Sync history",
-      authed: true,
-      isAdmin: currentUser(req)?.role === "admin",
-      ...view,
-    });
-  });
-
   app.post<{ Params: { id: string } }>(
     "/history/orphans/:id/ack",
     async (req, reply) => {

@@ -20,8 +20,8 @@ import { registerLinkRoutes } from "./routes/link.js";
 import { registerProfileRoutes } from "./routes/profiles.js";
 import { registerSyncRoutes } from "./routes/sync.js";
 import { registerHistoryRoutes } from "./routes/history.js";
-import { registerHomeRoute } from "./routes/home.js";
 import { registerApiRoutes } from "./routes/api.js";
+import { registerAppRoutes } from "./routes/app.js";
 import { registerBannerRoutes } from "./routes/banners.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -87,7 +87,6 @@ export async function build() {
 
   await registerAuthRoutes(app);
   registerSettingsRoutes(app);
-  registerHomeRoute(app);
   registerLinkRoutes(app);
   registerProfileRoutes(app);
   registerScheduleRoutes(app);
@@ -95,6 +94,7 @@ export async function build() {
   registerHistoryRoutes(app);
   registerBannerRoutes(app);
   registerApiRoutes(app);
+  await registerAppRoutes(app);
 
   return app;
 }

@@ -24,11 +24,6 @@ function viewData(extra: { saved?: boolean; errorKey?: string | null }) {
 }
 
 export function registerSettingsRoutes(app: FastifyInstance): void {
-  app.get("/settings", async (req, reply) => {
-    if (!requireAdmin(req, reply)) return;
-    return render(reply, "settings", viewData({}));
-  });
-
   app.post<{ Body: { registration_secret?: string } }>("/settings", async (req, reply) => {
     if (!requireAdmin(req, reply)) return;
     const secret = (req.body.registration_secret ?? "").trim();

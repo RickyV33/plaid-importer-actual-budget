@@ -65,16 +65,6 @@ export function registerLinkRoutes(app: FastifyInstance): void {
     }
   });
 
-  app.get<{ Querystring: { oauth_state_id?: string } }>(
-    "/link/oauth-return",
-    async (_req, reply) => {
-      return render(reply, "oauth_return", {
-        title: "Completing link…",
-        authed: true,
-      });
-    },
-  );
-
   app.post<{ Params: { itemId: string } }>(
     "/link/items/:itemId/update-token",
     async (req, reply) => {

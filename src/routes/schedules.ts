@@ -29,30 +29,6 @@ function ownedItemIds(userId: number): Set<string> {
 }
 
 export function registerScheduleRoutes(app: FastifyInstance): void {
-  app.get("/schedules", async (req, reply) => {
-    const userId = requireUserId(req, reply);
-    if (userId === undefined) return;
-    return render(reply, "schedules", {
-      title: "Schedules",
-      authed: true,
-      isAdmin: currentUser(req)?.role === "admin",
-      ...schedulesFor(userId, Date.now(), viewerTimeZone(req)),
-      error: null,
-    });
-  });
-
-  app.get("/schedules/new", async (req, reply) => {
-    const userId = requireUserId(req, reply);
-    if (userId === undefined) return;
-    return render(reply, "schedules_new", {
-      title: "New Schedule",
-      authed: true,
-      isAdmin: currentUser(req)?.role === "admin",
-      ...scheduleFormFor(userId, null),
-      error: null,
-    });
-  });
-
   app.post("/schedules", async (req, reply) => {
     const userId = requireUserId(req, reply);
     if (userId === undefined) return;
@@ -79,20 +55,6 @@ export function registerScheduleRoutes(app: FastifyInstance): void {
       nextRunAt,
     });
     return reply.redirect("/schedules");
-  });
-
-  app.get<{ Params: { id: string } }>("/schedules/:id/edit", async (req, reply) => {
-    const userId = requireUserId(req, reply);
-    if (userId === undefined) return;
-    const form = scheduleFormFor(userId, Number.parseInt(req.params.id, 10));
-    if (!form) return reply.code(404).send({ error: "not_found" });
-    return render(reply, "schedules_edit", {
-      title: "Edit Schedule",
-      authed: true,
-      isAdmin: currentUser(req)?.role === "admin",
-      ...form,
-      error: null,
-    });
   });
 
   app.post<{ Params: { id: string } }>("/schedules/:id/edit", async (req, reply) => {

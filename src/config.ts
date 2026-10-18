@@ -52,6 +52,10 @@ const schema = z.object({
   // is usually self-hosted on the same LAN. Set to "true" only when exposing
   // registration to less-trusted users who shouldn't reach internal hosts.
   BLOCK_PRIVATE_ACTUAL_HOSTS: z.string().default("false"),
+
+  // Development only: the Vite dev server's origin (e.g. http://localhost:5173).
+  // When set, page URLs load the app's modules from it instead of dist/web.
+  VITE_DEV_SERVER: z.string().optional().default(""),
 });
 
 export type Config = z.infer<typeof schema> & {
