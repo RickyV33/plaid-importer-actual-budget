@@ -1,0 +1,61 @@
+## 1. Insights core (pure, tested first)
+
+- [ ] 1.1 Create `src/insights/` with pure functions: `dailySeries(runs, days, now, tz)`, `byConnection(results, items)`, `byAccount(results)`, `outcomeSummary(runs)`, `freshness(item, now)`, `rateLimitUsage(pulls, oldest, limit, now)`, `coverage(accounts, mappings)`, `upcomingWeek(schedules, now, tz)` (reusing `nextOccurrence`), plus `safeTimeZone(raw)`
+- [ ] 1.2 Unit tests for each in `src/insights/*.test.ts`: zero-filled gaps, time-zone bucketing across midnight, invalid zone → UTC, shares, running runs excluded from success rate, no-runs → absent rate, freshness boundaries and relink precedence, at-ceiling free time, deselected accounts excluded from coverage, paused/legacy schedules excluded from the week
+- [ ] 1.3 Add read-only, owner-scoped queries in `src/db/queries.ts`: runs since a timestamp (`started_at`, `status`, `total_imported`), per-account imported since a timestamp (joined to item); cover owner scoping in `src/db/queries.test.ts`
+
+## 2. Locale cookie
+
+- [ ] 2.1 Extend `resolveLocale` with an optional cookie value (supported cookie wins; unsupported ignored); update `render.ts` to pass `req.cookies.lang`; add tests to `src/i18n/i18n.test.ts` for the four spec scenarios
+- [ ] 2.2 Add `shell.*`, `theme.*`, `lang.*` keys (en + es); keep the parity test green
+
+## 3. Design system foundation
+
+- [ ] 3.1 Vendor latin woff2 files for DM Sans 400/500/600/700, DM Mono 400/500, Playfair Display 600/700 into `public/fonts/` with their OFL license files; `@font-face` declarations with `font-display: swap`
+- [ ] 3.2 Rewrite `public/style.css` from Media Insights' token sheet and class vocabulary (light + dark tokens, OS-dark fallback block, type, shell, tabs, page intro, panel, hero, metric, meter, bar list, notices, buttons, icon buttons, inputs, segmented, row list with hover/focus actions and `hover: none` fallback, wider-screen layers); add app pieces: column chart, chip, routing row, week strip, disclosure rows
+- [ ] 3.3 Add `public/app.js` (deferred, shared): theme toggle with guarded `localStorage`, language select → `lang` cookie + reload, `tz` cookie write, `.rel-ts` relative times via `Intl.RelativeTimeFormat`, `.local-ts` absolute times, hero count-up and fill grow-in gated on reduced motion, generic `[data-disclosure]` row toggling with `aria-expanded`, banner dismiss
+- [ ] 3.4 Rebuild `layout.eta`: pre-paint theme script in `<head>`, header (title + version | theme pill, language select, sign-out pill), tab strip from a route-provided `nav` value with `aria-current`, banners as notices, no tabs when signed out; every route passes `nav`
+- [ ] 3.5 Add Eta partials: `page_intro`, `metric`, `bar_list`, `column_chart` (with visually-hidden table), `meter`, `chip`, `empty`
+- [ ] 3.6 Restyle `login.eta` and `register.eta` into a centered panel; verify sign-in, register, and the auth gate tests still pass
+
+## 4. Overview (`/`)
+
+- [ ] 4.1 In `home.ts`, compute overview data via the insights module: 30-day hero + 7/60/90 pills, soonest next sync, connection/relink counts, profile count, coverage, 30-day success rate, 30-day daily series, by-connection list, per-connection freshness/last/next, admin other-users
+- [ ] 4.2 Rewrite `dashboard.eta`: page intro, hero card, metric grid, two-col (imports per day | imports by connection), sync status row list; empty states for a fresh account; no create/edit/delete controls
+- [ ] 4.3 Add `dashboard.*`/`insights.*` strings (en + es); remove dashboard keys no longer used
+
+## 5. Connections
+
+- [ ] 5.1 In the `/connections` handler, add per-connection freshness, rate-limit usage (when a ceiling is set), and per-account 30-day imported and "feeds N budgets" counts
+- [ ] 5.2 Rewrite `connections.eta`: page intro with Sync all / Sync selected / Link bank actions, a panel per connection (status + freshness chips, rate-limit meter), calm account rows with checkbox and hover actions; keep every id/data-attribute the inline script uses (or update the script in step); sync result messages render as notices
+- [ ] 5.3 Manually exercise link, sync selected/all, relink, manage accounts, remove connection, remove deselected account in the dev container
+
+## 6. Profiles
+
+- [ ] 6.1 Add per-profile coverage to the `/profiles` handler
+- [ ] 6.2 Rewrite `profiles.eta`: page intro with a New profile icon action, a panel per profile (name, host · budget, coverage meter, edit/delete icons on hover), routing rows grouped by connection (account → select → pending switch) aligned on wide screens, stacked on narrow
+- [ ] 6.3 Restyle `profile_form.eta` into a panel using the shared form styles; keep the budget loader behavior
+- [ ] 6.4 Manually exercise mapping change/clear, pending toggle, create/edit/delete profile, budget loading
+
+## 7. Schedules
+
+- [ ] 7.1 Compute the seven-day upcoming strip in the schedules list handler via `upcomingWeek`
+- [ ] 7.2 Rewrite `schedules.eta`: page intro with New schedule icon action, week strip, calm schedule rows (name + chip / recurrence / connections · next) with toggle/edit/delete on hover; legacy rows as warn notices inside the row
+- [ ] 7.3 Restyle `schedules_new.eta`, `schedules_edit.eta`, `partials/schedules_form.eta` (day picker as segmented toggles); verify create/edit/toggle/delete
+
+## 8. History
+
+- [ ] 8.1 In `history.ts`, add 30-day outcome summary and 90-day daily series independent of `offset`
+- [ ] 8.2 Rewrite `history.eta`: page intro, metric grid, column chart panel, run rows with chips and `[data-disclosure]` drill-down to per-account result rows, pager; orphan banner partial restyled as a warn notice with its acknowledge action
+- [ ] 8.3 Add/extend route tests for history summary being independent of paging
+
+## 9. Settings and remaining views
+
+- [ ] 9.1 Rewrite `settings.eta` into panels (registration secret with reveal icon; sync limit and initial history side by side on wide screens); admin profile list as calm rows with a delete icon on hover; keep `settings.initial-history` tests green
+- [ ] 9.2 Restyle `oauth_return.eta`; grep views for any class from the old sheet and remove leftovers
+
+## 10. Wrap-up
+
+- [ ] 10.1 Run `npm test` and `npx tsc --noEmit` in the dev container; check every page at 360px and desktop width in light and dark, and with reduced motion
+- [ ] 10.2 Update `.vscode/tasks.json` / `launch.json` if any command changed
+- [ ] 10.3 At archive: fold this change's `mental-model.html` into the root `mental-model.html`, refresh `README.md` (with a screenshot of the overview), and archive the change
