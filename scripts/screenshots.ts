@@ -1,55 +1,27 @@
-// Renders every page through its real template with demo data, into static
-// HTML files that headless Chrome can capture (see scripts/screenshots.sh).
-// No Plaid, Actual, or real database is touched: required settings get dummy
-// values before anything is imported, and the database is a throwaway file.
+// Writes a static copy of the app with demo API responses, for screenshots:
+//   <out>/static/        public/ (stylesheet, fonts)
+//   <out>/static/app/    the built app (dist/web; run `npm run build` first)
+//   <out>/api/<name>.json  demo responses (scripts/screenshots.demo.ts)
+// scripts/screenshots_server.py serves it like Fastify would, and
+// scripts/screenshots.sh captures each page with headless Chrome.
 
-import crypto from "node:crypto";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 
+import { demoApi } from "./screenshots.demo.js";
+
 const OUT = path.resolve(process.argv[2] ?? "dist/screens");
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "plaid-importer-screens-"));
-Object.assign(process.env, {
-  NODE_ENV: "test",
-  APP_URL: "http://localhost:8080",
-  APP_USER: "demo",
-  APP_PASSWORD: "demo",
-  SESSION_SECRET: "x".repeat(32),
-  PLAID_CLIENT_ID: "demo",
-  PLAID_SECRET: "demo",
-  TOKEN_ENCRYPTION_KEY: crypto.randomBytes(32).toString("base64"),
-  DATABASE_PATH: path.join(tmp, "screens.db"),
-  ACTUAL_CACHE_DIR: path.join(tmp, "actual-cache"),
-});
-
-const { render } = await import("../src/views/render.js");
-const { demoPages } = await import("./screenshots.demo.js");
-
-/** Just enough of a Fastify reply for `render`: it captures the HTML. */
-function fakeReply(url: string) {
-  let html = "";
-  const reply = {
-    request: { url, headers: { "accept-language": "en-US" }, cookies: { tz: "America/Chicago" }, session: {} },
-    code: () => reply,
-    type: () => reply,
-    send: (body: string) => {
-      html = body;
-      return reply;
-    },
-  };
-  return { reply, html: () => html };
+const BUILT = path.resolve("dist/web");
+if (!fs.existsSync(path.join(BUILT, "index.html"))) {
+  console.error("dist/web is missing: run `npm run build` first.");
+  process.exit(1);
 }
 
 fs.rmSync(OUT, { recursive: true, force: true });
-fs.mkdirSync(OUT, { recursive: true });
+fs.mkdirSync(path.join(OUT, "api"), { recursive: true });
 fs.cpSync(path.resolve("public"), path.join(OUT, "static"), { recursive: true });
-
-for (const page of demoPages(Date.now())) {
-  const { reply, html } = fakeReply(page.url);
-  render(reply as never, page.template, page.data);
-  // Files are opened from disk, so root-relative asset paths become relative.
-  fs.writeFileSync(path.join(OUT, `${page.name}.html`), html().replaceAll('"/static/', '"static/'));
-  console.log(`rendered ${page.name}`);
+fs.cpSync(BUILT, path.join(OUT, "static", "app"), { recursive: true });
+for (const [name, body] of Object.entries(demoApi(Date.now()))) {
+  fs.writeFileSync(path.join(OUT, "api", `${name}.json`), JSON.stringify(body));
 }
-fs.rmSync(tmp, { recursive: true, force: true });
+console.log(`wrote ${OUT}`);
