@@ -333,4 +333,6 @@ export const en: Record<string, string> = {
   "history.orphans.ack": "I deleted it",
   "history.triggerOf.manual": "Manual",
   "history.triggerOf.scheduled": "Scheduled",
+  "settings.eyebrow": "Administration",
+  "settings.lede": "Registration, sync limits, and the history new links ask for. Only administrators see this page.",
 };

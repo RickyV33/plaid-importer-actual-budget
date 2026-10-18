@@ -333,4 +333,6 @@ export const es: Record<string, string> = {
   "history.orphans.ack": "Ya la borré",
   "history.triggerOf.manual": "Manual",
   "history.triggerOf.scheduled": "Programada",
+  "settings.eyebrow": "Administración",
+  "settings.lede": "Registro, límites de sincronización y el historial que piden los nuevos vínculos. Solo los administradores ven esta página.",
 };

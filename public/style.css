@@ -267,6 +267,7 @@ form > button { align-self: flex-start; }
 form.inline { display: inline-flex; }
 label.check { flex-direction: row; align-items: center; gap: 8px; font-weight: 500; font-size: 0.9rem; cursor: pointer; }
 .field-hint { font-weight: 400; color: var(--muted); font-size: 0.82rem; }
+label.spaced { margin-bottom: 14px; }
 .field-row { display: flex; flex-direction: column; gap: 14px; }
 .field-row > * { flex: 1 1 0; min-width: 0; }
 .input-row { display: flex; gap: 8px; align-items: stretch; }

@@ -55,7 +55,7 @@
 - [x] 7.6 Schedules: week strip, rows with toggle/edit/delete, legacy warning
 - [x] 7.7 Schedule create/edit pages (name, banks, segmented day picker, time, repeat)
 - [x] 7.8 History: 30-day metrics, 90-day chart, expandable runs, pager, orphan notice with acknowledge
-- [ ] 7.9 Settings (admin): registration secret with reveal, sync limit, initial history, all-profiles rows with delete
+- [x] 7.9 Settings (admin): registration secret with reveal, sync limit, initial history, all-profiles rows with delete
 
 ## 8. Strings
 
