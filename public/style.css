@@ -346,7 +346,7 @@ a.metric:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; 
 .meter > span { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
 .meter.full > span { background: var(--danger); }
 .meter-row { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.meter-label { display: flex; justify-content: space-between; gap: 10px; font-size: 0.82rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.meter-label { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 10px; font-size: 0.82rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 
 /* ── bar list ─────────────────────────────────────────────────── */
 
@@ -409,12 +409,15 @@ a.metric:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; 
 .row:hover, .row:focus-within { background: var(--hover-wash); }
 .row:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
 .row-icon { color: var(--muted); display: flex; width: 18px; justify-content: center; flex-shrink: 0; }
-.row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.row { flex-wrap: wrap; }
+/* When a row is too narrow for its text and actions side by side, the actions
+   take their own line rather than squeezing the text. */
+.row-main { flex: 1 1 12rem; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .row-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-weight: 600; }
 .row-secondary { color: var(--muted); font-size: 0.82rem; overflow-wrap: anywhere; }
-.row-aside { color: var(--ink-2); font-size: 0.85rem; text-align: right; display: flex; flex-direction: column; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.row-aside { color: var(--ink-2); font-size: 0.85rem; text-align: right; display: flex; flex-direction: column; font-variant-numeric: tabular-nums; flex-shrink: 0; margin-left: auto; }
 .row-aside small { color: var(--muted); }
-.row-actions { display: flex; gap: 6px; opacity: 0; transition: opacity 0.12s; flex-shrink: 0; }
+.row-actions { display: flex; gap: 6px; opacity: 0; transition: opacity 0.12s; flex-shrink: 0; margin-left: auto; }
 .row:hover .row-actions, .row:focus-within .row-actions,
 .panel-hover:hover .row-actions, .panel-hover:focus-within .row-actions { opacity: 1; }
 /* Touch screens have no hover: keep the actions reachable. */
@@ -455,7 +458,7 @@ a.metric:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; 
 .week-day.today .week-date span { color: inherit; }
 .week-runs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
 .week-run { display: inline-flex; gap: 6px; align-items: baseline; padding: 4px 9px; border-radius: 8px; background: var(--panel); color: var(--ink); font-size: 0.8rem; max-width: 100%; }
-.week-run b { font-variant-numeric: tabular-nums; }
+.week-run b { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .week-run span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .week-empty { font-size: 0.8rem; color: var(--muted); padding: 3px 0; }
 
