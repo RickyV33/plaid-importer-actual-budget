@@ -15,10 +15,20 @@ local encrypted journal, so adding more budgets never costs more Plaid calls.
 
 ## Features
 
-- **At-a-glance dashboard**: the home page summarizes your connections and
-  profiles, shows each connection's own last sync and next scheduled run, totals
-  how many transactions you've imported over the last 7/30/60/90 days, and flags
-  any bank that needs re-linking.
+- **At-a-glance overview**: transactions imported in the last 30 days (with
+  7/60/90-day totals), the next scheduled sync, how many accounts are routed to
+  a budget, your sync success rate, imports per day, imports by bank, and how
+  fresh each bank's last sync is.
+- **Health banners**: if a budget's last sync couldn't reach Actual, hit import
+  errors, or a bank needs reconnecting, every page says so and links to the fix.
+  Banners clear on their own after the next good sync.
+- **Bank health**: each connection shows how recently it synced, how much of the
+  sync limit it has used, which budgets each account feeds, and what each
+  account imported in the last 30 days.
+- **Routing view**: each profile shows bank account → Actual account rows and a
+  meter of how many accounts it receives; changes save in place.
+- **The week ahead**: the Schedules page lays out every sync your schedules will
+  run in the next seven days.
 - **Pending transactions**: set notes and categories on a pending transaction;
   they persist when it officially posts.
 - **Multi-user**: built for a household. Family or roommates each get their own
@@ -39,25 +49,29 @@ local encrypted journal, so adding more budgets never costs more Plaid calls.
 - **Manage accounts**: add or drop which accounts a connection shares without
   re-linking. Dropped accounts stop syncing but keep their mappings; re-added
   ones are reconciled so you don't get duplicates.
-- **Sync history**: see when you synced, how many items came through, and any
-  failures.
+- **Sync history**: 30-day run summary, a 90-day imports chart, and every run
+  with what each account imported and any failures.
 - **Registration secret**: only people with the secret can register an account.
 - **Admin controls**: the first account is admin and manages the registration
   secret, sync limits, initial history depth, and every profile.
 - **Encryption**: Plaid tokens and profile secrets are encrypted at rest;
   transaction data is encrypted and short-lived.
-- **Bilingual**: English and Spanish.
+- **Bilingual**: English and Spanish, switchable from the header.
+- **Light and dark**: follows your system until you pick one.
 - **Version on screen**: the running version shows next to the title in the top
   bar, so you always know which build you're on.
 - **Unraid**: setup instructions in [DEPLOY.md](DEPLOY.md).
 
 ## Screenshots
 
-<img src="docs/screenshots/1.png" alt="Screenshot 1" width="720" />
-<img src="docs/screenshots/2.png" alt="Screenshot 2" width="720" />
-<img src="docs/screenshots/5.png" alt="Screenshot 5" width="720" />
-<img src="docs/screenshots/3.png" alt="Screenshot 3" width="720" />
-<img src="docs/screenshots/4.png" alt="Screenshot 4" width="720" />
+Demo data throughout; regenerate with `./scripts/screenshots.sh`.
+
+<img src="docs/screenshots/overview.png" alt="Overview: transactions imported in the last 30 days, next sync, metrics, imports per day and by bank" width="720" />
+<img src="docs/screenshots/connections.png" alt="Connections: each bank with its freshness, sync-limit meter, and accounts" width="720" />
+<img src="docs/screenshots/profiles.png" alt="Profiles: bank accounts routed to Actual accounts, with a coverage meter" width="720" />
+<img src="docs/screenshots/schedules.png" alt="Schedules: the week ahead and each schedule" width="720" />
+<img src="docs/screenshots/history.png" alt="History: 30-day summary, 90-day chart, and runs" width="720" />
+<img src="docs/screenshots/settings.png" alt="Settings: registration secret, sync limit, initial history" width="720" />
 
 ## Set up
 
@@ -71,6 +85,21 @@ You need a Docker host, an Actual Budget server, and Plaid production credential
    each account to an Actual account, and click **Sync**, or set a schedule.
 
 That's it. Migrations and first-run setup happen automatically on boot.
+
+## Develop
+
+The app is a Fastify server (`src/`) with a React + Vite frontend (`web/`) for
+the signed-in pages; sign-in pages are server-rendered. Run commands in the dev
+container:
+
+```bash
+npm run dev                                  # server on :8080
+npm run dev:web                              # Vite on :5173 (modules + hot reload)
+VITE_DEV_SERVER=http://localhost:5173 npm run dev   # server loading the app from Vite
+npm test && npm run typecheck && npm run build
+```
+
+In VS Code, the **dev: all** task starts both; open http://localhost:8080.
 
 ### Key settings (`.env`)
 

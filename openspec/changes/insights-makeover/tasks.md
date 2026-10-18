@@ -63,7 +63,7 @@
 
 ## 9. Screenshots
 
-- [ ] 9.1 Rework `scripts/screenshots.ts`: build the app, serve it with demo API fixtures (from `screenshots.demo.ts`) on a local static server, capture each page with headless Chrome at 1112×813 CSS px, 2× (2224×1626, the size of the current README shots); replace `docs/screenshots/*.png` with one per page (overview, connections, profiles, schedules, history, settings) and update the README `<img>` list (still `width="720"`)
+- [x] 9.1 Rework `scripts/screenshots.ts`: build the app, serve it with demo API fixtures (from `screenshots.demo.ts`) on a local static server, capture each page with headless Chrome at 1112×813 CSS px, 2× (2224×1626, the size of the current README shots); replace `docs/screenshots/*.png` with one per page (overview, connections, profiles, schedules, history, settings) and update the README `<img>` list (still `width="720"`)
 
 ## 10. Cleanup and wrap-up
 

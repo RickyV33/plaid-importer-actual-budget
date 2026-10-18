@@ -266,8 +266,11 @@ export function demoApi(now: number): Record<string, unknown> {
     ],
   };
 
+  // Banners would repeat at the top of every shot; set DEMO_BANNERS=1 to show the relink one.
   const banners: { banners: BannerView[] } = {
-    banners: [{ key: "health:relink:item-lakeside:1", type: "error", message: "health.relink", vars: { name: "Lakeside Savings" }, href: "/connections", link: "health.fixRelink" }],
+    banners: process.env.DEMO_BANNERS
+      ? [{ key: "health:relink:item-lakeside:1", type: "error", message: "health.relink", vars: { name: "Lakeside Savings" }, href: "/connections", link: "health.fixRelink" }]
+      : [],
   };
 
   return {
