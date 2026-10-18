@@ -232,4 +232,17 @@ export const en: Record<string, string> = {
   "history.reason": "Reason",
   "history.newer": "← newer",
   "history.older": "older →",
+
+  // insights (shared data marks)
+  "insights.chart.imported": "{count} imported",
+  "insights.chart.date": "Date",
+  "insights.chart.importedCol": "Imported",
+  "insights.chart.empty": "Nothing imported in this period.",
+  "insights.freshness.fresh": "Up to date",
+  "insights.freshness.stale": "A few days old",
+  "insights.freshness.old": "Out of date",
+  "insights.freshness.never": "Never synced",
+  "insights.freshness.relink": "Needs relink",
+  "login.eyebrow": "Welcome back",
+  "register.eyebrow": "New account",
 };

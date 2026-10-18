@@ -11,12 +11,12 @@
 
 ## 3. Design system foundation
 
-- [ ] 3.1 Vendor latin woff2 files for DM Sans 400/500/600/700, DM Mono 400/500, Playfair Display 600/700 into `public/fonts/` with their OFL license files; `@font-face` declarations with `font-display: swap`
-- [ ] 3.2 Rewrite `public/style.css` from Media Insights' token sheet and class vocabulary (light + dark tokens, OS-dark fallback block, type, shell, tabs, page intro, panel, hero, metric, meter, bar list, notices, buttons, icon buttons, inputs, segmented, row list with hover/focus actions and `hover: none` fallback, wider-screen layers); add app pieces: column chart, chip, routing row, week strip, disclosure rows
-- [ ] 3.3 Add `public/app.js` (deferred, shared): theme toggle with guarded `localStorage`, language select → `lang` cookie + reload, `tz` cookie write, `.rel-ts` relative times via `Intl.RelativeTimeFormat`, `.local-ts` absolute times, hero count-up and fill grow-in gated on reduced motion, generic `[data-disclosure]` row toggling with `aria-expanded`, banner dismiss
-- [ ] 3.4 Rebuild `layout.eta`: pre-paint theme script in `<head>`, header (title + version | theme pill, language select, sign-out pill), tab strip from a route-provided `nav` value with `aria-current`, banners as notices, no tabs when signed out; every route passes `nav`
-- [ ] 3.5 Add Eta partials: `page_intro`, `metric`, `bar_list`, `column_chart` (with visually-hidden table), `meter`, `chip`, `empty`
-- [ ] 3.6 Restyle `login.eta` and `register.eta` into a centered panel; verify sign-in, register, and the auth gate tests still pass
+- [x] 3.1 Vendor latin woff2 files for DM Sans 400/500/600/700, DM Mono 400/500, Playfair Display 600/700 into `public/fonts/` with their OFL license files; `@font-face` declarations with `font-display: swap`
+- [x] 3.2 Rewrite `public/style.css` from Media Insights' token sheet and class vocabulary (light + dark tokens, OS-dark fallback block, type, shell, tabs, page intro, panel, hero, metric, meter, bar list, notices, buttons, icon buttons, inputs, segmented, row list with hover/focus actions and `hover: none` fallback, wider-screen layers); add app pieces: column chart, chip, routing row, week strip, disclosure rows
+- [x] 3.3 Add `public/app.js` (deferred, shared): theme toggle with guarded `localStorage`, language select → `lang` cookie + reload, `tz` cookie write, `.rel-ts` relative times via `Intl.RelativeTimeFormat`, `.local-ts` absolute times, hero count-up and fill grow-in gated on reduced motion, generic `[data-disclosure]` row toggling with `aria-expanded`, banner dismiss
+- [x] 3.4 Rebuild `layout.eta`: pre-paint theme script in `<head>`, header (title + version | theme pill, language select, sign-out pill), tab strip from a route-provided `nav` value with `aria-current`, banners as notices, no tabs when signed out; every route passes `nav`
+- [x] 3.5 Add Eta partials: `page_intro`, `metric`, `bar_list`, `column_chart` (with visually-hidden table), `meter`, `chip`, `empty`
+- [x] 3.6 Restyle `login.eta` and `register.eta` into a centered panel; verify sign-in, register, and the auth gate tests still pass
 
 ## 4. Connection-health banners
 
@@ -65,4 +65,5 @@
 
 - [ ] 11.1 Run `npm test` and `npx tsc --noEmit` in the dev container; check every page at 360px and desktop width in light and dark, and with reduced motion
 - [ ] 11.2 Update `.vscode/tasks.json` / `launch.json` if any command changed
-- [ ] 11.3 At archive: refresh `README.md` (with a screenshot of the overview), and archive the change
+- [ ] 11.3 Add `scripts/screenshots.ts`: render each page's real template with mocked demo data (no Plaid/Actual), then capture with headless Chrome at 1112×813 CSS px, 2× scale (2224×1626, the size of the current README shots); replace `docs/screenshots/*.png` with one per page (overview, connections, profiles, schedules, history, settings) and update the README `<img>` list (still `width="720"`)
+- [ ] 11.4 At archive: refresh `README.md` (with a screenshot of the overview), and archive the change

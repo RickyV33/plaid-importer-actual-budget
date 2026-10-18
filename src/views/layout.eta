@@ -3,67 +3,85 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1d5286" />
     <title><%= it.title ?? "plaid-importer" %></title>
+    <script>
+      // Pick the theme before first paint so dark mode never flashes white.
+      document.documentElement.classList.add("js");
+      try {
+        var t = localStorage.getItem("pi-theme");
+        document.documentElement.dataset.theme = t === "light" || t === "dark" ? t : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      } catch (e) {
+        document.documentElement.dataset.theme = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+    </script>
+    <link rel="preload" href="/static/fonts/playfair-display-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/static/fonts/dm-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="/static/style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" referrerpolicy="no-referrer" />
     <!-- Client i18n catalog. In <head> so page scripts can read it on parse. -->
     <script id="i18n-data" type="application/json"><%~ it.i18nClient %></script>
+    <script src="/static/app.js" defer></script>
   </head>
   <body>
-    <header class="topbar">
-      <div class="brand-block">
-        <a href="/" class="brand">Plaid Importer <span class="brand-sub">for Actual Budget</span></a>
-        <!-- Version only: a number (or the literal "dev"), so there is no prose
-             to translate and no message-catalog lookup is needed. Outside the
-             anchor so it is not part of the link text. -->
-        <span class="app-version"><%= it.version %></span>
-      </div>
-      <nav>
-        <% if (it.authed) { %>
-          <a href="/connections"><%= it.t("nav.connections") %></a>
-          <a href="/profiles"><%= it.t("nav.profiles") %></a>
-          <a href="/schedules"><%= it.t("nav.schedules") %></a>
-          <a href="/history"><%= it.t("nav.history") %></a>
-          <% if (it.isAdmin) { %>
-            <a href="/settings"><%= it.t("nav.settings") %></a>
+    <div class="shell">
+      <header class="site-head">
+        <div class="site-title">
+          <h1><a href="/"><%= it.t("shell.appName") %></a></h1>
+          <span class="site-sub"><%= it.t("shell.appSub") %></span>
+          <!-- Version only: a number (or the literal "dev"), so there is no prose
+               to translate. Outside the link so it is not part of the link text. -->
+          <span class="app-version"><%= it.version %></span>
+        </div>
+        <div class="site-tools">
+          <button type="button" class="pill-button" data-theme-toggle data-label-dark="<%= it.t('theme.dark') %>" data-label-light="<%= it.t('theme.light') %>" aria-pressed="false">
+            <i class="fa-solid fa-moon" aria-hidden="true"></i><span data-theme-label><%= it.t("theme.dark") %></span>
+          </button>
+          <label class="lang-select">
+            <span class="visually-hidden"><%= it.t("lang.label") %></span>
+            <select data-lang-select>
+              <% ["en", "es"].forEach(function(l) { %>
+                <option value="<%= l %>" <%= it.locale === l ? "selected" : "" %>><%= it.t("lang." + l) %></option>
+              <% }) %>
+            </select>
+          </label>
+          <% if (it.authed) { %>
+            <form method="post" action="/logout">
+              <button type="submit" class="pill-button"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i><%= it.t("shell.signOut") %></button>
+            </form>
           <% } %>
-          <form method="post" action="/logout" class="inline">
-            <button type="submit" class="linklike"><%= it.t("nav.logout") %></button>
-          </form>
-        <% } %>
-      </nav>
-    </header>
-    <% if (it.banners && it.banners.length > 0) { %>
-      <div class="app-banners">
-        <% it.banners.forEach(function(b) { %>
-          <div class="app-banner app-banner-<%= b.type %>" data-banner-key="<%= b.key %>">
-            <span><%~ it.t("banners." + b.key) %></span>
-            <button type="button" class="banner-dismiss" aria-label="Dismiss">×</button>
-          </div>
-        <% }) %>
-      </div>
-    <% } %>
-    <main>
-      <%~ it.body %>
-    </main>
-    <script>
-      (function () {
-        document.querySelectorAll('.banner-dismiss').forEach(function (btn) {
-          btn.addEventListener('click', function () {
-            var banner = btn.closest('.app-banner');
-            var key = banner && banner.dataset.bannerKey;
-            if (!key) return;
-            fetch('/banners/' + encodeURIComponent(key) + '/dismiss', { method: 'POST' });
-            banner.remove();
-          });
-        });
-        // Render epoch timestamps in the browser's local timezone (server-side
-        // toLocaleString uses the server TZ, which is typically UTC).
-        document.querySelectorAll('.local-ts[data-ts]').forEach(function (el) {
-          var ts = Number(el.dataset.ts);
-          if (!isNaN(ts) && ts > 0) el.textContent = new Date(ts).toLocaleString();
-        });
-      })();
-    </script>
+        </div>
+      </header>
+
+      <% if (it.authed) { %>
+        <nav class="tabs" aria-label="<%= it.t('nav.label') %>">
+          <% it.tabs.forEach(function(tab) { %>
+            <% if (tab.adminOnly && !it.isAdmin) return; %>
+            <a href="<%= tab.href %>" class="<%= it.activeTab === tab.id ? 'active' : '' %>"<%~ it.activeTab === tab.id ? ' aria-current="page"' : '' %>><%= it.t("nav." + tab.id) %></a>
+          <% }) %>
+        </nav>
+      <% } %>
+
+      <% if (it.banners && it.banners.length > 0) { %>
+        <div class="banners">
+          <% it.banners.forEach(function(b) { %>
+            <div class="notice <%= b.type %>" role="<%= b.type === 'error' ? 'alert' : 'status' %>">
+              <i class="fa-solid <%= b.type === 'info' ? 'fa-circle-info' : 'fa-triangle-exclamation' %>" aria-hidden="true"></i>
+              <div class="notice-body">
+                <span><%= b.message %></span>
+                <% if (b.href) { %><a href="<%= b.href %>"><%= b.linkLabel %></a><% } %>
+              </div>
+              <button type="button" class="icon-button" data-dismiss-key="<%= b.key %>" aria-label="<%= it.t('shell.dismiss') %>" title="<%= it.t('shell.dismiss') %>">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+              </button>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <main>
+        <%~ it.body %>
+      </main>
+    </div>
   </body>
 </html>

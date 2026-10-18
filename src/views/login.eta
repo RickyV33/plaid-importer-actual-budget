@@ -1,19 +1,18 @@
-<div class="card login-card">
-  <h1><%= it.t("login.title") %></h1>
+<section class="panel auth">
+  <p class="eyebrow"><%= it.t("login.eyebrow") %></p>
+  <h2><%= it.t("login.title") %></h2>
   <% if (it.errorKey) { %>
-    <p class="error"><%= it.t(it.errorKey) %></p>
+    <div class="notice error" role="alert"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><div class="notice-body"><%= it.t(it.errorKey) %></div></div>
   <% } %>
   <form method="post" action="/login">
-    <div class="field">
-      <label for="username"><%= it.t("login.username") %></label>
+    <label for="username"><%= it.t("login.username") %>
       <input id="username" name="username" type="text" autocomplete="username" autofocus required />
-    </div>
-    <div class="field">
-      <label for="password"><%= it.t("login.password") %></label>
+    </label>
+    <label for="password"><%= it.t("login.password") %>
       <input id="password" name="password" type="password" autocomplete="current-password" required />
-    </div>
+    </label>
     <input type="hidden" name="next" value="<%= it.next %>" />
-    <button type="submit"><%= it.t("login.submit") %></button>
+    <button type="submit" class="primary"><i class="fa-solid fa-arrow-right-to-bracket" aria-hidden="true"></i><%= it.t("login.submit") %></button>
   </form>
-  <p class="muted"><a href="/register"><%= it.t("login.needAccount") %></a></p>
-</div>
+  <p class="foot muted"><a href="/register"><%= it.t("login.needAccount") %></a></p>
+</section>

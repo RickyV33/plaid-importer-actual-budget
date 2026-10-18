@@ -1,0 +1,19 @@
+<%/* One series of horizontal bars. Every row carries its value and share as
+     text, and a hover/focus tooltip, so nothing is read from bar length alone.
+     it: rows [{ key, label, value, share }], fmt, empty, valueText(row)? */%>
+<% var max = Math.max(1, ...it.rows.map(function(r) { return r.value; })); %>
+<% var text = it.valueText || function(r) { return it.fmt.num(r.value); }; %>
+<% if (!it.rows.length || it.rows.every(function(r) { return r.value === 0; })) { %>
+  <p class="muted small"><%= it.empty %></p>
+<% } else { %>
+  <ul class="bar-list grow">
+    <% it.rows.forEach(function(r) { %>
+      <li class="bar-row" tabindex="0">
+        <span class="bar-label"><%= r.label %></span>
+        <span class="bar-track" aria-hidden="true"><span class="bar-fill" style="width: <%= (r.value / max * 100).toFixed(1) %>%"></span></span>
+        <span class="bar-value"><%= text(r) %> <small><%= it.fmt.pct(r.share) %></small></span>
+        <span class="tooltip" role="tooltip"><b><%= r.label %></b><span><%= text(r) %> · <%= it.fmt.pct(r.share) %></span></span>
+      </li>
+    <% }) %>
+  </ul>
+<% } %>

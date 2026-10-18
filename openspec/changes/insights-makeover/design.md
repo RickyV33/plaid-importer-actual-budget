@@ -147,8 +147,9 @@ a dismiss icon button.
 ### Navigation shell
 Header: title + version on the left; theme pill, language select, and a
 sign-out pill on the right. Below, a `.tabs` strip: Overview, Connections,
-Profiles, Schedules, History, Settings (admin). The active tab comes from a
-`nav` value each route passes (`aria-current="page"`). The strip scrolls
+Profiles, Schedules, History, Settings (admin). The active tab is derived
+from the request path in `src/views/nav.ts` (sub-pages count toward their
+section), so routes don't pass anything (`aria-current="page"`). The strip scrolls
 horizontally on small screens rather than wrapping.
 
 ### Page-by-page mapping
