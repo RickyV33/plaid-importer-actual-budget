@@ -292,4 +292,6 @@ export const en: Record<string, string> = {
   "errors.sync": "The sync failed. Check the server logs.",
   "errors.notFound": "That item no longer exists. It may have been removed in another tab.",
   "errors.forbidden": "Only an administrator can do that.",
+  "connections.syncDone": "Sync finished: {count} transactions imported.",
+  "connections.syncFailed": "The sync finished with errors ({count} transactions imported). History has the details.",
 };

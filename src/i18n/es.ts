@@ -292,4 +292,6 @@ export const es: Record<string, string> = {
   "errors.sync": "La sincronización falló. Revisa los registros del servidor.",
   "errors.notFound": "Ese elemento ya no existe. Puede que se haya eliminado en otra pestaña.",
   "errors.forbidden": "Solo un administrador puede hacer eso.",
+  "connections.syncDone": "Sincronización terminada: {count} transacciones importadas.",
+  "connections.syncFailed": "La sincronización terminó con errores ({count} transacciones importadas). El historial tiene los detalles.",
 };
