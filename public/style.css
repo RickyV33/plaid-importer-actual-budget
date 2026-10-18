@@ -509,6 +509,10 @@ a.metric:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; 
   .week-day { flex: 1 1 0; flex-direction: column; gap: 8px; min-height: 9rem; }
   .week-date { flex: 0 0 auto; }
   .week-runs { flex-direction: column; flex-wrap: nowrap; }
+  /* Narrow columns: time on its own line, names wrap instead of clipping. */
+  .week-run { flex-direction: column; gap: 1px; }
+  .week-run b { white-space: nowrap; }
+  .week-run span { white-space: normal; overflow-wrap: anywhere; }
 }
 
 /* ── legacy (pages not yet moved to the system above) ──────────

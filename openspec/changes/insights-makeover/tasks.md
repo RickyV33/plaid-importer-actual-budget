@@ -52,7 +52,7 @@
 - [x] 7.3 OAuth return page at `/link/oauth-return` (re-open Link with the stored token and `receivedRedirectUri`)
 - [x] 7.4 Profiles: panels with coverage meter, routing rows saving in place (mapping select, pending switch), delete
 - [x] 7.5 Profile create/edit pages with the budget loader and manual budget entry
-- [ ] 7.6 Schedules: week strip, rows with toggle/edit/delete, legacy warning
+- [x] 7.6 Schedules: week strip, rows with toggle/edit/delete, legacy warning
 - [ ] 7.7 Schedule create/edit pages (name, banks, segmented day picker, time, repeat)
 - [ ] 7.8 History: 30-day metrics, 90-day chart, expandable runs, pager, orphan notice with acknowledge
 - [ ] 7.9 Settings (admin): registration secret with reveal, sync limit, initial history, all-profiles rows with delete

@@ -303,4 +303,11 @@ export const en: Record<string, string> = {
   "profiles.coverage": "{routed} of {total} accounts routed to this budget",
   "profiles.formLede": "Which Actual server and budget this profile imports into.",
   "profiles.pickFromList": "Pick from the list instead",
+  "schedules.eyebrow": "Automation",
+  "schedules.week.title": "The week ahead",
+  "schedules.week.desc": "Every sync your active schedules will run in the next seven days, in your time zone.",
+  "schedules.week.today": "Today",
+  "schedules.week.none": "No syncs",
+  "schedules.list.title": "All schedules",
+  "schedules.legacy.chip": "Needs update",
 };

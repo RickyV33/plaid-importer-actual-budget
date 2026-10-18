@@ -303,4 +303,11 @@ export const es: Record<string, string> = {
   "profiles.coverage": "{routed} de {total} cuentas enlazadas a este presupuesto",
   "profiles.formLede": "El servidor de Actual y el presupuesto en que importa este perfil.",
   "profiles.pickFromList": "Elegir de la lista",
+  "schedules.eyebrow": "Automatización",
+  "schedules.week.title": "La semana que viene",
+  "schedules.week.desc": "Cada sincronización que harán tus programaciones activas en los próximos siete días, en tu zona horaria.",
+  "schedules.week.today": "Hoy",
+  "schedules.week.none": "Sin sincronizaciones",
+  "schedules.list.title": "Todas las programaciones",
+  "schedules.legacy.chip": "Requiere actualizar",
 };

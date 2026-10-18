@@ -15,6 +15,7 @@ import { coverage } from "../src/insights/coverage.js";
 import { byConnection, dailySeries } from "../src/insights/imports.js";
 import { outcomeSummary } from "../src/insights/runs.js";
 import { upcomingWeek } from "../src/insights/week.js";
+import { nextOccurrence } from "../src/scheduler/recurrence.js";
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -88,7 +89,7 @@ function demoRuns(now: number) {
 }
 
 function schedule(over: Partial<ScheduleRow> & { id: number }, now: number): ScheduleRow {
-  return {
+  const row: ScheduleRow = {
     owner_user_id: 1,
     name: null,
     plaid_item_ids: "[]",
@@ -104,6 +105,9 @@ function schedule(over: Partial<ScheduleRow> & { id: number }, now: number): Sch
     updated_at: now - 60 * DAY,
     ...over,
   };
+  // The next run the scheduler itself would compute.
+  row.next_run_at = nextOccurrence(JSON.parse(row.days_of_week!) as number[], row.time_of_day!, row.repeat_weeks ?? 1, row.timezone!, now);
+  return row;
 }
 
 export function demoApi(now: number): Record<string, unknown> {
@@ -191,9 +195,9 @@ export function demoApi(now: number): Record<string, unknown> {
   };
 
   const scheduleRows = [
-    schedule({ id: 1, name: "Weekday mornings", plaid_item_ids: '["item-harbor","item-northwind"]', next_run_at: nextRun }, now),
-    schedule({ id: 2, name: "Card statements", plaid_item_ids: '["item-summit"]', days_of_week: "[0,3]", time_of_day: "19:30", next_run_at: nextRun + 2 * DAY }, now),
-    schedule({ id: 3, name: "Savings check-in", plaid_item_ids: '["item-lakeside"]', days_of_week: "[6]", time_of_day: "09:00", repeat_weeks: 2, enabled: 0, next_run_at: nextRun + 5 * DAY }, now),
+    schedule({ id: 1, name: "Weekday mornings", plaid_item_ids: '["item-harbor","item-northwind"]' }, now),
+    schedule({ id: 2, name: "Card statements", plaid_item_ids: '["item-summit"]', days_of_week: "[0,3]", time_of_day: "19:30" }, now),
+    schedule({ id: 3, name: "Savings check-in", plaid_item_ids: '["item-lakeside"]', days_of_week: "[6]", time_of_day: "09:00", repeat_weeks: 2, enabled: 0 }, now),
   ];
   const bankName = new Map(BANKS.map((b) => [b.id, b.name]));
   const banksOf = (s: ScheduleRow) => (JSON.parse(s.plaid_item_ids) as string[]).map((id) => bankName.get(id) ?? id);
