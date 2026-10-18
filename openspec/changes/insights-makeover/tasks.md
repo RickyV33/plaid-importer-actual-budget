@@ -27,9 +27,9 @@
 
 ## 5. Overview (`/`)
 
-- [ ] 5.1 In `home.ts`, compute overview data via the insights module: 30-day hero + 7/60/90 pills, soonest next sync, connection/relink counts, profile count, coverage, 30-day success rate, 30-day daily series, by-connection list, per-connection freshness/last/next, admin other-users
-- [ ] 5.2 Rewrite `dashboard.eta`: page intro, hero card, metric grid, two-col (imports per day | imports by connection), sync status row list; empty states for a fresh account; no create/edit/delete controls
-- [ ] 5.3 Add `dashboard.*`/`insights.*` strings (en + es); remove dashboard keys no longer used
+- [x] 5.1 In `home.ts`, compute overview data via the insights module: 30-day hero + 7/60/90 pills, soonest next sync, connection/relink counts, profile count, coverage, 30-day success rate, 30-day daily series, by-connection list, per-connection freshness/last/next, admin other-users
+- [x] 5.2 Rewrite `dashboard.eta`: page intro, hero card, metric grid, two-col (imports per day | imports by connection), sync status row list; empty states for a fresh account; no create/edit/delete controls
+- [x] 5.3 Add `dashboard.*`/`insights.*` strings (en + es); remove dashboard keys no longer used
 
 ## 6. Connections
 

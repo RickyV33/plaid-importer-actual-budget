@@ -9,12 +9,19 @@ import {
   profileAccountMappings,
   profiles,
   schedules,
+  syncAccountResults,
   syncRuns,
   users,
   type PlaidAccountRow,
   type PlaidItemRow,
 } from "../db/queries.js";
-import { render } from "../views/render.js";
+import { freshness } from "../insights/connections.js";
+import { coverage } from "../insights/coverage.js";
+import { byConnection, dailySeries } from "../insights/imports.js";
+import { outcomeSummary } from "../insights/runs.js";
+import { render, viewerTimeZone } from "../views/render.js";
+
+const DAY_MS = 86_400_000;
 
 type HomeAccount = {
   plaidAccountId: string;
@@ -78,33 +85,49 @@ export function registerHomeRoute(app: FastifyInstance): void {
       }
     }
 
+    const now = Date.now();
+    const tz = viewerTimeZone(req);
+    const isAdmin = currentUser(req)?.role === "admin";
+    const userProfiles = profiles.listByOwner(userId);
+
+    // One read of the last 90 days feeds the windowed totals, the success rate,
+    // and the per-day chart.
+    const runs = syncRuns.listSinceByOwner(userId, now - 90 * DAY_MS);
+    const since = (days: number) => runs.filter((r) => r.started_at >= now - days * DAY_MS);
+    const importedIn = (days: number) => since(days).reduce((n, r) => n + r.total_imported, 0);
+    const importedTotals = { d7: importedIn(7), d30: importedIn(30), d60: importedIn(60), d90: importedIn(90) };
+
     const connectionSyncs = items.map((item) => ({
+      id: item.id,
       institutionName: item.institution_name,
       lastSyncedAt: item.last_synced_at,
       nextRunAt: nextByItem.get(item.id) ?? null,
+      freshness: freshness(item, now),
     }));
+    const upcoming = connectionSyncs.map((c) => c.nextRunAt).filter((t): t is number => t !== null);
 
-    // Imported-transaction totals over rolling windows (sum of total_imported).
-    const now = Date.now();
-    const day = 86_400_000;
-    const importedTotals = {
-      d7: syncRuns.totalImportedSince(userId, now - 7 * day),
-      d30: syncRuns.totalImportedSince(userId, now - 30 * day),
-      d60: syncRuns.totalImportedSince(userId, now - 60 * day),
-      d90: syncRuns.totalImportedSince(userId, now - 90 * day),
-    };
-
-    const isAdmin = currentUser(req)?.role === "admin";
+    // An account counts as routed when any of the user's budgets receives it.
+    const mapped = new Set(userProfiles.flatMap((p) => profileAccountMappings.listByProfile(p.id).map((m) => m.plaid_account_id)));
+    const accounts = plaidAccounts.listByOwnerAll(userId);
 
     return render(reply, "dashboard", {
       title: "plaid-importer",
       authed: true,
       isAdmin,
       connectionCount: items.length,
+      accountCount: accounts.filter((a) => a.access_status !== "deselected").length,
       relinkCount: items.filter((i) => i.status === "requires_relink").length,
       connectionSyncs,
+      nextSyncAt: upcoming.length ? Math.min(...upcoming) : null,
       importedTotals,
-      profileCount: profiles.listByOwner(userId).length,
+      outcomes: outcomeSummary(since(30)),
+      daily: dailySeries(runs, 30, now, tz),
+      byConnection: byConnection(
+        syncAccountResults.importedByItemSince(userId, now - 30 * DAY_MS),
+        items.map((i) => ({ id: i.id, label: i.institution_name ?? "?" })),
+      ),
+      coverage: coverage(accounts, mapped),
+      profileCount: userProfiles.length,
       // Other registered users (excluding the viewing admin); null for non-admins.
       otherUsers: isAdmin ? Math.max(0, users.count() - 1) : null,
     });

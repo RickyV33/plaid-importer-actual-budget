@@ -15,7 +15,7 @@ devcontainer exec --workspace-folder . npx tsx scripts/screenshots.ts "$OUT"
 
 mkdir -p docs/screenshots
 for page in "${PAGES[@]}"; do
-  "$CHROME" --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=2 \
+  TZ=America/Chicago "$CHROME" --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=2 \
     --window-size=1112,813 --virtual-time-budget=4000 \
     --screenshot="$PWD/docs/screenshots/$page.png" "file://$PWD/$OUT/$page.html" 2>/dev/null
   echo "captured docs/screenshots/$page.png"

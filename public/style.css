@@ -474,7 +474,7 @@ a.metric:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; 
   .panel { padding: 26px; }
   .hero-card { padding: 32px 38px; }
   .metric-grid { flex-direction: row; flex-wrap: wrap; }
-  .metric-grid .metric { flex: 1 1 200px; }
+  .metric-grid .metric { flex: 1 1 170px; }
   .bar-row { flex-wrap: nowrap; }
   .bar-label { flex: 0 0 34%; }
   .bar-track { order: 0; flex: 1 1 auto; }
