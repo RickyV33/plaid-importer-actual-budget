@@ -6,8 +6,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 
 import { config } from "../config.js";
 import { clientMessages, LOCALE_COOKIE, resolveLocale, translator, type Translate } from "../i18n/index.js";
-import { dismissedBanners, plaidItems, profiles, schedules, syncAccountResults } from "../db/queries.js";
-import { healthIncidents, type HealthKind } from "../insights/health.js";
+import { bannersFor } from "../api/banners.js";
 import { safeTimeZone } from "../insights/time.js";
 import { formatVersion } from "../version.js";
 import { makeFormat } from "./format.js";
@@ -24,67 +23,17 @@ const eta = new Eta({
 // happens here rather than in the template so the view stays free of logic.
 const displayVersion = formatVersion(config.appVersion);
 
-/** Keys of banners that are currently active in the app. */
-const ACTIVE_BANNER_KEYS = ["schedule_migration_v1"] as const;
-
-type Banner = { key: string; type: "info" | "warn" | "error" };
-
 /** A banner ready for the layout: its message resolved, and an optional link to the fix. */
-type ShownBanner = Banner & { message: string; href?: string; linkLabel?: string };
+type ShownBanner = { key: string; type: string; message: string; href?: string | undefined; linkLabel?: string | undefined };
 
-const ACTIVE_BANNERS: Banner[] = [
-  { key: "schedule_migration_v1", type: "warn" },
-];
-
-/** Where each health banner sends you, and the label of that link. */
-const HEALTH_FIX: Record<HealthKind, { type: Banner["type"]; href: string; message: string; link: string }> = {
-  actual_unreachable: { type: "error", href: "/profiles", message: "health.actualUnreachable", link: "health.fixProfile" },
-  relink: { type: "error", href: "/connections", message: "health.relink", link: "health.fixRelink" },
-  import_failed: { type: "warn", href: "/history", message: "health.importFailed", link: "health.fixHistory" },
-};
-
-/** Connection-health banners first (they need action), then the named ones. */
-function getBannersForUser(userId: number, t: Translate): ShownBanner[] {
-  let dismissed: Set<string>;
-  try {
-    dismissed = new Set(dismissedBanners.listByUser(userId).map((b) => b.banner_key));
-  } catch {
-    return [];
-  }
-  return [...healthBanners(userId, dismissed, t), ...namedBanners(userId, dismissed, t)];
-}
-
-function healthBanners(userId: number, dismissed: Set<string>, t: Translate): ShownBanner[] {
-  try {
-    const incidents = healthIncidents(
-      syncAccountResults.latestForProfilesByOwner(userId),
-      profiles.listByOwner(userId),
-      plaidItems.listByOwner(userId).filter((i) => i.status === "requires_relink"),
-      t("health.unknownBank"),
-    );
-    return incidents
-      .filter((i) => !dismissed.has(i.key))
-      .map((i) => {
-        const fix = HEALTH_FIX[i.kind];
-        return { key: i.key, type: fix.type, message: t(fix.message, { name: i.subject }), href: fix.href, linkLabel: t(fix.link) };
-      });
-  } catch {
-    return [];
-  }
-}
-
-function namedBanners(userId: number, dismissed: Set<string>, t: Translate): ShownBanner[] {
-  try {
-    return ACTIVE_BANNERS.filter((b) => {
-      if (dismissed.has(b.key)) return false;
-      if (b.key === "schedule_migration_v1") {
-        return schedules.listByOwner(userId).some((s) => s.interval_hours !== null && s.days_of_week === null);
-      }
-      return true;
-    }).map((b) => ({ ...b, message: t(`banners.${b.key}`) }));
-  } catch {
-    return [];
-  }
+function shownBanners(userId: number, t: Translate): ShownBanner[] {
+  return bannersFor(userId).map((b) => ({
+    key: b.key,
+    type: b.type,
+    message: t(b.message, { ...b.vars, name: b.vars?.name || t("health.unknownBank") }),
+    href: b.href,
+    linkLabel: b.link ? t(b.link) : undefined,
+  }));
 }
 
 export function render(
@@ -96,7 +45,7 @@ export function render(
   const t = translator(locale);
 
   const userId = reply.request?.session?.userId as number | undefined;
-  const banners = userId ? getBannersForUser(userId, t) : [];
+  const banners = userId ? shownBanners(userId, t) : [];
 
   const enriched = {
     ...data,
@@ -123,5 +72,3 @@ export function renderPartial(template: string, data: Record<string, unknown> = 
   return eta.render(template, data);
 }
 
-// Re-export active banner keys so routes can reference them without importing DB.
-export { ACTIVE_BANNER_KEYS };

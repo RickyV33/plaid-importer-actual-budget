@@ -3,18 +3,13 @@ import type { FastifyInstance } from "fastify";
 import { requireAdmin } from "../auth/middleware.js";
 import {
   INITIAL_HISTORY_DAYS_KEY,
-  profiles,
   REGISTRATION_SECRET_KEY,
   settings,
   SYNC_RATELIMIT_MAX_KEY,
   SYNC_RATELIMIT_WINDOW_HOURS_KEY,
 } from "../db/queries.js";
-import {
-  effectiveInitialHistoryDays,
-  MAX_HISTORY_DAYS,
-  MIN_HISTORY_DAYS,
-  validateInitialHistoryDays,
-} from "../plaid/history.js";
+import { validateInitialHistoryDays } from "../plaid/history.js";
+import { settingsFor } from "../api/settings.js";
 import { render } from "../views/render.js";
 
 function viewData(extra: { saved?: boolean; errorKey?: string | null }) {
@@ -22,21 +17,7 @@ function viewData(extra: { saved?: boolean; errorKey?: string | null }) {
     title: "Settings",
     authed: true,
     isAdmin: true,
-    currentSecret: settings.get(REGISTRATION_SECRET_KEY) ?? null,
-    syncMax: settings.get(SYNC_RATELIMIT_MAX_KEY) ?? "",
-    syncWindowHours: settings.get(SYNC_RATELIMIT_WINDOW_HOURS_KEY) ?? "",
-    // Always a valid in-range number: the view shows the window actually in
-    // effect, which is the default whenever the row is unset or unparseable.
-    initialHistoryDays: effectiveInitialHistoryDays(),
-    minHistoryDays: MIN_HISTORY_DAYS,
-    maxHistoryDays: MAX_HISTORY_DAYS,
-    allProfiles: profiles.listAllWithOwner().map((p) => ({
-      id: p.id,
-      name: p.name,
-      owner: p.owner_username,
-      serverUrl: p.server_url,
-      budgetId: p.budget_id,
-    })),
+    ...settingsFor(),
     saved: extra.saved ?? false,
     errorKey: extra.errorKey ?? null,
   };

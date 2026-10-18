@@ -4,7 +4,8 @@ import { z } from "zod";
 import { currentUser, requireUserId } from "../auth/middleware.js";
 import { plaidItems, schedules } from "../db/queries.js";
 import { nextOccurrence } from "../scheduler/recurrence.js";
-import { render } from "../views/render.js";
+import { scheduleFormFor, schedulesFor } from "../api/schedules.js";
+import { render, viewerTimeZone } from "../views/render.js";
 
 const cadenceSchema = z.object({
   name: z.string().optional(),
@@ -31,39 +32,11 @@ export function registerScheduleRoutes(app: FastifyInstance): void {
   app.get("/schedules", async (req, reply) => {
     const userId = requireUserId(req, reply);
     if (userId === undefined) return;
-
-    const ownerItems = plaidItems.listByOwner(userId);
-    const itemName = new Map(ownerItems.map((i) => [i.id, i.institution_name ?? i.id]));
-
-    const rows = schedules.listByOwner(userId).map((s) => ({
-      id: s.id,
-      name: s.name,
-      isLegacy: s.days_of_week === null,
-      intervalHours: s.interval_hours,
-      daysOfWeek: s.days_of_week ? (JSON.parse(s.days_of_week) as number[]) : null,
-      timeOfDay: s.time_of_day,
-      repeatWeeks: s.repeat_weeks,
-      timezone: s.timezone,
-      enabled: s.enabled === 1,
-      lastRunAt: s.last_run_at,
-      nextRunAt: s.next_run_at,
-      connectionNames: (() => {
-        try {
-          return (JSON.parse(s.plaid_item_ids) as string[]).map((id) => itemName.get(id) ?? id);
-        } catch {
-          return [];
-        }
-      })(),
-    }));
-
-    const connections = ownerItems.map((i) => ({ id: i.id, name: i.institution_name ?? i.id }));
-
     return render(reply, "schedules", {
       title: "Schedules",
       authed: true,
       isAdmin: currentUser(req)?.role === "admin",
-      schedules: rows,
-      connections,
+      ...schedulesFor(userId, Date.now(), viewerTimeZone(req)),
       error: null,
     });
   });
@@ -71,15 +44,11 @@ export function registerScheduleRoutes(app: FastifyInstance): void {
   app.get("/schedules/new", async (req, reply) => {
     const userId = requireUserId(req, reply);
     if (userId === undefined) return;
-
-    const ownerItems = plaidItems.listByOwner(userId);
-    const connections = ownerItems.map((i) => ({ id: i.id, name: i.institution_name ?? i.id }));
-
     return render(reply, "schedules_new", {
       title: "New Schedule",
       authed: true,
       isAdmin: currentUser(req)?.role === "admin",
-      connections,
+      ...scheduleFormFor(userId, null),
       error: null,
     });
   });
@@ -115,37 +84,13 @@ export function registerScheduleRoutes(app: FastifyInstance): void {
   app.get<{ Params: { id: string } }>("/schedules/:id/edit", async (req, reply) => {
     const userId = requireUserId(req, reply);
     if (userId === undefined) return;
-
-    const s = schedules.getOwned(Number.parseInt(req.params.id, 10), userId);
-    if (!s) return reply.code(404).send({ error: "not_found" });
-
-    const ownerItems = plaidItems.listByOwner(userId);
-    const connections = ownerItems.map((i) => ({ id: i.id, name: i.institution_name ?? i.id }));
-
-    // Best-effort pre-populate for legacy schedules
-    let checkedItemIds: string[];
-    try {
-      checkedItemIds = JSON.parse(s.plaid_item_ids) as string[];
-    } catch {
-      checkedItemIds = [];
-    }
-
-    const prefill = {
-      name: s.name ?? "",
-      daysOfWeek: s.days_of_week ? (JSON.parse(s.days_of_week) as number[]) : [1, 2, 3, 4, 5],
-      timeOfDay: s.time_of_day ?? inferTimeOfDay(s.next_run_at),
-      repeatWeeks: s.repeat_weeks ?? 1,
-      timezone: s.timezone ?? "",
-      checkedItemIds,
-    };
-
+    const form = scheduleFormFor(userId, Number.parseInt(req.params.id, 10));
+    if (!form) return reply.code(404).send({ error: "not_found" });
     return render(reply, "schedules_edit", {
       title: "Edit Schedule",
       authed: true,
       isAdmin: currentUser(req)?.role === "admin",
-      scheduleId: s.id,
-      connections,
-      prefill,
+      ...form,
       error: null,
     });
   });
@@ -192,13 +137,4 @@ export function registerScheduleRoutes(app: FastifyInstance): void {
     schedules.remove(s.id);
     return reply.code(204).send();
   });
-}
-
-/** Infer a best-guess "HH:MM" time from a stored next_run_at UTC epoch. */
-function inferTimeOfDay(nextRunAt: number | null): string {
-  if (!nextRunAt) return "09:00";
-  const d = new Date(nextRunAt);
-  const h = String(d.getUTCHours()).padStart(2, "0");
-  const m = String(d.getUTCMinutes()).padStart(2, "0");
-  return `${h}:${m}`;
 }
