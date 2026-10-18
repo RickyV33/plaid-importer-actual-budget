@@ -21,7 +21,6 @@ export const es: Record<string, string> = {
   "common.cancel": "Cancelar",
   "common.edit": "Editar",
   "common.delete": "Eliminar",
-  "common.networkError": "Error de red: {msg}",
 
   // auth
   "login.title": "Iniciar sesión",
@@ -42,7 +41,6 @@ export const es: Record<string, string> = {
 
   // settings
   "settings.title": "Ajustes",
-  "settings.secretUpdated": "Secreto de registro actualizado.",
   "settings.regSecret": "Secreto de registro",
   "settings.regSecretHelp": "Los nuevos usuarios deben indicar este secreto para registrarse. Compártelo solo con personas que quieras invitar.",
   "settings.currentSecret": "Secreto actual",
@@ -65,10 +63,8 @@ export const es: Record<string, string> = {
   "settings.errHistoryInvalid": "El historial inicial debe ser un número entero de días entre {min} y {max}.",
   "settings.allProfiles": "Todos los perfiles",
   "settings.allProfilesHelp": "Los perfiles de todos los usuarios. Como administrador puedes eliminar cualquiera.",
-  "settings.profileOwner": "Propietario",
   "settings.noProfiles": "Aún no hay perfiles.",
   "settings.deleteProfileConfirm": "¿Eliminar este perfil? Se eliminan sus asignaciones; los datos del presupuesto se conservan.",
-  "settings.deleteProfileFailed": "No se pudo eliminar el perfil.",
 
   // dashboard (landing at /)
   "dashboard.eyebrow": "Resumen",
@@ -118,9 +114,6 @@ export const es: Record<string, string> = {
   "home.linkAccount": "Vincular una cuenta",
   "home.linkAnother": "Vincular otra cuenta",
   "home.selectAll": "Seleccionar todas las cuentas",
-  "home.relinkNeeded": "se requiere revincular",
-  "home.active": "activa",
-  "home.lastSync": "última sincronización {when}",
   "home.neverSynced": "nunca sincronizada",
   "home.relink": "Revincular",
   "home.manageAccounts": "Administrar cuentas",
@@ -140,27 +133,17 @@ export const es: Record<string, string> = {
   "home.pendingHelp": "Cuando está activado, las transacciones que aún no se han confirmado se importan como no conciliadas y se actualizan en su lugar al confirmarse. Desactivado (predeterminado) espera a que la transacción se confirme antes de importarla, lo que evita duplicados por cambios de importe como propinas o retenciones de gasolina.",
   // home: client JS
   "home.syncing": "sincronizando…",
-  "home.syncResult": "Sincronización {status}: se importaron {count} transacciones.",
-  "home.skipped": "Omitidas (límite alcanzado): {list}",
-  "home.skippedItem": "{name} (reintenta en ~{minutes} min)",
-  "home.syncFailed": "Error de sincronización: {error}",
   "home.pickAccount": "Elige al menos una cuenta para sincronizar.",
   "home.connImported": "Importadas {count} transacción(es)",
   "home.connSkipped": "Omitida (límite de sincronización alcanzado): reintenta en ~{minutes} min",
-  "home.dismiss": "Descartar",
   "home.linkTokenError": "No se pudo obtener un token de vinculación. Revisa los registros del servidor.",
-  "home.exchangeFailed": "Falló el intercambio ({status}). Revisa los registros del servidor.",
   "home.plaidExited": "Plaid Link se cerró: {msg}",
   "home.removeConfirm": "¿Quitar {institution}? Esto detiene la sincronización y se desconecta de Plaid.",
   "home.removeFailed": "No se pudo quitar esta conexión.",
   "home.accountRemoveConfirm": "¿Quitar {name}? Esto elimina la cuenta y sus asignaciones. Volverá si la añades de nuevo desde tu banco.",
   "home.accountRemoveFailed": "No se pudo quitar esta cuenta.",
-  "home.relinkTokenError": "No se pudo obtener un token de actualización.",
   "home.mappingSaveError": "No se pudo guardar la asignación. Revisa los registros del servidor.",
-  "home.pendingUpdateError": "No se pudo actualizar el ajuste.",
   "home.deleteProfileConfirm": "¿Eliminar el perfil \"{name}\"? Se eliminan sus asignaciones; las transacciones ya presentes en su presupuesto se conservan.",
-  "home.deleteProfileFailed": "No se pudo eliminar el perfil.",
-  "home.thisConnection": "esta conexión",
 
   // profile form
   "profile.newTitle": "Nuevo perfil",
@@ -192,11 +175,8 @@ export const es: Record<string, string> = {
   "schedules.desc": "Ejecuta sincronizaciones automáticamente en una programación recurrente; las ejecuciones programadas se etiquetan en el Historial. Sincronizar una cuenta la actualiza en todos los perfiles que la tienen asignada, con una sola descarga.",
   "schedules.none": "Aún no hay programaciones.",
   "schedules.newDesc": "Elige qué conexiones bancarias sincronizar y cuándo.",
-  "schedules.enabled": "activada",
-  "schedules.disabled": "desactivada",
   "schedules.statusActive": "Activa",
   "schedules.statusPaused": "Pausada",
-  "schedules.connectionsCount": "{count} conexión(es): {names}",
   "schedules.next": "próxima {when}",
   "schedules.enable": "Activar",
   "schedules.disable": "Desactivar",
@@ -208,16 +188,12 @@ export const es: Record<string, string> = {
   "schedules.create": "Crear programación",
   "schedules.tip": "Cada conexión se descarga una vez y se reparte a todos los perfiles que asignan sus cuentas.",
   "schedules.deleteConfirm": "¿Eliminar esta programación?",
-  "schedules.deleteFailed": "No se pudo eliminar la programación.",
   // schedule recurrence form
   "schedules.name": "Nombre",
   "schedules.namePlaceholder": "Opcional — usa los nombres de las conexiones por defecto",
   "schedules.days": "Días",
-  "schedules.timeRepeat": "Hora y repetición",
-  "schedules.at": "a las",
   "schedules.timezone": "Zona horaria",
   "schedules.timezoneHelp": "Detectada automáticamente — verifica si es incorrecta.",
-  "schedules.repeatEvery": "cada",
   "schedules.repeatWeeksUnit": "semana(s)",
   "schedules.day.sun": "Dom",
   "schedules.day.mon": "Lun",
@@ -237,9 +213,6 @@ export const es: Record<string, string> = {
   // history
   "history.title": "Historial de sincronización",
   "history.none": "Aún no hay sincronizaciones.",
-  "history.started": "Inicio",
-  "history.trigger": "Origen",
-  "history.scope": "Alcance",
   "history.status": "Estado",
   "history.imported": "Importadas",
   "history.success": "correcta",
@@ -247,8 +220,6 @@ export const es: Record<string, string> = {
   "history.running": "en curso",
   "history.perAccount": "resultados por cuenta",
   "history.reason": "Motivo",
-  "history.newer": "← más recientes",
-  "history.older": "más antiguas →",
 
   // insights (shared data marks)
   "insights.chart.imported": "{count} importadas",

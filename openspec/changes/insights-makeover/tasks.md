@@ -59,7 +59,7 @@
 
 ## 8. Strings
 
-- [ ] 8.1 Add page strings (`connections.*`, `profiles.*`, `schedules.*`, `history.*`, `settings.*`, `health.*` client use) in en + es; drop keys no longer used; parity test green
+- [x] 8.1 Add page strings (`connections.*`, `profiles.*`, `schedules.*`, `history.*`, `settings.*`, `health.*` client use) in en + es; drop keys no longer used; parity test green
 
 ## 9. Screenshots
 

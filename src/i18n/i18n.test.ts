@@ -47,5 +47,5 @@ test("translator: returns localized strings with English fallback", () => {
 
 test("translator: interpolates params", () => {
   assert.equal(translator("en")("home.budget", { id: "abc" }), "budget abc");
-  assert.equal(translator("es")("home.skippedItem", { name: "Chase", minutes: 5 }), "Chase (reintenta en ~5 min)");
+  assert.equal(translator("en")("connections.feeds", { count: 2 }), "feeds 2 budget(s)");
 });

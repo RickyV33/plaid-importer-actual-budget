@@ -21,7 +21,6 @@ export const en: Record<string, string> = {
   "common.cancel": "Cancel",
   "common.edit": "Edit",
   "common.delete": "Delete",
-  "common.networkError": "Network error: {msg}",
 
   // auth
   "login.title": "Sign in",
@@ -42,7 +41,6 @@ export const en: Record<string, string> = {
 
   // settings
   "settings.title": "Settings",
-  "settings.secretUpdated": "Registration secret updated.",
   "settings.regSecret": "Registration secret",
   "settings.regSecretHelp": "New users must supply this secret to register. Share it only with people you want to invite.",
   "settings.currentSecret": "Current secret",
@@ -65,10 +63,8 @@ export const en: Record<string, string> = {
   "settings.errHistoryInvalid": "Initial history must be a whole number of days between {min} and {max}.",
   "settings.allProfiles": "All profiles",
   "settings.allProfilesHelp": "Every user's profiles. As an admin you can remove any of them.",
-  "settings.profileOwner": "Owner",
   "settings.noProfiles": "No profiles yet.",
   "settings.deleteProfileConfirm": "Delete this profile? Its mappings are removed; budget data is kept.",
-  "settings.deleteProfileFailed": "Could not delete profile.",
 
   // dashboard (landing at /)
   "dashboard.eyebrow": "Overview",
@@ -118,9 +114,6 @@ export const en: Record<string, string> = {
   "home.linkAccount": "Link an account",
   "home.linkAnother": "Link another account",
   "home.selectAll": "Select all accounts",
-  "home.relinkNeeded": "re-link needed",
-  "home.active": "active",
-  "home.lastSync": "last sync {when}",
   "home.neverSynced": "never synced",
   "home.relink": "Re-link",
   "home.manageAccounts": "Manage accounts",
@@ -140,27 +133,17 @@ export const en: Record<string, string> = {
   "home.pendingHelp": "When on, transactions that haven't posted yet are imported as uncleared and updated in place once they post. Off (the default) waits until a transaction posts before importing, which avoids duplicates from amount changes like tips or gas holds.",
   // home: client JS
   "home.syncing": "syncing…",
-  "home.syncResult": "Sync {status}: imported {count} transactions.",
-  "home.skipped": "Skipped (sync limit reached): {list}",
-  "home.skippedItem": "{name} (retry in ~{minutes} min)",
-  "home.syncFailed": "Sync failed: {error}",
   "home.pickAccount": "Pick at least one account to sync.",
   "home.connImported": "Imported {count} transaction(s)",
   "home.connSkipped": "Skipped (sync limit reached): retry in ~{minutes} min",
-  "home.dismiss": "Dismiss",
   "home.linkTokenError": "Could not get a link token. Check server logs.",
-  "home.exchangeFailed": "Exchange failed ({status}). Check server logs.",
   "home.plaidExited": "Plaid Link exited: {msg}",
   "home.removeConfirm": "Remove {institution}? This stops syncing and disconnects from Plaid.",
   "home.removeFailed": "Could not remove this connection.",
   "home.accountRemoveConfirm": "Remove {name}? This deletes the account and its mappings. It will return if you re-add it from your bank.",
   "home.accountRemoveFailed": "Could not remove this account.",
-  "home.relinkTokenError": "Could not get an update-mode link token.",
   "home.mappingSaveError": "Could not save mapping. Check server logs.",
-  "home.pendingUpdateError": "Could not update setting.",
   "home.deleteProfileConfirm": "Delete profile \"{name}\"? Its mappings are removed; transactions already in its budget are kept.",
-  "home.deleteProfileFailed": "Could not delete profile.",
-  "home.thisConnection": "this connection",
 
   // profile form
   "profile.newTitle": "New profile",
@@ -192,11 +175,8 @@ export const en: Record<string, string> = {
   "schedules.desc": "Run syncs automatically on a recurring schedule; scheduled runs are tagged in History. Syncing an account updates it in every profile that has it mapped, from a single pull.",
   "schedules.none": "No schedules yet.",
   "schedules.newDesc": "Choose which bank connections to sync and when.",
-  "schedules.enabled": "enabled",
-  "schedules.disabled": "disabled",
   "schedules.statusActive": "Active",
   "schedules.statusPaused": "Paused",
-  "schedules.connectionsCount": "{count} connection(s): {names}",
   "schedules.next": "next {when}",
   "schedules.enable": "Enable",
   "schedules.disable": "Disable",
@@ -208,16 +188,12 @@ export const en: Record<string, string> = {
   "schedules.create": "Create schedule",
   "schedules.tip": "Each connection is pulled once and fans out to every profile that maps its accounts.",
   "schedules.deleteConfirm": "Delete this schedule?",
-  "schedules.deleteFailed": "Could not delete schedule.",
   // schedule recurrence form
   "schedules.name": "Name",
   "schedules.namePlaceholder": "Optional — defaults to the connection names",
   "schedules.days": "Days",
-  "schedules.timeRepeat": "Time & Repeat",
-  "schedules.at": "at",
   "schedules.timezone": "Timezone",
   "schedules.timezoneHelp": "Auto-detected — verify if incorrect.",
-  "schedules.repeatEvery": "every",
   "schedules.repeatWeeksUnit": "week(s)",
   "schedules.day.sun": "Sun",
   "schedules.day.mon": "Mon",
@@ -237,9 +213,6 @@ export const en: Record<string, string> = {
   // history
   "history.title": "Sync history",
   "history.none": "No sync runs yet.",
-  "history.started": "Started",
-  "history.trigger": "Trigger",
-  "history.scope": "Scope",
   "history.status": "Status",
   "history.imported": "Imported",
   "history.success": "success",
@@ -247,8 +220,6 @@ export const en: Record<string, string> = {
   "history.running": "running",
   "history.perAccount": "per-account results",
   "history.reason": "Reason",
-  "history.newer": "← newer",
-  "history.older": "older →",
 
   // insights (shared data marks)
   "insights.chart.imported": "{count} imported",
