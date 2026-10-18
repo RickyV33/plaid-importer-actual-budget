@@ -5,6 +5,7 @@ COPY package.json package-lock.json* ./
 RUN npm ci
 COPY tsconfig.json ./
 COPY src ./src
+COPY web ./web
 RUN npm run build
 # Strip devDeps so only runtime libs ship to the runner stage.
 RUN npm prune --omit=dev

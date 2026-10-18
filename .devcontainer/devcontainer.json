@@ -4,9 +4,10 @@
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
-  "forwardPorts": [8080],
+  "forwardPorts": [8080, 5173],
   "portsAttributes": {
-    "8080": { "label": "plaid-importer", "onAutoForward": "notify" }
+    "8080": { "label": "plaid-importer", "onAutoForward": "notify" },
+    "5173": { "label": "vite (app modules)", "onAutoForward": "silent" }
   },
   "postCreateCommand": "npm install",
   "containerEnv": { "NODE_ENV": "development" },

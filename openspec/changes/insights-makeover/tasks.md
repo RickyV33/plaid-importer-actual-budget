@@ -43,7 +43,7 @@
 - [x] 6.4 Shell: header (title, version, theme pill, language select, sign-out form), tab strip with `aria-current`, banners from `/api/banners` with dismiss, page transition
 - [x] 6.5 Components: `PageIntro`, `Panel`, `SectionHead`, `Notice`, `HeroNumber`, `BarList` (ported), `ColumnChart`, `Meter`, `FreshnessChip`, `Row`, `ConfirmButton`, `EmptyState`
 - [x] 6.6 `plaid.ts`: load Plaid's script once; `openLink(token, handlers)`
-- [ ] 6.7 Build + deploy: Dockerfile copies `web/` and builds it; Fastify serves `dist/web` at `/static/app/`; `.vscode/tasks.json` runs Fastify + Vite together
+- [x] 6.7 Build + deploy: Dockerfile copies `web/` and builds it; Fastify serves `dist/web` at `/static/app/`; `.vscode/tasks.json` runs Fastify + Vite together
 
 ## 7. Pages
 

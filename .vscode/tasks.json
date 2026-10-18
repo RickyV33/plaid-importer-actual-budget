@@ -4,17 +4,44 @@
     {
       "label": "dev: server (watch)",
       "type": "shell",
-      "command": "npm run dev",
+      "command": "VITE_DEV_SERVER=http://localhost:5173 npm run dev",
       "problemMatcher": [],
       "isBackground": true,
-      "presentation": { "reveal": "always", "panel": "dedicated" },
-      "detail": "tsx watch src/server.ts on :8080 (runs in the dev container when attached)"
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "detail": "tsx watch src/server.ts on :8080, loading the app from Vite (runs in the dev container when attached)"
+    },
+    {
+      "label": "dev: app (vite)",
+      "type": "shell",
+      "command": "npm run dev:web",
+      "problemMatcher": [],
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "detail": "Vite dev server on :5173 for the app's modules and hot reload; open the app on :8080"
+    },
+    {
+      "label": "dev: all",
+      "dependsOn": [
+        "dev: server (watch)",
+        "dev: app (vite)"
+      ],
+      "problemMatcher": [],
+      "detail": "Fastify and Vite together; open http://localhost:8080"
     },
     {
       "label": "test: all",
       "type": "shell",
       "command": "npm test",
-      "group": { "kind": "test", "isDefault": true },
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
       "problemMatcher": [],
       "detail": "node --test over src/**/*.test.ts via tsx"
     },
@@ -29,10 +56,15 @@
     {
       "label": "typecheck",
       "type": "shell",
-      "command": "npx tsc --noEmit",
-      "group": { "kind": "build", "isDefault": false },
-      "problemMatcher": ["$tsc"],
-      "detail": "Type-check without emitting (stands in for lint/format)"
+      "command": "npm run typecheck",
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "problemMatcher": [
+        "$tsc"
+      ],
+      "detail": "Type-check the server and the app (stands in for lint/format)"
     },
     {
       "label": "migrate",
@@ -46,8 +78,10 @@
       "type": "shell",
       "command": "npm run build",
       "group": "build",
-      "problemMatcher": ["$tsc"],
-      "detail": "tsc + copy .eta/.sql assets into dist/"
+      "problemMatcher": [
+        "$tsc"
+      ],
+      "detail": "tsc + copy .eta/.sql assets into dist/, then vite build into dist/web"
     },
     {
       "label": "build image (deploy.sh)",
@@ -61,7 +95,10 @@
       "type": "shell",
       "command": "exec $SHELL",
       "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
       "detail": "Open an interactive shell in the task environment"
     }
   ]
