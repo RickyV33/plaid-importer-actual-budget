@@ -116,6 +116,8 @@ account, then they're ignored. The `ACTUAL_*` values are optional defaults for
 the New-profile form. Manage logins and budgets (profiles) in the app. Full list
 with defaults is in [`.env.example`](.env.example).
 
+## Credits
+
 Styling and inspiration: [Immich Insights](https://github.com/laurinml/Immich-Insights)
 by laurinml (MIT), by way of media-insights. Icons are [Feather](https://feathericons.com/)
 (MIT); fonts are OFL. Notices: [THIRD_PARTY_NOTICES.txt](public/THIRD_PARTY_NOTICES.txt).
