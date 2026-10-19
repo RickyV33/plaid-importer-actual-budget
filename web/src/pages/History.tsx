@@ -1,6 +1,6 @@
 // Every sync run: a 30-day summary and a 90-day chart (both independent of
-// paging), then the runs, newest first. A run that imported something or failed
-// opens to show each account's result.
+// paging), then the runs, newest first. Every run opens to show each account's
+// result.
 
 import { useState } from "react";
 import { FiChevronLeft, FiChevronRight, FiCheck } from "react-icons/fi";
@@ -103,7 +103,6 @@ export function History({ offset }: { offset: number }) {
 function RunRow({ run }: { run: HistoryRunView }) {
   const { t, num, dateTime } = useI18n();
   const [open, setOpen] = useState(false);
-  const expandable = run.results.length > 0 && (run.totalImported > 0 || run.status === "failure");
   const detailId = `run-${run.id}`;
   const tone = STATUS_TONE[run.status as keyof typeof STATUS_TONE] ?? "";
 
@@ -124,7 +123,6 @@ function RunRow({ run }: { run: HistoryRunView }) {
     </>
   );
 
-  if (!expandable) return <li className="row">{main}</li>;
   return (
     <>
       <li className="row" data-disclosure aria-expanded={open}>
@@ -135,28 +133,32 @@ function RunRow({ run }: { run: HistoryRunView }) {
       </li>
       {open && (
         <li id={detailId} className="row-detail">
-          <div className="table-scroll">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>{t("home.account")}</th>
-                  <th>{t("history.status")}</th>
-                  <th className="num">{t("history.imported")}</th>
-                  <th>{t("history.reason")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {run.results.map((r) => (
-                  <tr key={r.id}>
-                    <td>{r.accountName ?? r.plaid_account_id}</td>
-                    <td>{t(`history.${r.status}`)}</td>
-                    <td className="num">{num(r.txns_imported)}</td>
-                    <td className="muted">{r.reason && r.reason !== "pulled" ? r.reason : ""}</td>
+          {run.results.length === 0 ? (
+            <p className="muted small">{t("history.noResults")}</p>
+          ) : (
+            <div className="table-scroll">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>{t("home.account")}</th>
+                    <th>{t("history.status")}</th>
+                    <th className="num">{t("history.imported")}</th>
+                    <th>{t("history.reason")}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {run.results.map((r) => (
+                    <tr key={r.id}>
+                      <td>{r.accountName ?? r.plaid_account_id}</td>
+                      <td>{t(`history.${r.status}`)}</td>
+                      <td className="num">{num(r.txns_imported)}</td>
+                      <td className="muted">{r.reason && r.reason !== "pulled" ? r.reason : ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </li>
       )}
     </>

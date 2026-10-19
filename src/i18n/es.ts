@@ -219,6 +219,7 @@ export const es: Record<string, string> = {
   "history.failure": "fallida",
   "history.running": "en curso",
   "history.perAccount": "resultados por cuenta",
+  "history.noResults": "No se registraron resultados por cuenta en esta ejecución.",
   "history.reason": "Motivo",
 
   // insights (shared data marks)
