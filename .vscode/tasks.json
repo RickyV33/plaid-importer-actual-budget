@@ -4,7 +4,7 @@
     {
       "label": "dev: server (watch)",
       "type": "shell",
-      "command": "VITE_DEV_SERVER=http://localhost:5173 npm run dev",
+      "command": "VITE_DEV_SERVER=http://localhost:5173 npm run dev:server",
       "problemMatcher": [],
       "isBackground": true,
       "presentation": {
@@ -17,7 +17,15 @@
       "label": "dev: app (vite)",
       "type": "shell",
       "command": "npm run dev:web",
-      "problemMatcher": [],
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": { "regexp": "^__never__$" },
+        "background": {
+          "activeBegins": true,
+          "beginsPattern": "VITE",
+          "endsPattern": "ready in"
+        }
+      },
       "isBackground": true,
       "presentation": {
         "reveal": "always",
@@ -27,12 +35,15 @@
     },
     {
       "label": "dev: all",
-      "dependsOn": [
-        "dev: server (watch)",
-        "dev: app (vite)"
-      ],
+      "type": "shell",
+      "command": "npm run dev",
       "problemMatcher": [],
-      "detail": "Fastify and Vite together; open http://localhost:8080"
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "detail": "npm run dev: Vite and the server together; open http://localhost:8080"
     },
     {
       "label": "test: all",

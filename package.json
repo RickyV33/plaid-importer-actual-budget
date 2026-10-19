@@ -7,7 +7,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx scripts/dev.ts",
+    "dev:server": "tsx watch src/server.ts",
     "build": "tsc && npm run copy-assets && vite build --config web/vite.config.ts",
     "copy-assets": "mkdir -p dist/views dist/db/migrations && cp src/views/*.eta dist/views/ && cp src/db/migrations/*.sql dist/db/migrations/",
     "start": "node dist/server.js",

@@ -29,6 +29,12 @@ test("devShell: loads modules from the Vite dev server, with the React refresh p
   assert.ok(html.indexOf("@react-refresh") < html.indexOf("</head>"));
 });
 
+test("devShell: says so when the Vite dev server can't be reached", () => {
+  const html = devShell("<html><head></head><body></body></html>", "http://localhost:5173");
+  assert.match(html, /@vite\/client" onerror="viteMissing\(\)"/);
+  assert.match(html, /isn't answering at http:\/\/localhost:5173/);
+});
+
 test("every page URL is answered by the app shell", async (t) => {
   const app = Fastify();
   t.after(() => app.close());

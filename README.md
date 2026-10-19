@@ -93,13 +93,12 @@ the signed-in pages; sign-in pages are server-rendered. Run commands in the dev
 container:
 
 ```bash
-npm run dev                                  # server on :8080
-npm run dev:web                              # Vite on :5173 (modules + hot reload)
-VITE_DEV_SERVER=http://localhost:5173 npm run dev   # server loading the app from Vite
+npm run dev          # Vite (:5173) and the server (:8080) together; open :8080
 npm test && npm run typecheck && npm run build
 ```
 
-In VS Code, the **dev: all** task starts both; open http://localhost:8080.
+In VS Code, the **dev: all** task runs `npm run dev`; **Debug: dev server**
+starts Vite first, then the server under the debugger.
 
 ### Key settings (`.env`)
 

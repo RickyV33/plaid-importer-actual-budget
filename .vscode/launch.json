@@ -5,6 +5,7 @@
       "type": "node",
       "request": "launch",
       "name": "Debug: dev server",
+      "preLaunchTask": "dev: app (vite)",
       "runtimeExecutable": "tsx",
       "program": "${workspaceFolder}/src/server.ts",
       "envFile": "${workspaceFolder}/.env",

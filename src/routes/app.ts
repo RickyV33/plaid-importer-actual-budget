@@ -17,6 +17,11 @@ const ROOT = path.resolve(__dirname, "..", "..");
 export const APP_BUILD_DIR = path.join(ROOT, "dist", "web");
 export const APP_BASE = "/static/app/";
 
+// Dev-only, so English only: says why the page is blank when Vite isn't up.
+function viteMissingHtml(viteOrigin: string): string {
+  return `<div class="shell"><div class="notice error" role="alert"><div class="notice-body">The app's dev server isn't answering at ${viteOrigin}. Start the <code>dev: app (vite)</code> task (or <code>npm run dev:web</code>), or run <code>dev: all</code>, then reload.</div></div></div>`;
+}
+
 /**
  * In dev the shell loads the app's modules from the Vite dev server (Vite's
  * backend integration), so pages, API, cookies, and redirects all stay on this
@@ -31,7 +36,15 @@ window.$RefreshReg$ = () => {};
 window.$RefreshSig$ = () => (type) => type;
 window.__vite_plugin_react_preamble_installed__ = true;
 </script>
-<script type="module" src="${base}@vite/client"></script>`;
+<script>
+function viteMissing() {
+  var show = function () {
+    document.getElementById("root").innerHTML = ${JSON.stringify(viteMissingHtml(viteOrigin))};
+  };
+  document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", show) : show();
+}
+</script>
+<script type="module" src="${base}@vite/client" onerror="viteMissing()"></script>`;
   return template
     .replace("</head>", `${preamble}\n</head>`)
     .replace(/src="\/src\/main\.tsx"/, `src="${base}src/main.tsx"`);
