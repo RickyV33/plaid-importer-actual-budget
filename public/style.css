@@ -1,6 +1,9 @@
-/* Styling after Media Insights (itself after Immich Insights, MIT, laurinml):
-   Playfair Display headlines, DM Sans text, DM Mono labels, soft panels, a blue
-   accent. Mobile first; wider layouts are layered on with min-width queries. */
+/* Styling after Media Insights, itself after Immich Insights
+   (https://github.com/laurinml/Immich-Insights), Copyright (c) 2026 Laurin
+   (laurinml), MIT License; full notice in THIRD_PARTY_NOTICES.txt beside this
+   file. Playfair Display headlines, DM Sans text, DM Mono labels, soft panels,
+   a blue accent. Mobile first; wider layouts are layered on with min-width
+   queries. */
 
 /* ── fonts (vendored, OFL; see /static/fonts/LICENSE-*) ───────── */
 
