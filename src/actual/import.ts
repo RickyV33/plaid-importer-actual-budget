@@ -47,5 +47,15 @@ export async function importBatch(
   }
   const mapped = plaidTxns.map((t) => mapTransaction(t, actualAccountId));
   const result = (await api.importTransactions(actualAccountId, mapped)) as ImportOutcome;
+  // A normal API return can still contain per-transaction failures. Throw so
+  // the sync engine retains the journal and does not advance the item watermark.
+  // Retrying uses the same imported_id values, allowing Actual to deduplicate.
+  if (!result || !Array.isArray(result.errors) || !Array.isArray(result.added) || !Array.isArray(result.updated)) {
+    throw new Error("Actual returned an invalid import outcome");
+  }
+  if (result.errors.length > 0) {
+    // Do not include raw errors: they may contain transaction data or secrets.
+    throw new Error(`Actual import failed for ${result.errors.length} transaction(s); delivery retained for retry`);
+  }
   return result;
 }
