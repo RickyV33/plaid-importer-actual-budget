@@ -1,5 +1,6 @@
 import dns from "node:dns/promises";
 import net from "node:net";
+import { endpoint } from "./endpoint.js";
 
 export class UnsafeServerUrlError extends Error {}
 
@@ -43,7 +44,8 @@ function isBlockedIpv6(ip: string): boolean {
 }
 
 /**
- * Validate a profile's Actual server URL. Always requires https. When
+ * Validate a profile's Actual server URL. Requires HTTPS unless explicitly
+ * configured for an exact private-network HTTP endpoint. When
  * `blockPrivate` is true (opt-in SSRF guard), also rejects hosts that are — or
  * resolve to — loopback/private/link-local addresses. The guard is off by
  * default because a self-hosted Actual server is normally on the same LAN.
@@ -51,16 +53,22 @@ function isBlockedIpv6(ip: string): boolean {
  */
 export async function assertSafeServerUrl(
   raw: string,
-  opts?: { blockPrivate?: boolean },
+  opts?: { blockPrivate?: boolean; allowedServerUrl?: string; allowHttp?: boolean },
 ): Promise<URL> {
   let url: URL;
   try {
-    url = new URL(raw);
+    // Plain HTTP is permitted only for the exact operator-configured endpoint,
+    // never for arbitrary profile URLs. Intended for a private Docker network.
+    const allowHttp = Boolean(opts?.allowHttp && opts.allowedServerUrl);
+    url = new URL(endpoint(raw, allowHttp));
+    if (opts?.allowedServerUrl && endpoint(raw, allowHttp) !== endpoint(opts.allowedServerUrl, allowHttp)) {
+      throw new Error("Server URL is not the configured Actual endpoint.");
+    }
   } catch {
     throw new UnsafeServerUrlError("Server URL is not a valid URL.");
   }
 
-  if (url.protocol !== "https:") {
+  if (url.protocol !== "https:" && !opts?.allowHttp) {
     throw new UnsafeServerUrlError("Server URL must use https.");
   }
 

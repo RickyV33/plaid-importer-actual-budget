@@ -14,6 +14,7 @@ import {
   profileItemDelivery,
   profiles,
 } from "../db/queries.js";
+import { serverPasswordFor, sessionTokenFor } from "../profiles/endpoint.js";
 import { assertSafeServerUrl } from "../profiles/hostname.js";
 
 export function registerProfileRoutes(app: FastifyInstance): void {
@@ -29,12 +30,12 @@ export function registerProfileRoutes(app: FastifyInstance): void {
     const parsed = budgetsBody.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "invalid_body" });
     const serverPassword =
-      parsed.data.serverPassword.length > 0
-        ? parsed.data.serverPassword
-        : config.ACTUAL_SERVER_PASSWORD ?? "";
-    if (serverPassword.length === 0) return reply.code(400).send({ error: "password_required" });
+      serverPasswordFor(parsed.data.serverUrl, parsed.data.serverPassword, config.ACTUAL_SERVER_URL, config.ACTUAL_SERVER_PASSWORD);
+    if (!serverPassword && !sessionTokenFor(parsed.data.serverUrl, config.ACTUAL_SERVER_URL, config.ACTUAL_SESSION_TOKEN, config.ALLOW_HTTP_ACTUAL_SERVER === "true")) {
+      return reply.code(400).send({ error: "password_required" });
+    }
     try {
-      await assertSafeServerUrl(parsed.data.serverUrl, { blockPrivate: config.blockPrivateActualHosts });
+      await assertSafeServerUrl(parsed.data.serverUrl, { blockPrivate: config.blockPrivateActualHosts, allowedServerUrl: config.ACTUAL_SERVER_URL, allowHttp: config.ALLOW_HTTP_ACTUAL_SERVER === "true" });
     } catch {
       return reply.code(400).send({ error: "invalid_url" });
     }

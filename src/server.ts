@@ -13,6 +13,7 @@ import { runMigrations } from "./db/migrate.js";
 import { initCredentials, seedAdminFromEnv } from "./auth/credentials.js";
 import { registerScheduleRoutes } from "./routes/schedules.js";
 import { startScheduler } from "./scheduler/runner.js";
+import { originGuard } from "./auth/csrf.js";
 import { authPreHandler } from "./auth/middleware.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerLinkRoutes } from "./routes/link.js";
@@ -34,7 +35,7 @@ declare module "fastify" {
 
 export async function build() {
   const app = Fastify({
-    trustProxy: 1,
+    trustProxy: (_address: string, hop: number) => hop === 0,
     logger: {
       level: config.LOG_LEVEL,
       redact: {
@@ -81,6 +82,7 @@ export async function build() {
     return reply.send({ ok: true });
   });
 
+  app.addHook("preHandler", originGuard(config.APP_URL));
   app.addHook("preHandler", authPreHandler);
 
   await registerAuthRoutes(app);

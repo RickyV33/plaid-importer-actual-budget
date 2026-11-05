@@ -16,7 +16,7 @@ export function encrypt(plain: string): string {
 
 export function decrypt(b64: string): string {
   const raw = Buffer.from(b64, "base64");
-  if (raw.length < NONCE_LEN + TAG_LEN + 1) {
+  if (raw.length < NONCE_LEN + TAG_LEN) {
     throw new Error("ciphertext too short");
   }
   const nonce = raw.subarray(0, NONCE_LEN);

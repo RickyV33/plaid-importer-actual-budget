@@ -57,6 +57,9 @@ export async function seedAdminFromEnv(): Promise<void> {
   const username = config.APP_USER;
   const password = config.APP_PASSWORD;
   if (!username || !password) return;
+  if (password === "changeme" || password.length < 16) {
+    throw new Error("Initial administrator password must be unique and at least 16 characters");
+  }
 
   const adminId = await createUser(username, password, "admin");
   const claimed = plaidItems.backfillOwner(adminId);

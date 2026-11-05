@@ -38,7 +38,9 @@ export async function authPreHandler(req: FastifyRequest, reply: FastifyReply): 
 export function safeNextPath(raw: unknown): string {
   if (typeof raw !== "string" || raw.length === 0) return "/";
   if (!raw.startsWith("/")) return "/";
-  if (raw.startsWith("//")) return "/";
+  if (raw.startsWith("//") || /[\\\x00-\x20\x7f]/.test(raw)) return "/";
+  const base = "https://redirect.invalid";
+  if (new URL(raw, base).origin !== base) return "/";
   return raw;
 }
 

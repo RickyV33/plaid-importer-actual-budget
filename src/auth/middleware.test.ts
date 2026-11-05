@@ -50,3 +50,11 @@ test("authPreHandler: the allowlist and signed-in requests pass", async () => {
   assert.deepEqual(await gate("GET", "/static/app/index.js"), {});
   assert.deepEqual(await gate("GET", "/api/overview", true), {});
 });
+
+const { safeNextPath } = await import("./middleware.js");
+test("redirects reject external and ambiguous destinations", () => {
+  for (const input of ["//evil.example", "/\\evil.example", "https://evil.example", "/\n/evil.example", " /home", null]) {
+    assert.equal(safeNextPath(input), "/");
+  }
+  assert.equal(safeNextPath("/profiles?tab=accounts"), "/profiles?tab=accounts");
+});

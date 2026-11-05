@@ -240,7 +240,7 @@ type ItemPlan = {
   targetByPlaidAcct: Map<string, { mapping: { pending_visible: number; actual_account_id: string } }>;
 };
 
-async function drainProfile(args: DrainArgs): Promise<{ imported: number; anyFailure: boolean }> {
+export async function drainProfile(args: DrainArgs, actualSession: typeof withActual = withActual): Promise<{ imported: number; anyFailure: boolean }> {
   const { profile, targetItemIds, targetAccountIds, itemErrors, runId, log } = args;
 
   // Build this profile's per-item journal slices.
@@ -324,7 +324,7 @@ async function drainProfile(args: DrainArgs): Promise<{ imported: number; anyFai
 
   let imported = 0;
   try {
-    await withActual(connectionForProfile(profile), async (api) => {
+    await actualSession(connectionForProfile(profile), async (api) => {
       const accountIdsNeedingMap = new Set<string>([
         ...promotionsByActualAccount.keys(),
         ...removalsByActualAccount.keys(),
