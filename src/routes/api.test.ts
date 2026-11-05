@@ -163,3 +163,37 @@ test("POST /api/profiles: required fields, https only, password fallback, duplic
   const form = (await app.inject({ method: "GET", url: `/api/profiles/${ok.json().id}` })).json();
   assert.deepEqual(Object.keys(form.profile).sort(), ["budgetId", "id", "name", "serverUrl"]);
 });
+
+test("profile update cannot reuse saved credentials at a new endpoint", async () => {
+  const app = await appFor(member);
+  const created = await app.inject({ method: "POST", url: "/api/profiles", payload: {
+    name: "Credential binding", serverUrl: "https://original.example", budgetId: "binding", serverPassword: "original-secret",
+  } });
+  assert.equal(created.statusCode, 200);
+  const id = created.json().id;
+  const changed = await app.inject({ method: "PUT", url: `/api/profiles/${id}`, payload: {
+    name: "Credential binding", serverUrl: "https://replacement.example", budgetId: "binding", serverPassword: "",
+  } });
+  assert.equal(changed.statusCode, 400);
+  assert.equal(profiles.getOwned(id, member)?.server_url, "https://original.example");
+});
+
+test("OIDC session permits blank profile password only for the configured endpoint", async () => {
+  const { config } = await import("../config.js");
+  const saved = { url: config.ACTUAL_SERVER_URL, token: config.ACTUAL_SESSION_TOKEN, http: config.ALLOW_HTTP_ACTUAL_SERVER };
+  try {
+    config.ACTUAL_SERVER_URL = "http://actual-plaid:5006";
+    config.ACTUAL_SESSION_TOKEN = "test-session";
+    config.ALLOW_HTTP_ACTUAL_SERVER = "true";
+    const app = await appFor(member);
+    const body = { name: "OIDC test", serverUrl: config.ACTUAL_SERVER_URL, budgetId: "oidc-test", serverPassword: "" };
+    const created = await app.inject({ method: "POST", url: "/api/profiles", payload: body });
+    assert.equal(created.statusCode, 200);
+    const { decrypt } = await import("../crypto/tokens.js");
+    assert.equal(decrypt(profiles.getOwned(created.json().id, member)!.server_password_enc), "");
+    const forbidden = await app.inject({ method: "POST", url: "/api/profiles", payload: { ...body, serverUrl: "http://other:5006" } });
+    assert.equal(forbidden.statusCode, 400);
+  } finally {
+    config.ACTUAL_SERVER_URL = saved.url; config.ACTUAL_SESSION_TOKEN = saved.token; config.ALLOW_HTTP_ACTUAL_SERVER = saved.http;
+  }
+});

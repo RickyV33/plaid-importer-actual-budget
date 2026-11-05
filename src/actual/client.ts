@@ -3,6 +3,8 @@ import path from "node:path";
 
 import * as actual from "@actual-app/api";
 
+import { sessionTokenFor } from "../profiles/endpoint.js";
+import { assertSafeServerUrl } from "../profiles/hostname.js";
 import { config } from "../config.js";
 import { decrypt } from "../crypto/tokens.js";
 import type { ProfileRow } from "../db/queries.js";
@@ -18,6 +20,13 @@ export type ActualConnection = {
 };
 
 let inFlight = false;
+
+function actualAuth(serverUrl: string, serverPassword: string) {
+  const sessionToken = sessionTokenFor(serverUrl, config.ACTUAL_SERVER_URL,
+    config.ACTUAL_SESSION_TOKEN, config.ALLOW_HTTP_ACTUAL_SERVER === "true");
+  return !serverPassword && sessionToken ? { sessionToken } : { password: serverPassword };
+}
+
 
 export function profileCacheDir(profileId: number): string {
   return path.join(config.ACTUAL_CACHE_DIR, String(profileId));
@@ -48,6 +57,11 @@ export async function listBudgets(conn: {
   serverPassword: string;
   cacheDir: string;
 }): Promise<BudgetSummary[]> {
+  await assertSafeServerUrl(conn.serverUrl, {
+    blockPrivate: config.blockPrivateActualHosts,
+    allowedServerUrl: config.ACTUAL_SERVER_URL,
+    allowHttp: config.ALLOW_HTTP_ACTUAL_SERVER === "true",
+  });
   if (inFlight) {
     throw new Error("Actual client busy — try again in a moment.");
   }
@@ -56,8 +70,9 @@ export async function listBudgets(conn: {
   try {
     await actual.init({
       serverURL: conn.serverUrl,
-      password: conn.serverPassword,
+      ...actualAuth(conn.serverUrl, conn.serverPassword),
       dataDir: conn.cacheDir,
+      verbose: false,
     });
     // Actual's "Sync ID" (what downloadBudget matches on) is the budget's
     // groupId, NOT cloudFileId. See @actual-app/api downloadBudget:
@@ -95,6 +110,11 @@ export async function withActual<T>(
   conn: ActualConnection,
   fn: (api: ActualApi) => Promise<T>,
 ): Promise<T> {
+  await assertSafeServerUrl(conn.serverUrl, {
+    blockPrivate: config.blockPrivateActualHosts,
+    allowedServerUrl: config.ACTUAL_SERVER_URL,
+    allowHttp: config.ALLOW_HTTP_ACTUAL_SERVER === "true",
+  });
   if (inFlight) {
     throw new Error(
       "Actual client busy — another sync is in progress. Try again in a moment.",
@@ -107,8 +127,9 @@ export async function withActual<T>(
   try {
     await actual.init({
       serverURL: conn.serverUrl,
-      password: conn.serverPassword,
+      ...actualAuth(conn.serverUrl, conn.serverPassword),
       dataDir: conn.cacheDir,
+      verbose: false,
     });
 
     if (conn.encryptionPassword && conn.encryptionPassword.length > 0) {

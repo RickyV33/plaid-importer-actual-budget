@@ -10,7 +10,7 @@ const dbPath = path.join(tmpDir, "test.db");
 
 process.env.APP_URL ??= "http://localhost:8080";
 process.env.APP_USER = "seed-admin";
-process.env.APP_PASSWORD = "seed-pass";
+process.env.APP_PASSWORD = "seed-pass-with-entropy";
 process.env.SESSION_SECRET ??= "x".repeat(32);
 process.env.PLAID_CLIENT_ID ??= "test";
 process.env.PLAID_SECRET ??= "test";
@@ -30,7 +30,17 @@ const { initCredentials, createUser, verify, seedAdminFromEnv } = await import(
 runMigrations();
 await initCredentials();
 
-// Runs first, while the users table is still empty.
+const { config } = await import("../config.js");
+test("bootstrap refuses the published default password", async () => {
+  const password = config.APP_PASSWORD;
+  try {
+    config.APP_PASSWORD = "changeme";
+    await assert.rejects(seedAdminFromEnv(), /at least 16 characters/);
+    assert.equal(users.count(), 0);
+  } finally { config.APP_PASSWORD = password; }
+});
+
+// Runs while the users table is still empty.
 test("seedAdminFromEnv: creates the admin on an empty users table, idempotent after", async () => {
   assert.equal(users.count(), 0);
 

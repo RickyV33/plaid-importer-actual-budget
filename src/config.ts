@@ -36,11 +36,13 @@ const schema = z.object({
   PLAID_PRODUCTS: z.string().default("transactions"),
   PLAID_REDIRECT_URI: z.string().url().optional().or(z.literal("")),
 
-  // Optional defaults the New-profile form pre-fills (blank server password on
-  // the form falls back to ACTUAL_SERVER_PASSWORD). Budgets are chosen per
+  // A configured server URL also allowlists all Actual connections. The global
+  // password is available only to that exact endpoint. Budgets are chosen per
   // profile in the UI, so there is no server-wide budget/encryption setting.
   ACTUAL_SERVER_URL: z.string().optional().default(""),
   ACTUAL_SERVER_PASSWORD: z.string().optional().default(""),
+  ACTUAL_SESSION_TOKEN: z.string().optional().default(""),
+  ALLOW_HTTP_ACTUAL_SERVER: z.enum(["true", "false"]).default("false"),
 
   DATABASE_PATH: z.string().default("./data/plaid-importer.db"),
   ACTUAL_CACHE_DIR: z.string().default("./data/actual-cache"),

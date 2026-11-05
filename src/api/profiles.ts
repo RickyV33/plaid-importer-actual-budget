@@ -9,6 +9,7 @@ import { config } from "../config.js";
 import { encrypt } from "../crypto/tokens.js";
 import { plaidAccounts, plaidItems, profileAccountMappings, profiles } from "../db/queries.js";
 import { coverage, type Coverage } from "../insights/coverage.js";
+import { endpoint, serverPasswordFor, sessionTokenFor } from "../profiles/endpoint.js";
 import { assertSafeServerUrl } from "../profiles/hostname.js";
 import { fail, type Result } from "./result.js";
 import { accountsForItem, toAccountView, type AccountView } from "./shared.js";
@@ -89,7 +90,7 @@ export type ProfileFormView = {
 
 /** Undefined when `id` names a profile the user doesn't own. */
 export function profileFormFor(userId: number, id: number | null): ProfileFormView | undefined {
-  const defaults = { serverUrl: config.ACTUAL_SERVER_URL ?? "", hasServerPassword: Boolean(config.ACTUAL_SERVER_PASSWORD) };
+  const defaults = { serverUrl: config.ACTUAL_SERVER_URL ?? "", hasServerPassword: Boolean(config.ACTUAL_SERVER_PASSWORD || config.ACTUAL_SESSION_TOKEN) };
   if (id === null) return { profile: null, defaults };
   const p = profiles.getOwned(id, userId);
   if (!p) return undefined;
@@ -111,7 +112,7 @@ async function checkedInput(userId: number, body: unknown, id: number | null): P
   if (!parsed.success) return fail(400, "profile.errRequired");
   const d = parsed.data;
   try {
-    await assertSafeServerUrl(d.serverUrl, { blockPrivate: config.blockPrivateActualHosts });
+    await assertSafeServerUrl(d.serverUrl, { blockPrivate: config.blockPrivateActualHosts, allowedServerUrl: config.ACTUAL_SERVER_URL, allowHttp: config.ALLOW_HTTP_ACTUAL_SERVER === "true" });
   } catch {
     return fail(400, "profile.errServerUrl");
   }
@@ -125,8 +126,10 @@ export async function createProfile(userId: number, body: unknown): Promise<Resu
   const checked = await checkedInput(userId, body, null);
   if (!checked.ok) return checked;
   const d = checked.input;
-  const serverPassword = d.serverPassword.length > 0 ? d.serverPassword : config.ACTUAL_SERVER_PASSWORD ?? "";
-  if (serverPassword.length === 0) return fail(400, "profile.errServerPw");
+  const serverPassword = serverPasswordFor(d.serverUrl, d.serverPassword, config.ACTUAL_SERVER_URL, config.ACTUAL_SERVER_PASSWORD);
+  if (!serverPassword && !sessionTokenFor(d.serverUrl, config.ACTUAL_SERVER_URL, config.ACTUAL_SESSION_TOKEN, config.ALLOW_HTTP_ACTUAL_SERVER === "true")) {
+    return fail(400, "profile.errServerPw");
+  }
   const id = profiles.create({
     ownerUserId: userId,
     name: d.name,
@@ -140,10 +143,15 @@ export async function createProfile(userId: number, body: unknown): Promise<Resu
 
 /** Blank secret fields keep the stored values. */
 export async function updateProfile(userId: number, id: number, body: unknown): Promise<Result<{ id: number }>> {
-  if (!profiles.getOwned(id, userId)) return fail(404, "not_found");
+  const previous = profiles.getOwned(id, userId);
+  if (!previous) return fail(404, "not_found");
   const checked = await checkedInput(userId, body, id);
   if (!checked.ok) return checked;
   const d = checked.input;
+  // Never forward saved credentials to a replacement endpoint.
+  if (endpoint(previous.server_url, config.ALLOW_HTTP_ACTUAL_SERVER === "true") !== endpoint(d.serverUrl, config.ALLOW_HTTP_ACTUAL_SERVER === "true") && !d.serverPassword) {
+    return fail(400, "profile.errServerPw");
+  }
   profiles.update(id, {
     name: d.name,
     serverUrl: d.serverUrl,

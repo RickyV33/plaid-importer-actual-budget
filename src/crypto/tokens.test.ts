@@ -43,3 +43,11 @@ test("tampered ciphertext fails decryption", () => {
 test("short ciphertext fails fast", () => {
   assert.throws(() => decrypt("c2hvcnQ="));
 });
+
+test("empty optional credentials round-trip with authentication", () => {
+  const cipher = encrypt("");
+  assert.equal(decrypt(cipher), "");
+  const raw = Buffer.from(cipher, "base64");
+  raw[raw.length - 1] = raw[raw.length - 1]! ^ 1;
+  assert.throws(() => decrypt(raw.toString("base64")));
+});
